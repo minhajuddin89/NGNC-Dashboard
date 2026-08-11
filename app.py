@@ -1844,6 +1844,170 @@ def get_dashboard_state():
         print(f"Error loading dashboard state: {e}")
         return jsonify({"error": "error", "message": str(e)}), 500
 
+def format_vlan_ranges(vlan_list):
+    """Convert [101, 102, 103, 105, 108, 109, 110] into '101-103, 105, 108-110'"""
+    if not vlan_list:
+        return ""
+    sorted_vlans = sorted(list(set(vlan_list)))
+    ranges = []
+    start = sorted_vlans[0]
+    end = sorted_vlans[0]
+    
+    for v in sorted_vlans[1:]:
+        if v == end + 1:
+            end = v
+        else:
+            if start == end:
+                ranges.append(str(start))
+            else:
+                ranges.append(f"{start}-{end}")
+            start = v
+            end = v
+    if start == end:
+        ranges.append(str(start))
+    else:
+        ranges.append(f"{start}-{end}")
+    return ", ".join(ranges)
+
+@app.route("/vlan-search")
+@app.route("/vlan-search/")
+def serve_vlan_search():
+    return send_from_directory(os.path.join(app.static_folder, "vlan-search"), "index.html")
+
+@app.route("/t-shoot")
+@app.route("/t-shoot/")
+def serve_t_shoot():
+    return send_from_directory(os.path.join(app.static_folder, "t-shoot"), "index.html")
+
+@app.route("/api/vlan/search", methods=["POST"])
+def api_vlan_search():
+    try:
+        data = request.json or {}
+        host_ip = data.get("host_ip", "").strip()
+        username = data.get("username", "").strip()
+        password = data.get("password", "")
+        port = int(data.get("port", 22))
+        device_type = data.get("device_type", "huawei").strip().lower()
+        vlan_min = int(data.get("vlan_min", 1))
+        vlan_max = int(data.get("vlan_max", 4094))
+
+        if not host_ip or not username or not password:
+            return jsonify({"success": False, "message": "Host IP, Username, and Password are required."}), 400
+
+        import paramiko
+        import re
+        import time
+
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        
+        try:
+            client.connect(
+                hostname=host_ip,
+                port=port,
+                username=username,
+                password=password,
+                timeout=12,
+                allow_agent=False,
+                look_for_keys=False
+            )
+        except Exception as conn_err:
+            return jsonify({"success": False, "message": f"SSH Connection failed: {str(conn_err)}"}), 400
+
+        channel = client.invoke_shell()
+        time.sleep(0.5)
+
+        # Device specific commands
+        if device_type == "huawei":
+            commands = [
+                "screen-length 0 temporary",
+                "dis current-configuration | in vlan-type dot1q",
+                "undo screen-length temporary",
+                "quit"
+            ]
+        elif device_type == "cisco":
+            commands = [
+                "terminal length 0",
+                "sh running-config | in encapsulation dot1Q",
+                "exit"
+            ]
+        elif device_type == "juniper":
+            commands = [
+                "set cli screen-length 0",
+                "show configuration | match vlan-id",
+                "exit"
+            ]
+        elif device_type == "mikrotik":
+            commands = [
+                "/interface vlan print terse",
+                "quit"
+            ]
+        else: # default fallback
+            commands = [
+                "dis current-configuration | in vlan-type dot1q",
+                "sh running-config | in encapsulation dot1Q",
+                "quit"
+            ]
+
+        for cmd in commands:
+            channel.send(cmd + "\n")
+            time.sleep(0.8)
+
+        output = ""
+        while channel.recv_ready():
+            chunk = channel.recv(65535).decode("utf-8", errors="ignore")
+            output += chunk
+            time.sleep(0.2)
+
+        client.close()
+
+        # Extract configured VLANs
+        configured_vlans_set = set()
+        matched_details = []
+
+        lines = output.splitlines()
+        for line in lines:
+            line_str = line.strip()
+            # Ignore echo of the search commands themselves
+            if any(cmd.lower() in line_str.lower() for cmd in commands):
+                continue
+            
+            # Find all numbers in the configuration line
+            numbers = [int(n) for n in re.findall(r'\b\d+\b', line_str)]
+            for num in numbers:
+                if 1 <= num <= 4094:
+                    configured_vlans_set.add(num)
+                    matched_details.append({
+                        "vlan_id": num,
+                        "line": line_str
+                    })
+
+        sorted_configured = sorted(list(configured_vlans_set))
+        
+        # Calculate available free VLANs within requested range
+        full_range_set = set(range(vlan_min, vlan_max + 1))
+        available_set = full_range_set - configured_vlans_set
+        sorted_available = sorted(list(available_set))
+
+        return jsonify({
+            "success": True,
+            "device_type": device_type,
+            "host_ip": host_ip,
+            "vlan_min": vlan_min,
+            "vlan_max": vlan_max,
+            "total_configured": len(sorted_configured),
+            "total_available": len(sorted_available),
+            "configured_vlans": sorted_configured,
+            "configured_details": matched_details,
+            "available_vlans": sorted_available,
+            "available_ranges": format_vlan_ranges(sorted_available),
+            "configured_ranges": format_vlan_ranges(sorted_configured),
+            "raw_output": output
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Server error processing VLAN search: {str(e)}"}), 500
+
 if __name__ == "__main__":
     try:
         init_excel()
