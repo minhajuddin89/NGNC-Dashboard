@@ -594,9 +594,6 @@
                             <button type="button" class="output-tab-btn" data-view="configured">
                                 <i data-lucide="list"></i> Configured Details
                             </button>
-                            <button type="button" class="output-tab-btn" data-view="terminal">
-                                <i data-lucide="terminal"></i> Console Terminal
-                            </button>
                         </div>
                         <div class="action-btn-group">
                             <button type="button" id="btnCopyAvailableRanges" class="btn-copy">
@@ -638,11 +635,6 @@
                             </table>
                         </div>
                     </div>
-
-                    <!-- View 3: CLI Terminal Output -->
-                    <div id="viewTerminal" style="display: none;">
-                        <pre id="cliTerminalOutput" class="cli-terminal">=== CLI Terminal Output Stream ===&#10;Awaiting scan execution...</pre>
-                    </div>
                 </div>
             </div>
         </div>
@@ -683,7 +675,6 @@
         const outputTabs = document.querySelectorAll('.output-tab-btn');
         const viewAvailable = document.getElementById('viewAvailable');
         const viewConfigured = document.getElementById('viewConfigured');
-        const viewTerminal = document.getElementById('viewTerminal');
 
         outputTabs.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -692,7 +683,6 @@
                 const view = btn.getAttribute('data-view');
                 viewAvailable.style.display = (view === 'available') ? 'block' : 'none';
                 viewConfigured.style.display = (view === 'configured') ? 'block' : 'none';
-                viewTerminal.style.display = (view === 'terminal') ? 'block' : 'none';
             });
         });
 
@@ -715,7 +705,6 @@
         const btnScan = document.getElementById('btnExecuteScan');
         const vlanBadgesContainer = document.getElementById('vlanBadgesContainer');
         const configuredDetailsBody = document.getElementById('configuredDetailsBody');
-        const cliTerminalOutput = document.getElementById('cliTerminalOutput');
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -799,9 +788,6 @@
                     configuredDetailsBody.appendChild(tr);
                 });
             }
-
-            // Render Terminal
-            cliTerminalOutput.textContent = data.raw_output || 'No output recorded.';
         }
 
         // Copy Available Ranges
