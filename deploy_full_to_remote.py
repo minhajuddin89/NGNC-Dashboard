@@ -1,0 +1,92 @@
+import os
+import paramiko
+import time
+
+REMOTE_HOST = '203.76.96.218'
+REMOTE_PORT = 30222
+REMOTE_USER = 'subrata'
+REMOTE_PASS = 'Ai@Link3@2050'
+REMOTE_DIR = '/home/subrata/task-manager'
+
+print("=== Starting Full Remote Server Deployment ===")
+
+ssh = paramiko.SSHClient()
+ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+try:
+    print(f"Connecting to SSH: {REMOTE_HOST}:{REMOTE_PORT} as {REMOTE_USER}...")
+    ssh.connect(REMOTE_HOST, port=REMOTE_PORT, username=REMOTE_USER, password=REMOTE_PASS, timeout=30)
+    sftp = ssh.open_sftp()
+
+    def sftp_mkdir_p(remote_path):
+        dirs = []
+        p = remote_path
+        while p and p != '/':
+            dirs.append(p)
+            p = os.path.dirname(p)
+        for d in reversed(dirs):
+            try:
+                sftp.mkdir(d)
+            except Exception:
+                pass
+
+    def upload_dir(local_dir, remote_base):
+        for root, dirs, files in os.walk(local_dir):
+            # Skip git and cache directories
+            if '.git' in root or '__pycache__' in root or 'extracted' in root:
+                continue
+            rel_path = os.path.relpath(root, local_dir)
+            target_remote_dir = os.path.join(remote_base, rel_path).replace('\\', '/')
+            sftp_mkdir_p(target_remote_dir)
+
+            for file in files:
+                if file.endswith('.pyc') or file == '.gitignore' or 'extracted' in file:
+                    continue
+                local_file_path = os.path.join(root, file)
+                remote_file_path = os.path.join(target_remote_dir, file).replace('\\', '/')
+                try:
+                    sftp.put(local_file_path, remote_file_path)
+                    print(f"  Uploaded: {rel_path}/{file}")
+                except Exception as e:
+                    print(f"  [ERROR] Failed to upload {file}: {e}")
+
+    # 1. Upload root python files and data
+    root_files = ['app.py', 'tasks.xlsx', 'release.py']
+    for rf in root_files:
+        if os.path.exists(rf):
+            remote_rf = f"{REMOTE_DIR}/{rf}"
+            print(f"Uploading root file: {rf} -> {remote_rf}")
+            sftp.put(rf, remote_rf)
+
+    # 2. Upload static/ folder recursively
+    print("\nUploading static directory tree...")
+    upload_dir('static', f"{REMOTE_DIR}/static")
+
+    # 3. Upload olt_backend/ folder recursively if present
+    if os.path.exists('olt_backend'):
+        print("\nUploading olt_backend directory tree...")
+        upload_dir('olt_backend', f"{REMOTE_DIR}/olt_backend")
+
+    sftp.close()
+    print("\n[SUCCESS] File synchronization complete!")
+
+    # 4. Restart services on remote server
+    print("\nRestarting services via start.sh...")
+    stdin, stdout, stderr = ssh.exec_command(f"{REMOTE_DIR}/start.sh")
+    out = stdout.read().decode()
+    err = stderr.read().decode()
+    print(out)
+    if err:
+        print("[STDERR]:", err)
+
+    # 5. Check remote status
+    time.sleep(2)
+    stdin, stdout, stderr = ssh.exec_command("ps aux | grep -E 'gunicorn|python3' | grep -v grep")
+    print("\n--- Remote Process Status ---")
+    print(stdout.read().decode())
+
+    ssh.close()
+    print("\n=== FULL PRODUCTION DEPLOYMENT FINISHED SUCCESSFULLY ===")
+
+except Exception as e:
+    print(f"\n[FATAL ERROR] Deployment failed: {e}")

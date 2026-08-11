@@ -2727,5 +2727,134 @@ body.light-theme .engineer-row-compact.status-busy:hover {
     color: #ffffff !important;
 }
 
+/* ==========================================================================
+   Comprehensive Light Theme Modal & Pop-up Overrides
+   ========================================================================== */
+body.light-theme .modal-overlay-deck {
+    background-color: rgba(15, 23, 42, 0.45) !important;
+    backdrop-filter: blur(6px) !important;
+}
 
+body.light-theme .modal-content-deck,
+body.light-theme #taskDetailModal .modal-content-deck,
+body.light-theme #adminModal .modal-content-deck,
+body.light-theme #rosterModal .modal-content-deck,
+body.light-theme #implTrackerModal .modal-content-deck,
+body.light-theme #editModal .modal-content-deck,
+body.light-theme #finishTaskModal .modal-content-deck,
+body.light-theme #dependencyModal .modal-content-deck,
+body.light-theme #escalationModal .modal-content-deck {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
 
+body.light-theme .modal-header-deck,
+body.light-theme #taskDetailModal .modal-header-deck,
+body.light-theme #adminModal .modal-header-deck,
+body.light-theme #rosterModal .modal-header-deck,
+body.light-theme #editModal .modal-header-deck,
+body.light-theme #finishTaskModal .modal-header-deck,
+body.light-theme #dependencyModal .modal-header-deck,
+body.light-theme #escalationModal .modal-header-deck {
+    border-bottom: 1px solid #e2e8f0 !important;
+    background: #ffffff !important;
+}
+
+body.light-theme .modal-header-deck h3,
+body.light-theme .modal-header-deck h4 {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+}
+
+body.light-theme .modal-close-btn-deck {
+    color: #64748b !important;
+}
+
+body.light-theme .modal-close-btn-deck:hover {
+    color: #0f172a !important;
+}
+
+body.light-theme .form-group-deck label,
+body.light-theme .panel-label {
+    color: #475569 !important;
+    font-weight: 600 !important;
+}
+
+body.light-theme .form-group-deck textarea,
+body.light-theme .form-group-deck input,
+body.light-theme .form-group-deck select,
+body.light-theme #editPendingReason,
+body.light-theme #editEscalationHistory,
+body.light-theme #dependencyReasonInput,
+body.light-theme #escalationReasonInput,
+body.light-theme #escalationRecipientSelect,
+body.light-theme #editOwner,
+body.light-theme #editDescription,
+body.light-theme #editStartTime,
+body.light-theme #editEndTime,
+body.light-theme #editStatus {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+body.light-theme .form-group-deck textarea:focus,
+body.light-theme .form-group-deck input:focus,
+body.light-theme .form-group-deck select:focus,
+body.light-theme #editPendingReason:focus,
+body.light-theme #editEscalationHistory:focus,
+body.light-theme #dependencyReasonInput:focus,
+body.light-theme #escalationReasonInput:focus {
+    background-color: #ffffff !important;
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15) !important;
+}
+
+body.light-theme .modal-footer-deck,
+body.light-theme #taskDetailModal .modal-footer-deck {
+    border-top: 1px solid #e2e8f0 !important;
+    background: #ffffff !important;
+}
+
+body.light-theme .btn-modal-cancel {
+    background-color: #f1f5f9 !important;
+    color: #334155 !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+body.light-theme .btn-modal-cancel:hover {
+    background-color: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+
+body.light-theme #dependencyTaskPreview,
+body.light-theme #escalationTaskPreview {
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+    border: 1px solid #e2e8f0 !important;
+    border-left: 4px solid #0284c7 !important;
+}
+
+/* Light Theme Task Detail Console Modal */
+body.light-theme #taskDetailModal .terminal-body {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #0f172a !important;
+}
+
+body.light-theme #taskDetailModal textarea {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+body.light-theme #taskDetailModal div[style*="color: #64748b"] {
+    color: #475569 !important;
+    font-weight: 600 !important;
+}
+
+body.light-theme #taskDetailModal div[style*="border-bottom: 1px dashed #1e293b"] {
+    border-bottom: 1px dashed #cbd5e1 !important;
+}
