@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Traceroute Console</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-gradient: radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%);
+      --glass-bg: rgba(15, 23, 42, 0.65);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --text-primary: #f3f4f6;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      
+      --accent-cyan: #00f2fe;
+      --accent-cyan-glow: rgba(0, 242, 254, 0.15);
+      --accent-green: #10b981;
+      --accent-green-glow: rgba(16, 185, 129, 0.2);
+      --accent-red: #f43f5e;
+      --accent-red-glow: rgba(244, 63, 94, 0.2);
+      
+      --font-main: 'Plus Jakarta Sans', sans-serif;
+      --font-title: 'Outfit', sans-serif;
+      --font-mono: 'Fira Code', 'Consolas', monospace;
+      --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      color: var(--text-primary);
+      font-family: var(--font-main);
+      min-height: 100vh;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .console-container {
+      width: 100%;
+      max-width: 850px;
+      height: calc(100vh - 32px);
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Decorative top glow */
+    .console-container::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 10%;
+      width: 80%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+    }
+
+    .console-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.15);
+    }
+
+    .header-title-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .pulse-icon {
+      width: 32px;
+      height: 32px;
+      background: rgba(0, 242, 254, 0.1);
+      border: 1px solid rgba(0, 242, 254, 0.2);
+      border-radius: 8px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: var(--accent-cyan);
+      box-shadow: 0 0 10px var(--accent-cyan-glow);
+    }
+
+    .pulse-icon svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .header-text h1 {
+      font-family: var(--font-title);
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      line-height: 1.2;
+    }
+
+    .header-text span {
+      font-size: 11px;
+      color: var(--text-secondary);
+      display: block;
+    }
+
+    /* Badges */
+    .badge {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: var(--transition-smooth);
+    }
+
+    .badge-pulse {
+      background: rgba(0, 242, 254, 0.1);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(0, 242, 254, 0.2);
+      box-shadow: 0 0 8px var(--accent-cyan-glow);
+    }
+
+    .badge-pulse::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--accent-cyan);
+      border-radius: 50%;
+      display: inline-block;
+      animation: pulse-dot 1.5s infinite;
+    }
+
+    .badge-complete {
+      background: rgba(16, 185, 129, 0.1);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      box-shadow: 0 0 8px var(--accent-green-glow);
+    }
+
+    .badge-complete::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--accent-green);
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    @keyframes pulse-dot {
+      0% { transform: scale(0.8); opacity: 0.5; }
+      50% { transform: scale(1.3); opacity: 1; }
+      100% { transform: scale(0.8); opacity: 0.5; }
+    }
+
+    .terminal-wrapper {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .terminal-box {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      border-radius: 12px;
+      padding: 20px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.6;
+      color: #e2e8f0;
+      overflow-y: auto;
+      box-shadow: inset 0 4px 20px rgba(0, 0, 0, 0.4);
+      white-space: pre-wrap;
+    }
+
+    .terminal-line {
+      min-height: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.01);
+      padding: 2px 0;
+    }
+
+    /* Custom Scrollbar */
+    .terminal-box::-webkit-scrollbar {
+      width: 8px;
+    }
+    .terminal-box::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 6px;
+    }
+    .terminal-box::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      border: 2px solid rgba(0, 0, 0, 0.2);
+    }
+    .terminal-box::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+  </style>
+</head>
+<body>
+  <div class="console-container">
+    <header class="console-header">
+      <div class="header-title-group">
+        <div class="pulse-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+        </div>
+        <div class="header-text">
+          <h1 id="headerTarget">Traceroute</h1>
+          <span id="headerDetails">Initializing diagnostic tunnel...</span>
+        </div>
+      </div>
+      <div>
+        <span class="badge badge-pulse" id="statusBadge">Active</span>
+      </div>
+    </header>
+
+    <div class="terminal-wrapper">
+      <div class="terminal-box" id="terminal">Connecting to diagnostic node...</div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const terminal = document.getElementById('terminal');
+    const headerTarget = document.getElementById('headerTarget');
+    const headerDetails = document.getElementById('headerDetails');
+    const statusBadge = document.getElementById('statusBadge');
+
+    // Get parameters from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const target = urlParams.get('target');
+    const mode = urlParams.get('mode') || 'icmp';
+    const port = urlParams.get('port') || '80';
+
+    const hopLines = {};
+    const introLines = [];
+    let headerLine = '';
+
+    if (!target) {
+      terminal.innerHTML = '<div class="terminal-line" style="color: var(--accent-red);">Error: No target host specified.</div>';
+      statusBadge.className = 'badge';
+      statusBadge.style.background = 'rgba(244, 63, 94, 0.1)';
+      statusBadge.style.color = '#fb7185';
+      statusBadge.textContent = 'Error';
+    } else {
+      // Update UI Header
+      headerTarget.textContent = target;
+      headerDetails.textContent = `Protocol: ${mode.toUpperCase()} ${mode === 'tcp' ? `(${port})` : ''} | Mode: Real-time Hop Profiler`;
+      
+      socket.on('connect', () => {
+        const routerType = urlParams.get('routerType');
+        const routerHost = urlParams.get('routerHost');
+        const routerPort = parseInt(urlParams.get('routerPort'), 10) || 22;
+        const routerUser = urlParams.get('routerUser');
+        const routerPass = urlParams.get('routerPass') ? decodeURIComponent(urlParams.get('routerPass')) : '';
+        const routerSource = urlParams.get('routerSource');
+        const routerNeedsPty = urlParams.get('routerNeedsPty') === 'true';
+        const routerNeedsPasswordOption = urlParams.get('routerNeedsPasswordOption') === 'true';
+
+        const routerConfig = routerHost ? {
+          type: routerType,
+          host: routerHost,
+          port: routerPort,
+          username: routerUser,
+          password: routerPass,
+          source: routerSource,
+          needsPty: routerNeedsPty,
+          needsPasswordOption: routerNeedsPasswordOption
+        } : null;
+
+        terminal.innerHTML = '<div class="terminal-line" style="color: var(--text-secondary);">Spawning traceroute process...</div>';
+        socket.emit('start-traceroute', { target, mode, port, routerConfig });
+      });
+
+      socket.on('traceroute-line', (line) => {
+        const trimmed = line.trim();
+        if (!trimmed) return;
+
+        // Parse hop number at the start of the line
+        const tokens = trimmed.split(/\s+/);
+        const hopNum = parseInt(tokens[0], 10);
+
+        if (!isNaN(hopNum)) {
+          hopLines[hopNum] = line;
+        } else {
+          // Parse headers vs intro lines
+          if (trimmed.includes('address') || trimmed.includes('LOSS') || trimmed.includes('sent') || trimmed.includes('ms')) {
+            if (trimmed.includes('hop') || trimmed.includes('address') || trimmed.includes('LOSS')) {
+              headerLine = line;
+            } else {
+              introLines.push(line);
+            }
+          } else {
+            introLines.push(line);
+          }
+        }
+
+        renderTerminal();
+      });
+
+      socket.on('traceroute-error', (err) => {
+        introLines.push(`Error: ${err}`);
+        statusBadge.className = 'badge';
+        statusBadge.style.background = 'rgba(244, 63, 94, 0.1)';
+        statusBadge.style.color = '#fb7185';
+        statusBadge.textContent = 'Failed';
+        renderTerminal();
+      });
+      
+      socket.on('traceroute-complete', () => {
+        statusBadge.className = 'badge badge-complete';
+        statusBadge.textContent = 'Complete';
+        renderTerminal();
+      });
+    }
+
+    // Dynamic Rich Colorizer
+    function colorize(line, isHeader = false) {
+      const trimmed = line.trim();
+      if (!trimmed) return '';
+
+      if (isHeader) {
+        return `<span style="color: var(--text-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px;">${line}</span>`;
+      }
+
+      const tokens = trimmed.split(/\s+/);
+      const hopNum = parseInt(tokens[0], 10);
+
+      if (!isNaN(hopNum)) {
+        // Hop line: Highlight hop index in cyan, IPs in white, latencies in green, timeouts in red
+        let html = `<span style="color: var(--accent-cyan); font-weight: 600; display: inline-block; width: 32px;">#${hopNum}</span>`;
+        
+        let rest = line.substring(line.indexOf(tokens[0]) + tokens[0].length);
+        
+        // Colorize IP addresses
+        rest = rest.replace(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/g, '<span style="color: #ffffff; font-weight: 500;">$1</span>');
+        
+        // Colorize latencies (e.g. 5ms, 5 ms, <1ms)
+        rest = rest.replace(/(<\d+ms|\d+\s*ms)/gi, '<span style="color: #34d399; font-weight: 500;">$1</span>');
+        
+        // Colorize asterisks (timeouts)
+        rest = rest.replace(/\*/g, '<span style="color: var(--accent-red); font-weight: 700;">*</span>');
+        
+        return `<div class="terminal-line">${html}${rest}</div>`;
+      } else {
+        // System or general text lines
+        let color = 'var(--text-secondary)';
+        let weight = '400';
+        
+        if (trimmed.startsWith('Error:')) {
+          color = 'var(--accent-red)';
+          weight = '600';
+        } else if (trimmed.startsWith('[System]')) {
+          color = 'var(--accent-cyan)';
+        } else if (trimmed.includes('complete') || trimmed.includes('successful')) {
+          color = '#34d399';
+        }
+        
+        return `<div class="terminal-line" style="color: ${color}; font-weight: ${weight};">${line}</div>`;
+      }
+    }
+
+    function renderTerminal() {
+      let htmlOutput = '';
+      
+      if (introLines.length > 0) {
+        introLines.forEach(line => {
+          htmlOutput += colorize(line);
+        });
+        htmlOutput += '<div style="height: 12px; border-bottom: 1px solid rgba(255,255,255,0.02)"></div>';
+      }
+      
+      if (headerLine) {
+        htmlOutput += colorize(headerLine, true);
+      }
+      
+      // Sort and append hops
+      const sortedHops = Object.keys(hopLines).map(Number).sort((a, b) => a - b);
+      sortedHops.forEach(hopNum => {
+        htmlOutput += colorize(hopLines[hopNum]);
+      });
+
+      terminal.innerHTML = htmlOutput;
+      
+      // Scroll to bottom
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+@echo off
+title Installing Ping Monitor...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0install.ps1"

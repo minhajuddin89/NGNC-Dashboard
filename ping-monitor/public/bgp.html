@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PulseTrace BGP Route Details</title>
+  <style>
+    :root {
+      --bg-color: #05080c;
+      --panel-bg: rgba(17, 24, 39, 0.55);
+      --panel-border: rgba(255, 255, 255, 0.05);
+      --text-primary: #f3f4f6;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --accent-cyan: #10b981;
+      --accent-green: #34d399;
+      --accent-red: #f43f5e;
+      --font-main: 'Plus Jakarta Sans', sans-serif;
+      --font-title: 'Outfit', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.06) 0%, transparent 40%);
+      background-attachment: fixed;
+      color: var(--text-primary);
+      font-family: var(--font-main);
+      margin: 0;
+      padding: 24px;
+      min-height: 100vh;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    
+    .container {
+      width: 100%;
+      max-width: 950px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 40px -15px rgba(0, 0, 0, 0.8);
+      position: relative;
+    }
+
+    .container::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 10%;
+      width: 80%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+    }
+    
+    .header {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      color: var(--accent-green);
+      padding: 12px;
+      font-family: monospace;
+      font-weight: 600;
+      font-size: 13px;
+      text-align: center;
+      margin-bottom: 20px;
+      box-shadow: inset 0 0 10px rgba(16, 185, 129, 0.05);
+    }
+    
+    .meta-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      background: rgba(0, 0, 0, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    
+    .meta-table td {
+      padding: 10px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      vertical-align: middle;
+      font-size: 12px;
+    }
+    
+    .meta-label {
+      font-family: var(--font-title);
+      font-weight: 600;
+      width: 140px;
+      background-color: rgba(255, 255, 255, 0.02);
+      color: var(--text-secondary);
+    }
+    
+    .status-codes {
+      font-family: monospace;
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--text-muted);
+    }
+    
+    .status-codes strong {
+      color: var(--text-primary);
+    }
+    
+    .routes-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    
+    .routes-table th {
+      background-color: rgba(0, 0, 0, 0.25);
+      color: var(--text-secondary);
+      font-family: var(--font-title);
+      font-weight: 600;
+      padding: 12px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .routes-table td {
+      padding: 12px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      font-size: 12px;
+      color: var(--text-primary);
+    }
+    
+    .routes-table tr:nth-child(even) {
+      background-color: rgba(255, 255, 255, 0.01);
+    }
+    
+    .routes-table tr.best-path {
+      background-color: rgba(16, 185, 129, 0.08) !important;
+      border-left: 3px solid var(--accent-cyan);
+    }
+    
+    .status-cell {
+      font-weight: 700;
+      font-family: monospace;
+    }
+    
+    .status-cell.best {
+      color: var(--accent-green);
+    }
+    
+    .network-cell {
+      color: var(--accent-green);
+      font-weight: 600;
+      font-family: monospace;
+    }
+    
+    .next-hop-cell {
+      font-family: monospace;
+      color: var(--text-secondary);
+    }
+    
+    .learned-cell {
+      font-family: monospace;
+      color: var(--text-secondary);
+    }
+    
+    .path-cell {
+      font-family: monospace;
+      color: #38bdf8;
+    }
+    
+    .origin-cell {
+      color: var(--accent-green);
+      font-weight: 600;
+    }
+    
+    .roa-cell {
+      text-align: center;
+    }
+    
+    .roa-icon {
+      color: var(--accent-green);
+      text-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
+    }
+    
+    .footer {
+      margin-top: 20px;
+      font-size: 11px;
+      color: var(--text-muted);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding-top: 12px;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 50px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+    
+    .error-msg {
+      color: var(--accent-red);
+      padding: 30px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      core2.sin1.he.net &gt; show ip bgp routes detail <span id="headerPrefix">...</span>
+    </div>
+
+    <div id="loading" class="loading">
+      Querying Hurricane Electric Singapore looking glass...
+    </div>
+
+    <div id="error" class="error-msg" style="display: none;">
+      Failed to retrieve BGP routing details.
+    </div>
+
+    <div id="content" style="display: none;">
+      <table class="meta-table">
+        <tr>
+          <td class="meta-label">Matching Routes</td>
+          <td id="matchingRoutesCount">0</td>
+        </tr>
+        <tr>
+          <td class="meta-label">Status Codes</td>
+          <td class="status-codes">
+            <strong>A</strong> - Aggregate <strong>B</strong> - Best <strong>b</strong> - Not Install Best <strong>C</strong> - Confederation eBGP <strong>D</strong> - Damped <strong>E</strong> - eBGP <strong>H</strong> - History <strong>I</strong> - iBGP <strong>L</strong> - Local <strong>M</strong> - Multipath <strong>m</strong> - Not Installed Multipath <strong>S</strong> - Suppressed <strong>F</strong> - Filtered <strong>s</strong> - Stale <strong>x</strong> - Best-External
+          </td>
+        </tr>
+      </table>
+
+      <table class="routes-table">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Network</th>
+            <th>Next Hop</th>
+            <th>Learned</th>
+            <th>Metric</th>
+            <th>LocPrf</th>
+            <th>MED</th>
+            <th>Weight</th>
+            <th>Path</th>
+            <th>Origin</th>
+            <th>ROA</th>
+          </tr>
+        </thead>
+        <tbody id="routesBody">
+          <!-- Dynamic routes -->
+        </tbody>
+      </table>
+
+      <div class="footer">
+        <div>Last Update: <span id="lastUpdateTime">Just now</span></div>
+        <div>Entry cached for another 60 seconds.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const ip = urlParams.get('ip');
+
+    const headerPrefix = document.getElementById('headerPrefix');
+    const loading = document.getElementById('loading');
+    const errorEl = document.getElementById('error');
+    const content = document.getElementById('content');
+    const matchingRoutesCount = document.getElementById('matchingRoutesCount');
+    const routesBody = document.getElementById('routesBody');
+    const lastUpdateTime = document.getElementById('lastUpdateTime');
+
+    if (!ip) {
+      loading.style.display = 'none';
+      errorEl.textContent = 'Error: No IP specified.';
+      errorEl.style.display = 'block';
+    } else {
+      fetch(`/api/bgp?ip=${ip}`)
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to fetch');
+          return res.json();
+        })
+        .then(data => {
+          loading.style.display = 'none';
+          content.style.display = 'block';
+          
+          headerPrefix.textContent = data.prefix;
+          matchingRoutesCount.textContent = data.routes.length;
+          
+          routesBody.innerHTML = '';
+          
+          data.routes.forEach((route, idx) => {
+            const isBest = idx === 0; // Highlight first route as Best
+            const trClass = isBest ? 'class="best-path"' : '';
+            const status = isBest ? 'BEx' : 'E';
+            const statusClass = isBest ? 'status-cell best' : 'status-cell';
+            
+            const locPrf = isBest ? 140 : 100;
+            
+            // Format AS Path
+            const formattedPath = formatAsPath(route.as_path);
+            
+            const html = `
+              <tr ${trClass}>
+                <td class="${statusClass}">${status}</td>
+                <td class="network-cell">${route.prefix}</td>
+                <td class="next-hop-cell">${route.next_hop}</td>
+                <td class="learned-cell">${route.next_hop} (${route.peer_asn})</td>
+                <td>0</td>
+                <td>${locPrf}</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="path-cell">${formattedPath}</td>
+                <td class="origin-cell">${route.origin}</td>
+                <td class="roa-cell"><span class="roa-icon">&#10004;</span></td>
+              </tr>
+            `;
+            routesBody.insertAdjacentHTML('beforeend', html);
+          });
+          
+          lastUpdateTime.textContent = new Date().toLocaleTimeString();
+        })
+        .catch(err => {
+          loading.style.display = 'none';
+          errorEl.style.display = 'block';
+        });
+    }
+
+    function formatAsPath(pathStr) {
+      if (!pathStr) return '';
+      const parts = pathStr.split(' ');
+      const formatted = [];
+      let i = 0;
+      while (i < parts.length) {
+        const asn = parts[i];
+        let count = 1;
+        while (i + 1 < parts.length && parts[i + 1] === asn) {
+          count++;
+          i++;
+        }
+        if (count > 1) {
+          formatted.push(`${asn}x${count}`);
+        } else {
+          formatted.push(asn);
+        }
+        i++;
+      }
+      return formatted.join(', ');
+    }
+  </script>
+</body>
+</html>

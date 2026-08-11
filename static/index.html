@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Task Manager</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Login Screen Overlay (Shown by default) -->
+    <div id="loginOverlay" class="login-overlay">
+        <div class="login-card">
+            <div class="login-logo">
+                <div class="logo-icon-large">
+                    <i data-lucide="lock"></i>
+                </div>
+                <h2>Task Manager Login</h2>
+                <p>Enter your credentials to access the Excel task list</p>
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-group-deck">
+                    <label for="loginUsername" class="panel-label">User ID (Username)</label>
+                    <input type="text" id="loginUsername" placeholder="e.g. admin or operator1" required autocomplete="username">
+                </div>
+                
+                <div class="form-group-deck">
+                    <label for="loginPassword" class="panel-label">Password</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+                
+                <button type="submit" class="btn-login-submit">
+                    <i data-lucide="log-in"></i> Sign In
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Workspace (Hidden by default until logged in) -->
+    <div id="appWorkspace" class="app-workspace hidden">
+        <!-- Main Full-Width Header -->
+        <header class="app-header">
+            <div class="app-header-inner" style="max-width: 1400px; width: 100%; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
+                <div class="header-logo">
+                    <div class="logo-icon">
+                        <i data-lucide="check-square"></i>
+                    </div>
+                    <h1>Task Control Dashboard</h1>
+                </div>
+                
+                <div class="header-actions">
+                    <!-- Script Generator Hub Link -->
+                    <button id="btnOpenScriptGen" class="btn-admin-console" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(168, 85, 247, 0.2)); border: 1px solid rgba(168, 85, 247, 0.2); color: #c084fc;">
+                        <i data-lucide="terminal"></i>
+                        Script Gen
+                    </button>
+
+                    <!-- T-Shoot Tools Hub Link -->
+                    <button id="btnOpenTShoot" class="btn-admin-console" style="background: linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(56, 189, 248, 0.2)); border: 1px solid rgba(56, 189, 248, 0.2); color: #38bdf8;">
+                        <i data-lucide="wrench"></i>
+                        T Shoot Tools
+                    </button>
+
+                    <!-- Implementation Tracker Link -->
+                    <button id="btnOpenImplTracker" class="btn-admin-console" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(236, 72, 153, 0.2)); border: 1px solid rgba(236, 72, 153, 0.2); color: #f472b6;">
+                        <i data-lucide="layers"></i>
+                        Impl Tracker
+                    </button>
+
+                    <!-- Duty Roster Link (visible to all) -->
+                    <button id="btnViewRoster" class="btn-admin-console" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.2)); border: 1px solid rgba(59, 130, 246, 0.2); color: #60a5fa;">
+                        <i data-lucide="calendar"></i>
+                        Duty Roster
+                    </button>
+    
+                    <!-- Admin Console Link -->
+                    <button id="btnAdminConsole" class="btn-admin-console hidden">
+                        <i data-lucide="shield-check"></i>
+                        Admin Console
+                    </button>
+    
+                    <!-- User profile chip -->
+                    <div id="userProfile" class="user-profile-chip">
+                        <div class="user-avatar">
+                            <i data-lucide="user"></i>
+                        </div>
+                        <div class="user-info">
+                            <span id="headerUserName" class="user-name">Guest</span>
+                            <span id="headerUserRole" class="user-role">User</span>
+                        </div>
+                        <button id="btnLogout" class="btn-logout" title="Log Out">
+                            <i data-lucide="log-out"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="status-badge-server">
+                        <span class="status-dot"></span>
+                        <span>Active</span>
+                    </div>
+                    
+                    <button id="btnThemeToggle" class="btn-theme-toggle" title="Toggle Dark/Light Mode">
+                        <i data-lucide="sun" id="themeToggleIcon" style="width: 16px; height: 16px;"></i>
+                    </button>
+    
+                </div>
+            </div>
+        </header>
+
+        <div class="app-layout">
+            <!-- Main Panel Content -->
+            <main class="main-workspace">
+                
+                <!-- Horizontal Portal Quick Links Bar -->
+                <section class="horizontal-quick-links-bar" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.25rem 1.75rem; box-shadow: var(--shadow-md); backdrop-filter: blur(10px); z-index: 10;">
+                    <label class="panel-label" style="margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem;">
+                        <i data-lucide="external-link" style="width: 14px; height: 14px; color: #38bdf8;"></i>
+                        Portal Quick Links
+                    </label>
+                    <div id="quickLinksContainer" style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; width: 100%;">
+                        <!-- Dynamic links list -->
+                    </div>
+                </section>
+
+                <!-- Hero Task Control Center (Matches User Sketch) -->
+                <section class="task-control-center">
+                    
+                    <!-- Left: Task detail window -->
+                    <div class="control-left">
+                        <label for="taskDescription" class="panel-label">Task detail window</label>
+                        <textarea id="taskDescription" placeholder="Write task description/details here..." required></textarea>
+                    </div>
+                    
+                    <!-- Right: Owner selection, Time display, Start & Finish actions -->
+                    <div class="control-right">
+                        
+                        <!-- Task Owner Name (Auto-assigned to logged in user) -->
+                        <div class="control-group">
+                            <label class="panel-label">Task owner name</label>
+                            <div class="active-owner-display">
+                                <i data-lucide="user-check" class="owner-icon"></i>
+                                <span id="activeOwnerName">Not Logged In</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Current Time -->
+                        <div class="control-group">
+                            <label class="panel-label">Current time</label>
+                            <div id="timeDisplay" class="time-display-box">
+                                --:--:--
+                            </div>
+                        </div>
+                        
+                        <!-- Actions Row (Start & Finish) -->
+                        <div class="action-buttons-row">
+                            <button type="button" id="btnStart" class="btn-action-start">
+                                <i data-lucide="play-circle"></i> Start
+                            </button>
+                            <button type="button" id="btnFinish" class="btn-action-finish">
+                                <i data-lucide="check-circle2"></i> Finish
+                            </button>
+                        </div>
+                        <div class="action-buttons-row" style="margin-top: 0.5rem; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                            <button type="button" id="btnPendingDependency" class="btn-action-pending" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: linear-gradient(135deg, #eab308, #ca8a04); box-shadow: 0 4px 10px rgba(234, 179, 8, 0.2); border: none; padding: 0.75rem 1.5rem; border-radius: var(--radius-md); color: #fff; font-weight: 700; cursor: pointer; transition: var(--transition-fast);">
+                                <i data-lucide="alert-circle" style="width: 16px; height: 16px;"></i> Pending
+                            </button>
+                            <button type="button" id="btnEscalateTask" class="btn-action-escalate" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: linear-gradient(135deg, #818cf8, #4f46e5); box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2); border: none; padding: 0.75rem 1.5rem; border-radius: var(--radius-md); color: #fff; font-weight: 700; cursor: pointer; transition: var(--transition-fast);">
+                                <i data-lucide="trending-up" style="width: 16px; height: 16px;"></i> Escalation
+                            </button>
+                        </div>
+                        
+                    </div>
+                </section>
+
+                <!-- Dashboard Analytics Metrics (Moved to sidebar) -->
+
+                <!-- Dashboard Task Manager Filters & Controls -->
+                <section class="list-controls-card">
+                    <div class="controls-wrapper">
+                        <div class="search-bar-widget">
+                            <i data-lucide="search" class="search-widget-icon"></i>
+                            <input type="text" id="searchQuery" placeholder="Search by task description or owner name...">
+                        </div>
+                        
+                        <div class="filters-widget">
+                            <select id="filterStatus">
+                                <option value="ALL">All Statuses</option>
+                                <option value="Pending">Pending</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Completed">Completed</option>
+                            </select>
+                            
+                            <select id="filterScope">
+                                <option value="ALL">All Tasks</option>
+                                <option value="OWN">Own Tasks</option>
+                            </select>
+                            
+                            <div class="layout-toggle-widget">
+                                <button id="viewGrid" class="toggle-widget-btn" title="Grid Layout">
+                                    <i data-lucide="grid"></i>
+                                </button>
+                                <button id="viewTable" class="toggle-widget-btn active" title="Spreadsheet Table Layout">
+                                    <i data-lucide="table"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Workspace Grid layout: Tasks list on Left, Live Engineer status on Right -->
+                <div class="workspace-grid">
+                    <!-- Tasks Container (Dynamic Grid / Table) -->
+                    <section class="tasks-display-area" style="margin-top: 0;">
+                        <!-- Dashboard Metrics Summary Row -->
+                        <div class="metrics-row" style="margin-bottom: 1.5rem;">
+                            <div class="metric-box total">
+                                <span class="metric-title">Total Tasks</span>
+                                <span id="metricTotal" class="metric-number">0</span>
+                                <i data-lucide="layers" class="metric-icon"></i>
+                            </div>
+                            <div class="metric-box pending">
+                                <span class="metric-title">Pending</span>
+                                <span id="metricPending" class="metric-number">0</span>
+                                <i data-lucide="clock" class="metric-icon"></i>
+                            </div>
+                            <div class="metric-box progress">
+                                <span class="metric-title">In Progress</span>
+                                <span id="metricProgress" class="metric-number">0</span>
+                                <i data-lucide="play" class="metric-icon"></i>
+                            </div>
+                            <div class="metric-box completed">
+                                <span class="metric-title">Completed</span>
+                                <span id="metricCompleted" class="metric-number">0</span>
+                                <i data-lucide="check-circle" class="metric-icon"></i>
+                            </div>
+                        </div>
+
+                        <!-- Admin Workload Dashboard (Admin Only) -->
+                        <section id="adminDashboardSection" class="admin-dashboard-box hidden" style="margin-bottom: 1.5rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; backdrop-filter: blur(10px);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem; color: var(--text-main); font-size: 1.1rem; font-weight: 700;">
+                                    <i data-lucide="bar-chart-2" style="color: #38bdf8; width: 20px; height: 20px;"></i>
+                                    Engineer Workload Distribution
+                                </h3>
+                            </div>
+                            
+                            <div style="position: relative; height: 220px; width: 100%;">
+                                <canvas id="workloadChart"></canvas>
+                            </div>
+                        </section>
+                    </section>
+                    
+                    <!-- Right Side: On-Duty Engineers Status -->
+                    <aside class="engineers-column">
+                        <div class="engineers-panel">
+                            <h3><i data-lucide="shield-alert"></i> On duty Engineer</h3>
+                            <div id="engineersList" class="engineers-list-compact">
+                                <div style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 1rem 0;">
+                                    Loading engineer status...
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+
+                <!-- Grid Layout (Hidden by default) -->
+                <div id="tasksGrid" class="tasks-grid-layout hidden" style="margin-top: 1.5rem;">
+                    <!-- Cards will be dynamically rendered here -->
+                </div>
+                
+                <!-- Table Layout (Active by default) -->
+                <div id="tasksTableContainer" class="tasks-table-layout" style="margin-top: 1.5rem;">
+                    <table class="spreadsheet-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 350px; min-width: 280px;">Description</th>
+                                <th style="width: 120px;">Reference</th>
+                                <th style="width: 130px;">Category</th>
+                                <th style="width: 130px;">Forwarded by</th>
+                                <th style="width: 140px;">Owner</th>
+                                <th style="width: 140px;">Start Time</th>
+                                <th style="width: 140px;">End Time</th>
+                                <th style="width: 90px;">Duration</th>
+                                <th style="width: 110px;">Status</th>
+                                <th style="width: 160px;">Pending Reason</th>
+                                <th style="width: 160px;">Escalation History</th>
+                                <th style="width: 120px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tasksTableBody">
+                            <!-- Rows will be dynamically rendered here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="empty-state-card hidden" style="margin-top: 1.5rem;">
+                    <i data-lucide="clipboard-x" class="empty-state-icon"></i>
+                    <h3>No tasks found</h3>
+                    <p>Change your search filters or start a new task using the control deck above.</p>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Edit Task Modal -->
+    <div id="editModal" class="modal-overlay-deck hidden">
+        <div class="modal-content-deck">
+            <div class="modal-header-deck">
+                <h3><i data-lucide="edit-3"></i> Edit Task <span id="modalTaskId">TSK-1001</span></h3>
+                <button id="btnCloseModal" class="modal-close-btn-deck">&times;</button>
+            </div>
+            <form id="editTaskForm">
+                <input type="hidden" id="editTaskId">
+                
+                <div class="form-group-deck">
+                    <label for="editDescription" class="panel-label">Task Description</label>
+                    <textarea id="editDescription" required rows="3"></textarea>
+                </div>
+                
+                <div class="form-group-deck">
+                    <label for="editOwner" class="panel-label">Task Owner</label>
+                    <input type="text" id="editOwner" required readonly>
+                </div>
+                
+                <div class="form-row-deck">
+                    <div class="form-group-deck">
+                        <label for="editStartTime" class="panel-label">Start Time</label>
+                        <input type="datetime-local" id="editStartTime">
+                    </div>
+                    <div class="form-group-deck">
+                        <label for="editEndTime" class="panel-label">End Time</label>
+                        <input type="datetime-local" id="editEndTime">
+                    </div>
+                </div>
+                
+                <div class="form-group-deck">
+                    <label for="editStatus" class="panel-label">Status</label>
+                    <select id="editStatus">
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                </div>
+                
+                <div class="form-group-deck" id="editPendingReasonGroup">
+                    <label for="editPendingReason" class="panel-label">Pending Reason (Dependency)</label>
+                    <textarea id="editPendingReason" placeholder="Describe the dependency blockage..." style="width: 100%; height: 80px; padding: 0.65rem; background: rgba(15, 23, 42, 0.5); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: #f1f5f9; resize: none; outline: none; transition: var(--transition-fast); font-family: inherit; font-size: 0.88rem; line-height: 1.4;"></textarea>
+                </div>
+                
+                <div class="form-group-deck" id="editEscalationHistoryGroup">
+                    <label for="editEscalationHistory" class="panel-label">Escalation History</label>
+                    <textarea id="editEscalationHistory" placeholder="No escalation history recorded." style="width: 100%; height: 80px; padding: 0.65rem; background: rgba(15, 23, 42, 0.5); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: #f1f5f9; resize: none; outline: none; transition: var(--transition-fast); font-family: inherit; font-size: 0.88rem; line-height: 1.4;"></textarea>
+                </div>
+                
+                <div class="modal-footer-deck">
+                    <button type="button" id="btnCancelEdit" class="btn-modal-cancel">Cancel</button>
+                    <button type="submit" class="btn-modal-save">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Select Task to Finish Modal (shown when finishing with multiple active tasks) -->
+    <div id="finishTaskModal" class="modal-overlay-deck hidden">
+        <div class="modal-content-deck" style="max-width: 500px; width: 90%;">
+            <div class="modal-header-deck">
+                <h3><i data-lucide="check-square"></i> Select Task to Finish</h3>
+                <button id="btnCloseFinishModal" class="modal-close-btn-deck">&times;</button>
+            </div>
+            <div class="modal-body-deck" style="padding: 1rem 0;">
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem; line-height: 1.4;">
+                    You have multiple active tasks running. Which task would you like to finish?
+                </p>
+                <div id="finishTasksList" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 300px; overflow-y: auto; padding-right: 0.25rem;">
+                    <!-- Dynamically populated tasks will go here -->
+                </div>
+            </div>
+            <div class="modal-footer-deck">
+                <button type="button" id="btnCancelFinishModal" class="btn-modal-cancel" style="width: 100%;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending for Dependency Wizard Modal -->
+    <div id="dependencyModal" class="modal-overlay-deck hidden">
+        <div class="modal-content-deck" style="max-width: 500px; width: 90%;">
+            <!-- Step 1: Select Task (Only shown if multiple tasks are active) -->
+            <div id="dependencyStepSelect" class="hidden">
+                <div class="modal-header-deck">
+                    <h3><i data-lucide="check-square"></i> Select Task for Dependency</h3>
+                    <button type="button" class="modal-close-btn-deck btn-close-dep">&times;</button>
+                </div>
+                <div class="modal-body-deck" style="padding: 1rem 0;">
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem; line-height: 1.4;">
+                        You have multiple active tasks running. Which task would you like to set to pending?
+                    </p>
+                    <div id="dependencyTasksList" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 250px; overflow-y: auto; padding-right: 0.25rem;">
+                        <!-- Populate dynamic tasks -->
+                    </div>
+                </div>
+                <div class="modal-footer-deck">
+                    <button type="button" class="btn-modal-cancel btn-close-dep" style="width: 100%;">Cancel</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Enter Reason -->
+            <div id="dependencyStepInput" class="hidden">
+                <div class="modal-header-deck">
+                    <h3><i data-lucide="alert-circle"></i> Dependency Details</h3>
+                    <button type="button" class="modal-close-btn-deck btn-close-dep">&times;</button>
+                </div>
+                <div class="modal-body-deck" style="padding: 1rem 0;">
+                    <div id="dependencyTaskPreview" style="margin-bottom: 1.25rem; padding: 0.75rem 1rem; background: rgba(255, 255, 255, 0.03); border-left: 3px solid #eab308; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; font-size: 0.85rem; color: #f1f5f9; line-height: 1.4; word-break: break-word;">
+                        Task: "Loading details..."
+                    </div>
+                    <div class="form-group-deck">
+                        <label for="dependencyReasonInput" class="panel-label">What is blocking this task?</label>
+                        <textarea id="dependencyReasonInput" placeholder="E.g., Blocked by DB replication delay / Waiting on user approval..." required style="width: 100%; height: 100px; padding: 0.75rem; background: rgba(15, 23, 42, 0.5); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: #f1f5f9; resize: none; outline: none; transition: var(--transition-fast); font-family: inherit; font-size: 0.88rem; line-height: 1.4;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer-deck">
+                    <button type="button" class="btn-modal-cancel btn-close-dep">Cancel</button>
+                    <button type="button" id="btnSubmitDependency" class="btn-modal-save" style="background: linear-gradient(135deg, #eab308, #ca8a04); box-shadow: 0 4px 10px rgba(234, 179, 8, 0.2);">Mark Pending</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Escalation Wizard Modal -->
+    <div id="escalationModal" class="modal-overlay-deck hidden">
+        <div class="modal-content-deck" style="max-width: 500px; width: 90%;">
+            <!-- Step 1: Select Task (Only shown if multiple tasks are active for the logged in user) -->
+            <div id="escalationStepSelect" class="hidden">
+                <div class="modal-header-deck">
+                    <h3><i data-lucide="check-square"></i> Select Task to Escalate</h3>
+                    <button type="button" class="modal-close-btn-deck btn-close-esc">&times;</button>
+                </div>
+                <div class="modal-body-deck" style="padding: 1rem 0;">
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem; line-height: 1.4;">
+                        You have multiple active tasks running. Which task would you like to escalate?
+                    </p>
+                    <div id="escalationTasksList" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 250px; overflow-y: auto; padding-right: 0.25rem;">
+                        <!-- Populate dynamic tasks -->
+                    </div>
+                </div>
+                <div class="modal-footer-deck">
+                    <button type="button" class="btn-modal-cancel btn-close-esc" style="width: 100%;">Cancel</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Select Recipient & Input Reason -->
+            <div id="escalationStepInput" class="hidden">
+                <div class="modal-header-deck">
+                    <h3><i data-lucide="trending-up"></i> Escalate Task</h3>
+                    <button type="button" class="modal-close-btn-deck btn-close-esc">&times;</button>
+                </div>
+                <div class="modal-body-deck" style="padding: 1rem 0;">
+                    <div id="escalationTaskPreview" style="margin-bottom: 1.25rem; padding: 0.75rem 1rem; background: rgba(255, 255, 255, 0.03); border-left: 3px solid #4f46e5; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; font-size: 0.85rem; color: #f1f5f9; line-height: 1.4; word-break: break-word;">
+                        Task: "Loading details..."
+                    </div>
+                    
+                    <div class="form-group-deck">
+                        <label for="escalationRecipientSelect" class="panel-label">Escalate To (Select Engineer)</label>
+                        <select id="escalationRecipientSelect" required style="width: 100%; padding: 0.75rem; background: rgba(15, 23, 42, 0.5); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: #f1f5f9; outline: none; font-size: 0.88rem; transition: var(--transition-fast);">
+                            <!-- Dynamic owner/engineer options populated via JS -->
+                        </select>
+                    </div>
+                    
+                    <div class="form-group-deck" style="margin-top: 1.25rem;">
+                        <label for="escalationReasonInput" class="panel-label">Escalation Update / Reason</label>
+                        <textarea id="escalationReasonInput" placeholder="E.g., Escalate to L2 due to packet drop / Need admin privileges for configuration..." required style="width: 100%; height: 100px; padding: 0.75rem; background: rgba(15, 23, 42, 0.5); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: #f1f5f9; resize: none; outline: none; transition: var(--transition-fast); font-family: inherit; font-size: 0.88rem; line-height: 1.4;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer-deck">
+                    <button type="button" class="btn-modal-cancel btn-close-esc">Cancel</button>
+                    <button type="button" id="btnSubmitEscalation" class="btn-modal-save" style="background: linear-gradient(135deg, #818cf8, #4f46e5); box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);">Escalate Task</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Duty Roster Modal (Viewable by all) -->
+    <div id="rosterModal" class="modal-overlay-deck hidden">
+        <div class="modal-content-deck roster-modal-full">
+            <div class="modal-header-deck">
+                <h3><i data-lucide="calendar"></i> Employee Duty Roster</h3>
+                <button id="btnCloseRosterModal" class="modal-close-btn-deck">&times;</button>
+            </div>
+            
+            <!-- Admin Roster Upload Box (visible only to admin) -->
+            <div id="rosterModalAdminSection" class="admin-form-box hidden" style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color);">
+                <h4 style="margin: 0 0 1rem 0; color: var(--text-main);"><i data-lucide="file-spreadsheet"></i> Upload / Sync Roster Excel</h4>
+                <form id="rosterModalUploadForm" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+                    <div class="form-group-deck" style="margin: 0; flex: 1; min-width: 250px;">
+                        <label for="rosterModalFile" class="panel-label">Roster Spreadsheet (.xlsx)</label>
+                        <input type="file" id="rosterModalFile" accept=".xlsx, .xls" required style="padding: 0.5rem 0.25rem;">
+                    </div>
+                    <button type="submit" class="btn-admin-submit" style="width: auto; padding: 0.75rem 1.5rem; margin: 0; background: linear-gradient(135deg, var(--excel-green), var(--primary)); box-shadow: 0 4px 10px rgba(16, 124, 65, 0.2);">
+                        <i data-lucide="upload-cloud"></i> Sync Roster File
+                    </button>
+                </form>
+            </div>
+
+            <!-- Roster Table Display -->
+            <div class="roster-table-wrapper">
+                <div id="rosterTableContainer">
+                    <div style="color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 2rem 0;">
+                        Loading roster schedule grid...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Roster Footer (Admin Only Save Controls) -->
+            <div id="rosterModalFooter" class="hidden" style="margin-top: 1rem; display: flex; justify-content: flex-end; align-items: center; gap: 1rem;">
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">* Remember to save after changing shifts!</span>
+                <button type="button" id="btnSaveRosterChanges" class="btn-admin-submit" style="width: auto; padding: 0.6rem 1.5rem; margin: 0; background: linear-gradient(135deg, #10b981, #059669); font-size: 0.82rem; font-weight: 700; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); display: flex; align-items: center; gap: 0.5rem; border: 1px solid transparent; border-radius: var(--radius-sm); height: 36px;">
+                    <i data-lucide="save" style="width: 15px; height: 15px;"></i> Save Roster Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Implementation Tracker Modal -->
+    <div id="implTrackerModal" class="modal-overlay-deck hidden">
+        <div class="modal-content-deck roster-modal-full">
+            <div class="modal-header-deck">
+                <h3><i data-lucide="layers"></i> Implementation Tracker Control Panel</h3>
+                <button id="btnCloseImplTrackerModal" class="modal-close-btn-deck">&times;</button>
+            </div>
+            
+            <!-- Quick Stats Summary Row -->
+            <div id="implTrackerStatsBar" class="impl-tracker-stats-bar" style="margin-bottom: 1.25rem; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; padding: 1rem 1.5rem; border-radius: var(--radius-md);">
+                <div class="impl-stat-item" style="text-align: center;">
+                    <span class="impl-stat-label" style="font-size: 0.75rem; display: block; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 0.25rem;">Total Implementations</span>
+                    <span id="statImplTotal" style="font-size: 1.5rem; font-weight: 700; color: #0284c7;">0</span>
+                </div>
+                <div class="impl-stat-item" style="text-align: center; border-left: 1px dashed var(--border-color);">
+                    <span class="impl-stat-label" style="font-size: 0.75rem; display: block; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 0.25rem;">In Progress</span>
+                    <span id="statImplProgress" style="font-size: 1.5rem; font-weight: 700; color: #d97706;">0</span>
+                </div>
+                <div class="impl-stat-item" style="text-align: center; border-left: 1px dashed var(--border-color);">
+                    <span class="impl-stat-label" style="font-size: 0.75rem; display: block; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 0.25rem;">Completed</span>
+                    <span id="statImplCompleted" style="font-size: 1.5rem; font-weight: 700; color: #059669;">0</span>
+                </div>
+                <div class="impl-stat-item" style="text-align: center; border-left: 1px dashed var(--border-color);">
+                    <span class="impl-stat-label" style="font-size: 0.75rem; display: block; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 0.25rem;">Config Verified</span>
+                    <span id="statImplVerified" style="font-size: 1.5rem; font-weight: 700; color: #7c3aed;">0</span>
+                </div>
+            </div>
+
+            <!-- Search / Filter bar inside implementation tracker -->
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                <div id="implTrackerSearchWrapper" style="display: flex; align-items: center; gap: 0.5rem; border-radius: var(--radius-md); padding: 0.4rem 0.75rem; width: 350px;">
+                    <i data-lucide="search" style="width: 16px; height: 16px; color: var(--text-muted);"></i>
+                    <input type="text" id="implTrackerSearch" placeholder="Search by Ticket ID / Owner / Description..." style="background: transparent; border: none; outline: none; font-size: 0.85rem; width: 100%;">
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <select id="implTrackerStatusFilter" style="padding: 0.4rem 1rem; font-size: 0.85rem; border-radius: var(--radius-sm); outline: none; cursor: pointer;">
+                        <option value="all">All Statuses</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Pending">Pending</option>
+                    </select>
+                    <select id="implTrackerVerifyFilter" style="padding: 0.4rem 1rem; font-size: 0.85rem; border-radius: var(--radius-sm); outline: none; cursor: pointer;">
+                        <option value="all">All Configurations</option>
+                        <option value="verified">Verified</option>
+                        <option value="unverified">Unverified</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Implementation Tasks Table -->
+            <div class="roster-table-wrapper impl-tracker-table-wrapper" style="flex: 1; overflow-y: auto; overflow-x: hidden; max-height: calc(100vh - 270px);">
+                <table class="spreadsheet-table impl-tracker-table" style="width: 100%; table-layout: fixed;">
+                    <thead>
+                        <tr>
+                            <th style="width: 10%;">Reference</th>
+                            <th class="col-description" style="width: 27%;">Description</th>
+                            <th style="width: 9%;">Assignee</th>
+                            <th style="width: 9%;">Start Time</th>
+                            <th style="width: 9%;">End Time</th>
+                            <th style="width: 7%;">Duration</th>
+                            <th style="width: 8%;">Task Status</th>
+                            <th style="width: 7%;">MIS Status</th>
+                            <th style="width: 6%;">Config</th>
+                            <th style="width: 8%;">Verified By</th>
+                        </tr>
+                    </thead>
+                    <tbody id="implTrackerTableBody">
+                        <tr>
+                            <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                                Loading implementation history records...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin User Management Modal (Admin Only) -->
+    <div id="adminModal" class="modal-overlay-deck hidden">
+        <div class="modal-content-deck admin-modal-width">
+            <div class="modal-header-deck">
+                <h3><i data-lucide="shield-check"></i> Admin Console - User Management</h3>
+                <button id="btnCloseAdminModal" class="modal-close-btn-deck">&times;</button>
+            </div>
+            
+            <div class="admin-grid-layout">
+                <!-- Left: Create User Form & Roster Import -->
+                <div class="admin-create-user-section">
+                    <div class="admin-form-box">
+                        <h4><i data-lucide="user-plus"></i> Create New User ID</h4>
+                        <form id="createUserForm">
+                            <div class="form-group-deck">
+                                <label for="newUsername" class="panel-label">User ID (Username)</label>
+                                <input type="text" id="newUsername" placeholder="e.g. operator1" required autocomplete="username">
+                            </div>
+                            <div class="form-group-deck">
+                                <label for="newFullName" class="panel-label">Full Name</label>
+                                <input type="text" id="newFullName" placeholder="e.g. Operator One" required>
+                            </div>
+                            <div class="form-group-deck">
+                                <label for="newPassword" class="panel-label">Password</label>
+                                <input type="password" id="newPassword" placeholder="e.g. secret123" required autocomplete="new-password">
+                            </div>
+                            <button type="submit" class="btn-admin-submit">
+                                <i data-lucide="plus-circle"></i> Create User
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <div class="admin-form-box" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                        <h4><i data-lucide="file-spreadsheet"></i> Import Roster (Excel)</h4>
+                        <form id="importRosterForm">
+                            <div class="form-group-deck">
+                                <label for="rosterFile" class="panel-label">Roster Spreadsheet</label>
+                                <input type="file" id="rosterFile" accept=".xlsx, .xls" required style="padding: 0.5rem 0.25rem;">
+                                <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: block; line-height: 1.4;">
+                                    Scans columns like "Name" and auto-registers users. Default pass: <strong>123456</strong>
+                                </span>
+                            </div>
+                            <button type="submit" class="btn-admin-submit" style="background: linear-gradient(135deg, var(--excel-green), var(--primary)); box-shadow: 0 4px 10px rgba(16, 124, 65, 0.2);">
+                                <i data-lucide="upload-cloud"></i> Sync Roster File
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <div class="admin-form-box" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                        <h4><i data-lucide="database"></i> Database Operations</h4>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); display: block; line-height: 1.4; margin-bottom: 0.75rem;">
+                            Deletes all tasks recorded in the Excel database sheet. User accounts are preserved.
+                        </span>
+                        <button type="button" id="btnClearAllTasks" class="btn-admin-submit" style="background: linear-gradient(135deg, #ef4444, #b91c1c); box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);">
+                            <i data-lucide="trash-2"></i> Delete All Tasks
+                        </button>
+                    </div>
+
+                    <div class="admin-form-box" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                        <h4><i data-lucide="download"></i> Export Database (Excel)</h4>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.75rem;">
+                            <!-- Full Export Button -->
+                            <button type="button" id="btnExportFull" class="btn-admin-submit" style="background: linear-gradient(135deg, var(--excel-green), var(--primary)); box-shadow: 0 4px 10px rgba(16, 124, 65, 0.2); width: 100%;">
+                                <i data-lucide="file-spreadsheet"></i> Download Full Database
+                            </button>
+                            
+                            <div style="border-bottom: 1px dashed var(--border-color); margin: 0.5rem 0;"></div>
+                            
+                            <!-- Date-wise Filter Form -->
+                            <span style="font-size: 0.75rem; color: var(--text-muted); display: block; line-height: 1.4;">
+                                Download date-wise task reports:
+                            </span>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                                <div class="form-group-deck" style="margin: 0; gap: 0.25rem;">
+                                    <label for="exportStartDate" class="panel-label" style="font-size: 0.65rem;">Start Date</label>
+                                    <input type="date" id="exportStartDate" style="padding: 0.4rem 0.5rem; font-size: 0.8rem; background: rgba(15, 23, 42, 0.5); border: 1px solid var(--border-color); color: #f1f5f9; border-radius: var(--radius-sm); outline: none;">
+                                </div>
+                                <div class="form-group-deck" style="margin: 0; gap: 0.25rem;">
+                                    <label for="exportEndDate" class="panel-label" style="font-size: 0.65rem;">End Date</label>
+                                    <input type="date" id="exportEndDate" style="padding: 0.4rem 0.5rem; font-size: 0.8rem; background: rgba(15, 23, 42, 0.5); border: 1px solid var(--border-color); color: #f1f5f9; border-radius: var(--radius-sm); outline: none;">
+                                </div>
+                            </div>
+                            <button type="button" id="btnExportDateWise" class="btn-admin-submit" style="background: linear-gradient(135deg, #eab308, #ca8a04); box-shadow: 0 4px 10px rgba(234, 179, 8, 0.2); width: 100%;">
+                                <i data-lucide="filter"></i> Download Date-Wise Report
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="admin-form-box" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                        <h4><i data-lucide="clock"></i> Shift Schedule Config</h4>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); display: block; line-height: 1.4; margin-bottom: 0.75rem;">
+                            Customize roster shift code mapping:
+                        </span>
+                        
+                        <div style="display: grid; grid-template-columns: 50px 1.2fr 1fr 1fr 20px; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem;">
+                            <span class="panel-label" style="text-align: center; margin: 0; font-size: 0.7rem;">Code</span>
+                            <span class="panel-label" style="margin: 0; font-size: 0.7rem;">Name</span>
+                            <span class="panel-label" style="margin: 0; font-size: 0.7rem;">Start</span>
+                            <span class="panel-label" style="margin: 0; font-size: 0.7rem;">End</span>
+                            <span></span>
+                        </div>
+
+                        <div id="shiftsConfigContainer" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 250px; overflow-y: auto; padding-right: 0.25rem;">
+                            <!-- Dynamic shift list -->
+                        </div>
+                        
+                        <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                            <button type="button" id="btnAddShiftRow" class="btn-admin-submit" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.2); box-shadow: none; padding: 0.5rem; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem; width: auto;">
+                                <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Add Shift
+                            </button>
+                            <button type="button" id="btnSaveShiftsConfig" class="btn-admin-submit" style="background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); flex: 1; padding: 0.5rem; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
+                                <i data-lucide="save" style="width: 14px; height: 14px;"></i> Save Shift Timings
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="admin-form-box" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                        <h4><i data-lucide="external-link"></i> Portal Quick Links Config</h4>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); display: block; line-height: 1.4; margin-bottom: 0.75rem;">
+                            Manage dashboard portal redirect links:
+                        </span>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 2.5fr 20px; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem;">
+                            <span class="panel-label" style="margin: 0; font-size: 0.7rem;">Portal Name</span>
+                            <span class="panel-label" style="margin: 0; font-size: 0.7rem;">URL Link</span>
+                            <span></span>
+                        </div>
+
+                        <div id="quickLinksConfigContainer" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 200px; overflow-y: auto; padding-right: 0.25rem;">
+                            <!-- Dynamic quick links config list -->
+                        </div>
+                        
+                        <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                            <button type="button" id="btnAddLinkRow" class="btn-admin-submit" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.2); box-shadow: none; padding: 0.5rem; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem; width: auto;">
+                                <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Add Link
+                            </button>
+                            <button type="button" id="btnSaveLinksConfig" class="btn-admin-submit" style="background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); flex: 1; padding: 0.5rem; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
+                                <i data-lucide="save" style="width: 14px; height: 14px;"></i> Save Links
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right: Users List -->
+                <div class="admin-users-list-section">
+                    <h4><i data-lucide="users"></i> Registered Users (Excel sheet)</h4>
+                    <div class="admin-table-wrapper">
+                        <table class="admin-users-table">
+                            <thead>
+                                <tr>
+                                    <th>User ID</th>
+                                    <th>Full Name</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminUsersTableBody">
+                                <!-- Dynamic rows populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Detail Terminal Modal (All Users) -->
+    <div id="taskDetailModal" class="modal-overlay-deck hidden">
+        <div class="modal-content-deck terminal-modal-width" style="max-width: 800px; width: 90%; max-height: 92vh; overflow-y: auto; border: 1px solid #38bdf8; background: #0b0f19; box-shadow: 0 0 25px rgba(56, 189, 248, 0.25);">
+            <div class="modal-header-deck" style="border-bottom: 1px solid #1e293b; padding-bottom: 0.75rem;">
+                <h3 style="color: #38bdf8; font-family: 'Courier New', Courier, monospace; display: flex; align-items: center; gap: 0.5rem; margin: 0; font-size: 1.1rem;">
+                    <i data-lucide="terminal" style="color: #38bdf8; width: 18px; height: 18px;"></i> SYSTEM_CONSOLE:~ task_details
+                </h3>
+                <button id="btnCloseDetailModal" class="modal-close-btn-deck" style="color: #38bdf8;">&times;</button>
+            </div>
+            
+            <div class="terminal-body" style="font-family: 'Courier New', Courier, monospace; background: #020617; border-radius: var(--radius-sm); padding: 1.25rem; margin-top: 1rem; border: 1px solid #1e293b; line-height: 1.6; color: #38bdf8;">
+                <div style="color: #64748b; font-size: 0.8rem; margin-bottom: 0.75rem;">
+                    [SYSTEM SESSION ACTIVE - LOCAL DATETIME: <span id="terminalTimestamp">N/A</span>]
+                </div>
+                <div style="color: #10b981; font-weight: bold; margin-bottom: 0.5rem;">
+                    &gt; TASK STATUS REPORT <span id="detailTaskId" style="display: none;">N/A</span>
+                </div>
+                <div style="border-bottom: 1px dashed #1e293b; margin: 0.5rem 0;"></div>
+                
+                <div style="display: grid; grid-template-columns: 140px 1fr; gap: 0.5rem; font-size: 0.88rem;">
+                    <div style="color: #64748b;">DESCRIPTION  :</div>
+                    <div id="detailDescription" style="color: #f1f5f9; word-break: break-word;">N/A</div>
+                    
+                    <div style="color: #64748b;">REFERENCE    :</div>
+                    <div id="detailReference" style="color: #f59e0b; font-weight: bold;">N/A</div>
+                    
+                    <div style="color: #64748b;">CATEGORY     :</div>
+                    <div id="detailCategory" style="color: #a78bfa; font-weight: bold;">N/A</div>
+                    
+                    <div style="color: #64748b;">ASSIGNED TO  :</div>
+                    <div id="detailOwner" style="color: #10b981; font-weight: bold;">N/A</div>
+                    
+                    <div style="color: #64748b;">STATUS       :</div>
+                    <div id="detailStatus" style="color: #38bdf8; font-weight: bold;">N/A</div>
+                    
+                    <div style="color: #64748b;">ASSIGN TIME  :</div>
+                    <div id="detailAssignedTime" style="color: #60a5fa;">N/A</div>
+                    
+                    <div style="color: #64748b;">START TIME   :</div>
+                    <div id="detailStartTime" style="color: #f1f5f9;">N/A</div>
+                    
+                    <div style="color: #64748b;">END TIME     :</div>
+                    <div id="detailEndTime" style="color: #f1f5f9;">N/A</div>
+                    
+                    <div style="color: #64748b;">DURATION     :</div>
+                    <div id="detailDuration" style="color: #a855f7; font-weight: bold;">N/A</div>
+                    
+                    <div style="color: #64748b; align-self: flex-start; margin-top: 0.25rem;">PENDING INFO :</div>
+                    <textarea id="detailPendingReason" readonly style="color: #eab308; background: rgba(15, 23, 42, 0.6); border: 1px solid #1e293b; border-radius: var(--radius-sm); padding: 0.5rem; font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; height: 100px; resize: none; outline: none; width: 100%; word-break: break-word; line-height: 1.4;"></textarea>
+                    
+                    <div style="color: #64748b; align-self: flex-start; margin-top: 0.25rem;">ESCALATION   :</div>
+                    <textarea id="detailEscalationHistory" readonly style="color: #818cf8; background: rgba(15, 23, 42, 0.6); border: 1px solid #1e293b; border-radius: var(--radius-sm); padding: 0.5rem; font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; height: 100px; resize: none; outline: none; width: 100%; word-break: break-word; line-height: 1.4;"></textarea>
+                    
+                    <div style="color: #64748b; align-self: flex-start; margin-top: 0.25rem;">ASSIGN LOG   :</div>
+                    <textarea id="detailAssignmentHistory" readonly style="color: #a78bfa; background: rgba(15, 23, 42, 0.6); border: 1px solid #1e293b; border-radius: var(--radius-sm); padding: 0.5rem; font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; height: 100px; resize: none; outline: none; width: 100%; word-break: break-word; line-height: 1.4;"></textarea>
+                </div>
+                
+                <div style="border-bottom: 1px dashed #1e293b; margin: 0.75rem 0;"></div>
+                <div style="color: #64748b; font-size: 0.75rem; text-align: right;">
+                    &gt; connection_state: ESTABLISHED (Excel backend sync active)
+                </div>
+            </div>
+            
+            <div class="modal-footer-deck" style="margin-top: 1.25rem; justify-content: flex-end; padding-top: 0.75rem; border-top: 1px solid #1e293b; display: flex;">
+                <button type="button" id="btnCloseDetailModalFooter" class="btn-modal-cancel" style="background: #1e293b; color: #f1f5f9; border: 1px solid #334155; font-family: 'Courier New', Courier, monospace; font-size: 0.8rem; padding: 0.5rem 1.25rem; cursor: pointer; transition: background 0.2s;">
+                    Close Terminal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer" class="toast-container-deck"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OLT-T-Shoot | OLT Diagnostics & Troubleshooting</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Main Workspace -->
+        <main class="main-content" style="overflow-y: auto; height: 100vh; padding: 2rem 3rem;">
+            <!-- Header -->
+            <header class="app-header" style="margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; z-index: 10;">
+                <div class="header-left" style="display: flex; align-items: center; gap: 0.85rem;">
+                    <div style="background: linear-gradient(135deg, var(--primary), var(--secondary)); width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px var(--primary-glow);">
+                        <i class="fa-solid fa-gauge-high" style="font-size: 1.5rem; color: #fff;"></i>
+                    </div>
+                    <div>
+                        <h1 style="margin: 0; font-size: 1.6rem; font-weight: 700; letter-spacing: 0.5px; background: linear-gradient(135deg, var(--primary), #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">OLT-T-Shoot</h1>
+                        <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 500;">Diagnostics & Troubleshooting Engine</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <!-- Dynamic Connection Status Header Badge -->
+                    <div class="connection-status-wrapper" id="connection-header-panel">
+                        <div class="connection-status-badge offline" id="connection-badge" style="display: flex; align-items: center; gap: 0.5rem; background: rgba(244, 63, 94, 0.1); border: 1px solid var(--danger); padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; color: var(--danger);">
+                            <i class="fa-solid fa-circle-dot" style="font-size: 0.75rem;"></i>
+                            <span id="connection-status-text">Not Connected</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Notification Toast -->
+            <div id="toast" class="toast hidden" style="z-index: 100000;">
+                <i class="fa-solid fa-circle-info" id="toast-icon"></i>
+                <span id="toast-message">Message here...</span>
+            </div>
+
+            <!-- Screen 1: OLT Login Card (Shown by default) -->
+            <section id="screen-login" class="fade-in" style="display: flex; justify-content: center; align-items: center; min-height: 65vh; z-index: 2; position: relative;">
+                <div class="config-card glass-panel" style="max-width: 520px; width: 100%; padding: 2.25rem; border-radius: 16px; overflow: visible;">
+                    <div style="text-align: center; margin-bottom: 2rem;">
+                        <i class="fa-solid fa-server" style="font-size: 3rem; color: var(--primary); margin-bottom: 0.75rem; filter: drop-shadow(0 0 10px var(--primary-glow));"></i>
+                        <h2 style="margin: 0; font-size: 1.6rem; color: var(--text-primary); font-weight: 600;">OLT Login Session</h2>
+                        <p style="margin: 0.35rem 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">Connect to VSOL or CDATA OLT via Telnet</p>
+                    </div>
+                    
+                    <form id="login-form">
+                        <!-- Search OLT Autocomplete -->
+                        <div class="form-group" style="margin-bottom: 1.5rem; position: relative;">
+                            <label for="device-search-input" style="font-weight: 600; color: var(--text-secondary);"><i class="fa-solid fa-search"></i> Search OLT Device (Name or IP)</label>
+                            <div style="position: relative; display: flex; align-items: center;">
+                                <input type="text" id="device-search-input" placeholder="Type name or IP (e.g. Malek_CDATA, 10.49...)" autocomplete="off" style="width: 100%; height: 42px; border-radius: 8px; padding-right: 2.25rem;">
+                                <i class="fa-solid fa-chevron-down" id="btn-toggle-suggestions" style="position: absolute; right: 1rem; color: var(--text-secondary); cursor: pointer; font-size: 0.85rem; transition: transform 0.2s;"></i>
+                            </div>
+                            <div id="device-suggestions-list" class="suggestions-list hidden" style="position: absolute; top: 100%; left: 0; right: 0; background: #181c25; border: 1px solid var(--border-color); border-radius: 8px; max-height: 220px; overflow-y: auto; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.65);">
+                                <!-- Suggestions rendered dynamically -->
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1.5rem; width: 100%;">
+                            <div style="height: 1px; background: rgba(255,255,255,0.08); flex: 1;"></div>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">Or Manual Entry</span>
+                            <div style="height: 1px; background: rgba(255,255,255,0.08); flex: 1;"></div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group flex-2">
+                                <label for="login-host"><i class="fa-solid fa-circle-nodes"></i> IP Address / Host</label>
+                                <input type="text" id="login-host" required placeholder="e.g. 192.168.10.25">
+                            </div>
+                            <div class="form-group flex-1">
+                                <label for="login-port"><i class="fa-solid fa-door-open"></i> Port</label>
+                                <input type="number" id="login-port" value="23" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="login-username"><i class="fa-solid fa-user"></i> Username</label>
+                                <input type="text" id="login-username" required placeholder="e.g. admin">
+                            </div>
+                            <div class="form-group">
+                                <label for="login-password"><i class="fa-solid fa-lock"></i> Password</label>
+                                <input type="password" id="login-password" required placeholder="••••••••">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group" id="login-enable-password-group">
+                                <label for="login-enable-password"><i class="fa-solid fa-key"></i> Enable Password</label>
+                                <input type="password" id="login-enable-password" placeholder="e.g. Leave blank if none">
+                            </div>
+                            <div class="form-group">
+                                <label for="login-brand"><i class="fa-solid fa-copyright"></i> Brand</label>
+                                <select id="login-brand" required style="cursor: pointer;">
+                                     <option value="vsol_gpon">VSOL GPON</option>
+                                     <option value="cdata_gpon">CDATA GPON</option>
+                                     <option value="huawei_gpon">HUAWEI GPON</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success btn-full btn-glow" style="margin-top: 1.25rem; padding: 0.85rem; font-weight: 600; font-size: 1rem; border-radius: 10px;">
+                            <i class="fa-solid fa-plug"></i> Connect & Login
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Screen 2: Search & Diagnostics Dashboard (Hidden by default) -->
+            <section id="screen-dashboard" class="fade-in hidden" style="z-index: 2; position: relative;">
+                <!-- Search Control Card -->
+                <div class="control-card glass-panel" style="margin-bottom: 2rem; border-radius: 14px;">
+                    <div class="card-body" style="padding: 1.5rem;">
+                        <div style="display: flex; gap: 1rem; align-items: flex-end; max-width: 650px; width: 100%; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 250px;">
+                                <label for="search-query-input" style="font-weight: 600; margin-bottom: 0.5rem; display: block; color: var(--text-secondary); font-size: 0.95rem;"><i class="fa-solid fa-search"></i> Search MAC Address or VLAN ID</label>
+                                <input type="text" id="search-query-input" placeholder="e.g. 00e0-fc12-3456 (MAC) or 100 (VLAN)" style="width: 100%; height: 44px; border-radius: 8px;">
+                            </div>
+                            <button id="btn-submit-search" class="btn btn-primary btn-glow" style="height: 44px; padding: 0 1.5rem; font-weight: 600; display: flex; align-items: center; gap: 0.65rem; border-radius: 8px;">
+                                <i class="fa-solid fa-magnifying-glass-chart"></i> Search & Diagnose
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Two-Column Workspace Layout -->
+                <div class="dashboard-workspace" style="display: flex; gap: 2rem; align-items: flex-start; width: 100%;">
+                    
+                    <!-- Left Column: Diagnostic Outputs -->
+                    <div class="workspace-left" style="flex: 7; min-width: 0;">
+                        <!-- Loader Spinner Status card (Hidden by default) -->
+                        <div class="glass-panel fade-in hidden" id="search-loading-card" style="text-align: center; padding: 4rem 2rem; margin-bottom: 2rem; border-radius: 14px;">
+                            <div class="spinner" style="border: 4px solid rgba(255,255,255,0.05); border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 1.5rem auto; box-shadow: 0 0 15px var(--primary-glow);"></div>
+                            <h3 style="color: var(--text-primary); margin-bottom: 0.5rem;" id="loading-status-title">Connecting to OLT...</h3>
+                            <p style="color: var(--text-secondary); margin: 0;" id="loading-status-desc">Executing remote CLI query commands via Telnet session.</p>
+                        </div>
+
+                        <!-- VLAN Details Summary Card (Hidden by default) -->
+                        <div class="glass-panel fade-in hidden" id="vlan-details-card" style="padding: 1.75rem; margin-bottom: 1.5rem; border-radius: 14px;">
+                            <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.25rem;">
+                                <h3 style="margin: 0; color: var(--primary); font-size: 1.25rem; display: flex; align-items: center; gap: 0.50rem;">
+                                    <i class="fa-solid fa-circle-info"></i> VLAN Details Summary
+                                </h3>
+                            </div>
+                            <div class="telemetry-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+                                <div class="telemetry-card" style="padding: 0.75rem 1rem;">
+                                    <span class="telemetry-label" style="font-size: 0.75rem;">VLAN ID</span>
+                                    <span class="telemetry-value" id="vlan-lbl-id" style="font-size: 1.25rem;">N/A</span>
+                                </div>
+                                <div class="telemetry-card" style="padding: 0.75rem 1rem;">
+                                    <span class="telemetry-label" style="font-size: 0.75rem;">VLAN Name</span>
+                                    <span class="telemetry-value" id="vlan-lbl-name" style="font-size: 1.25rem;">N/A</span>
+                                </div>
+                                <div class="telemetry-card" style="padding: 0.75rem 1rem;">
+                                    <span class="telemetry-label" style="font-size: 0.75rem;">Router/OLT MAC</span>
+                                    <span class="telemetry-value" id="vlan-lbl-mac" style="font-size: 1.15rem; font-family: var(--font-mono);">N/A</span>
+                                </div>
+                            </div>
+                            <div style="margin-top: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">Tagged Ports:</span>
+                                    <span id="vlan-lbl-tagged" style="font-size: 0.9rem; color: var(--text-primary); font-weight: 600; font-family: var(--font-mono);">N/A</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">Untagged Ports:</span>
+                                    <span id="vlan-lbl-untagged" style="font-size: 0.9rem; color: var(--text-primary); font-weight: 600; font-family: var(--font-mono);">N/A</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- VLAN Search Result Table Card (Hidden by default) -->
+                        <div class="table-card glass-panel fade-in hidden" id="vlan-results-card" style="margin-bottom: 2rem; border-radius: 14px;">
+                            <div class="card-header" style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                                <h3 style="margin: 0; font-size: 1.2rem;"><i class="fa-solid fa-network-wired" style="color: var(--primary);"></i> VLAN <span id="lbl-vlan-id">0</span> Learned MAC Table</h3>
+                                <span class="count-badge" id="vlan-mac-count-badge" style="background: var(--primary-glow); color: var(--primary); border: 1px solid rgba(0, 242, 254, 0.2); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700;">0 MACs</span>
+                            </div>
+                            <div class="card-body scroll-table-container" style="padding: 0;">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>MAC Address</th>
+                                            <th>VLAN</th>
+                                            <th>Sport</th>
+                                            <th>Port</th>
+                                            <th>Onu (ONT ID)</th>
+                                            <th>Gemid</th>
+                                            <th>MAC-Type</th>
+                                            <th class="actions-header">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="vlan-results-body">
+                                        <!-- Dynamic rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- MAC Search Diagnostic Report Card (Hidden by default) -->
+                        <div class="glass-panel fade-in hidden" id="mac-results-card" style="padding: 2rem; margin-bottom: 2rem; border-radius: 14px;">
+                            <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 1.25rem; margin-bottom: 1.75rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                                <h3 style="margin: 0; color: var(--primary); font-size: 1.35rem; display: flex; align-items: center; gap: 0.50rem;">
+                                    <i class="fa-solid fa-microchip"></i> MAC Diagnostic Report: 
+                                    <span id="lbl-searched-mac" style="color: var(--text-primary); font-family: var(--font-mono); font-weight: 500; font-size: 1.25rem;">00:00:00:00:00:00</span>
+                                </h3>
+                                <span class="status-badge" id="mac-status-badge" style="padding: 0.35rem 0.85rem; border-radius: 20px; font-weight: 700; font-size: 0.85rem;"><i class="fa-solid fa-circle-play"></i> Online</span>
+                            </div>
+                            
+                            <h4 style="margin: 0 0 1rem 0; color: var(--text-secondary); font-size: 1rem;"><i class="fa-solid fa-location-dot"></i> Port & Location Details</h4>
+                            <div class="telemetry-grid" style="margin-bottom: 2rem;">
+                                <div class="telemetry-card">
+                                    <span class="telemetry-label">GPON Port Location</span>
+                                    <span class="telemetry-value" id="mac-lbl-port">N/A</span>
+                                </div>
+                                <div class="telemetry-card">
+                                    <span class="telemetry-label">ONT ID</span>
+                                    <span class="telemetry-value" id="mac-lbl-ont-id">N/A</span>
+                                </div>
+                                <div class="telemetry-card">
+                                    <span class="telemetry-label">Associated VLAN ID</span>
+                                    <span class="telemetry-value" id="mac-lbl-vlan">N/A</span>
+                                </div>
+                                <div class="telemetry-card">
+                                    <span class="telemetry-label">ONT Serial Number</span>
+                                    <span class="telemetry-value" id="mac-lbl-sn" style="font-size: 1.15rem; font-family: var(--font-mono);">N/A</span>
+                                </div>
+                            </div>
+
+                            <h4 style="margin: 0 0 1rem 0; color: var(--text-secondary); font-size: 1rem;"><i class="fa-solid fa-square-poll-vertical"></i> ONT Diagnostic Telemetry</h4>
+                            <div class="telemetry-grid" style="margin-bottom: 2rem;">
+                                <div class="telemetry-card">
+                                    <span class="telemetry-label">ONT Rx Power (Received)</span>
+                                    <span class="telemetry-value" id="mac-lbl-rx">N/A</span>
+                                    <div class="telemetry-sub" id="mac-lbl-rx-desc">Power level</div>
+                                </div>
+                                <div class="telemetry-card">
+                                    <span class="telemetry-label">ONT Tx Power (Transmitted)</span>
+                                    <span class="telemetry-value" id="mac-lbl-tx">N/A</span>
+                                </div>
+                                <div class="telemetry-card">
+                                    <span class="telemetry-label">OLT Received Power</span>
+                                    <span class="telemetry-value" id="mac-lbl-olt-rx">N/A</span>
+                                </div>
+                                <div class="telemetry-card">
+                                    <span class="telemetry-label">Working Temperature</span>
+                                    <span class="telemetry-value" id="mac-lbl-temp">N/A</span>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 1rem; border-top: 1px solid var(--border-color); padding-top: 1.75rem; justify-content: space-between; flex-wrap: wrap; align-items: center;">
+                                <div class="profile-info">
+                                    <h4 style="margin: 0 0 0.35rem 0; font-size: 0.95rem; color: var(--text-secondary);">Customer Description</h4>
+                                    <p id="mac-lbl-desc" style="color: var(--text-primary); margin: 0; font-size: 1.1rem; font-weight: 500;">Customer Description</p>
+                                </div>
+                                 <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
+                                     <button class="btn btn-secondary" id="btn-mac-show-config" style="padding: 0.65rem 1.25rem; font-weight: 600; border-radius: 8px;"><i class="fa-solid fa-gears"></i> View Running Config</button>
+                                     <button class="btn btn-danger" id="btn-mac-delete-static" style="padding: 0.65rem 1.25rem; font-weight: 600; border-radius: 8px; background: #ea4335; display: none;"><i class="fa-solid fa-trash-can"></i> Delete Static MAC</button>
+                                     <button class="btn btn-danger" id="btn-mac-reboot" style="padding: 0.65rem 1.25rem; font-weight: 600; border-radius: 8px;"><i class="fa-solid fa-power-off"></i> Reboot ONT</button>
+                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Not Found / Empty State Card -->
+                        <div class="glass-panel fade-in hidden" id="search-empty-card" style="text-align: center; padding: 4rem 2rem; border-radius: 14px; margin-bottom: 2rem;">
+                            <i class="fa-solid fa-magnifying-glass-minus placeholder-icon" style="font-size: 4rem; color: var(--danger); margin-bottom: 1.5rem; filter: drop-shadow(0 0 10px var(--danger-glow));"></i>
+                            <h3 style="color: var(--text-primary); margin-bottom: 0.5rem;" id="search-empty-title">Search Complete - Not Found</h3>
+                            <p style="color: var(--text-secondary); margin: 0;" id="search-empty-desc">The requested item could not be located in the OLT tables.</p>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Live Console Feed -->
+                    <div class="workspace-right" style="flex: 5.5; min-width: 420px; position: sticky; top: 1rem;">
+                        <div class="glass-panel" style="padding: 1.5rem; border-radius: 14px; display: flex; flex-direction: column; height: 780px; border-color: rgba(0, 242, 254, 0.15);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+                                <h3 style="margin: 0; font-size: 1.1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-terminal"></i> OLT Live CLI Console</h3>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <a href="#" id="btn-open-putty" class="btn btn-secondary btn-sm" style="padding: 0.25rem 0.65rem; font-size: 0.8rem; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Open in PuTTY
+                                    </a>
+                                    <button class="btn btn-secondary btn-sm" id="btn-fullscreen-console" style="padding: 0.25rem 0.65rem; font-size: 0.8rem; border-radius: 6px;">
+                                        <i class="fa-solid fa-expand"></i> Maximize
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" id="btn-clear-console" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; border-radius: 6px;">Clear</button>
+                                </div>
+                            </div>
+                            <div id="live-console-box" style="flex: 1; background: rgba(0,0,0,0.45); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; overflow-y: auto; font-family: var(--font-mono); font-size: 0.82rem; color: #a6e22e; line-height: 1.4; cursor: text;">
+                                <span id="console-history-text" style="white-space: pre-wrap; word-break: break-all;">[System] Console initialized. Connect to OLT to start CLI session logging...</span>
+                                <input type="text" id="console-inline-input" autocomplete="off" style="display: inline-block; background: transparent; border: none; outline: none; color: #a6e22e; font-family: inherit; font-size: inherit; padding: 0; margin: 0; width: 50px; min-width: 15px;">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- ONT Configuration Details Viewer Modal -->
+    <div id="config-modal" class="modal hidden" style="z-index: 10000;">
+        <div class="modal-content glass-panel" style="max-width: 750px; width: 100%;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0; font-size: 1.35rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-gears"></i> Running Configuration Details</h2>
+                <button class="modal-close-btn" id="btn-close-config-modal" style="background: none; border: none; color: var(--text-secondary); font-size: 1.8rem; cursor: pointer;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 0;">
+                <div class="telemetry-raw-section" style="margin-top: 0;">
+                    <h3 id="config-modal-title" style="margin-top: 0; font-size: 1rem; margin-bottom: 0.75rem; color: var(--text-secondary);">Checking ONT running configuration...</h3>
+                    <pre class="raw-terminal-view" id="config-modal-raw-output" style="max-height: 480px; height: 380px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; overflow-y: auto; font-family: var(--font-mono); font-size: 0.9rem; color: #a6e22e; line-height: 1.5;">Fetching raw configuration from OLT CLI...</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Static MAC Assignment Modal -->
+    <div id="static-mac-modal" class="modal hidden" style="z-index: 10001;">
+        <div class="modal-content glass-panel" style="max-width: 480px; width: 100%; padding: 2rem;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0; font-size: 1.25rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-anchor"></i> Configure Static MAC</h2>
+                <button class="modal-close-btn" id="btn-close-static-modal" style="background: none; border: none; color: var(--text-secondary); font-size: 1.8rem; cursor: pointer; line-height: 1;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 0;">
+                <div style="margin-bottom: 1.25rem;">
+                    <label style="font-weight: 600; margin-bottom: 0.5rem; display: block; color: var(--text-secondary); font-size: 0.9rem;">MAC Address</label>
+                    <input type="text" id="static-mac-input-mac" style="width: 100%; height: 40px; border-radius: 8px; font-family: var(--font-mono); font-weight: bold; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-color); color: var(--text-primary); padding: 0 1rem;">
+                </div>
+                <div style="margin-bottom: 1.25rem;">
+                    <label style="font-weight: 600; margin-bottom: 0.5rem; display: block; color: var(--text-secondary); font-size: 0.9rem;">VLAN ID</label>
+                    <input type="number" id="static-mac-input-vlan" style="width: 100%; height: 40px; border-radius: 8px; font-family: var(--font-mono); font-weight: bold; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-color); color: var(--text-primary); padding: 0 1rem;">
+                </div>
+                <div style="margin-bottom: 1.75rem;">
+                    <label style="font-weight: 600; margin-bottom: 0.5rem; display: block; color: var(--text-secondary); font-size: 0.9rem;">Uplink Port (Interface)</label>
+                    <input type="text" id="static-mac-input-port" placeholder="e.g. ge1" style="width: 100%; height: 40px; border-radius: 8px; font-family: var(--font-mono); font-weight: bold; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-color); color: var(--text-primary); padding: 0 1rem;">
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button class="btn btn-secondary" id="btn-cancel-static" style="padding: 0.5rem 1.25rem; border-radius: 8px;">Cancel</button>
+                    <button class="btn btn-primary" id="btn-confirm-static" style="padding: 0.5rem 1.25rem; border-radius: 8px;"><i class="fa-solid fa-check"></i> Bind Static</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script tags -->
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T Shoot Tools - Link3 Task Portal</title>
+    <meta name="description" content="Central hub for network troubleshooting, diagnostics, and OLT analysis tools for Link3 engineers.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-base: #0a0e17;
+            --card-bg: rgba(15, 23, 42, 0.75);
+            --card-hover: rgba(30, 41, 59, 0.9);
+            --border-color: rgba(51, 65, 85, 0.6);
+            --primary: #38bdf8;
+            --primary-glow: rgba(56, 189, 248, 0.25);
+            --accent-purple: #a855f7;
+            --accent-emerald: #10b981;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --radius-md: 14px;
+            --radius-sm: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Ambient Glow Background */
+        .ambient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 0;
+            background: 
+                radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+        }
+
+        .container {
+            max-width: 1300px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 1.5rem 2rem;
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .hub-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+        }
+
+        .hub-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+        }
+
+        .hub-logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #0284c7, #38bdf8);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.35);
+        }
+
+        .hub-title h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #ffffff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hub-title p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.55rem 1.15rem;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-back:hover {
+            background: rgba(51, 65, 85, 0.8);
+            border-color: rgba(148, 163, 184, 0.4);
+            transform: translateY(-1px);
+        }
+
+        /* Hero section */
+        .hub-hero {
+            text-align: center;
+            padding: 1.5rem 1rem 2.5rem;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.85rem;
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #38bdf8;
+            margin-bottom: 1rem;
+        }
+
+        .hero-badge .pulse-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #38bdf8;
+            box-shadow: 0 0 8px #38bdf8;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.85); }
+        }
+
+        .hub-hero h2 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.75rem;
+        }
+
+        .hub-hero p {
+            font-size: 1.05rem;
+            color: var(--text-muted);
+            max-width: 650px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+
+        /* Tools Grid */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 1.75rem;
+            margin-bottom: 3rem;
+        }
+
+        .tool-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.75rem;
+            backdrop-filter: blur(12px);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .tool-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, transparent);
+            transition: all 0.3s ease;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-4px);
+            background: var(--card-hover);
+            border-color: rgba(56, 189, 248, 0.4);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35), 0 0 20px rgba(56, 189, 248, 0.15);
+        }
+
+        .tool-card.featured::before {
+            background: linear-gradient(90deg, #38bdf8, #a855f7, #10b981);
+        }
+
+        .tool-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.25rem;
+        }
+
+        .tool-icon-wrapper {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(56, 189, 248, 0.15);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: #38bdf8;
+        }
+
+        .status-tag {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.25rem 0.65rem;
+            border-radius: 50px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .status-tag.active {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .tool-card h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.6rem;
+            color: #ffffff;
+        }
+
+        .tool-card p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin-bottom: 1.25rem;
+            flex: 1;
+        }
+
+        .vendor-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .vendor-badge {
+            font-size: 0.72rem;
+            font-weight: 500;
+            font-family: 'Fira Code', monospace;
+            padding: 0.2rem 0.5rem;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(51, 65, 85, 0.7);
+            border-radius: 4px;
+            color: #cbd5e1;
+        }
+
+        .btn-launch {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 0.92rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .btn-launch:hover {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.45);
+        }
+
+        /* Footer */
+        .hub-footer {
+            margin-top: auto;
+            text-align: center;
+            padding: 1.5rem 0;
+            color: #64748b;
+            font-size: 0.8rem;
+            border-top: 1px solid rgba(51, 65, 85, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-bg"></div>
+
+    <div class="container">
+        <!-- Hub Header -->
+        <header class="hub-header">
+            <div class="hub-logo">
+                <div class="hub-logo-icon">
+                    <i data-lucide="wrench"></i>
+                </div>
+                <div class="hub-title">
+                    <h1>T Shoot Tools</h1>
+                    <p>Network Diagnostics & Troubleshooting Portal for Link3 Engineers</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <a href="/" class="btn-back">
+                    <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+                    Back to Task Dashboard
+                </a>
+            </div>
+        </header>
+
+        <!-- Hero Section -->
+        <section class="hub-hero">
+            <div class="hero-badge">
+                <span class="pulse-dot"></span>
+                <span>Diagnostic & Analysis Utilities</span>
+            </div>
+            <h2>Choose a Troubleshooting Tool</h2>
+            <p>Select specialized diagnostic tools to inspect fiber optical power, test link connectivity, and analyze network hardware state.</p>
+        </section>
+
+        <!-- Tools Grid -->
+        <main class="tools-grid">
+            <!-- Card 1: OLT Troubleshooting Portal (Active) -->
+            <div class="tool-card featured">
+                <div class="tool-card-header">
+                    <div class="tool-icon-wrapper">
+                        <i data-lucide="radio" style="width: 24px; height: 24px;"></i>
+                    </div>
+                    <span class="status-tag active">Live & Active</span>
+                </div>
+                <h3>OLT Troubleshooting Portal</h3>
+                <p>Real-time OLT & ONT diagnostics across Huawei, ZTE, BDCOM, and V-SOL devices. Inspect optical signal levels, ONU registration status, MAC address lookup, and CLI commands.</p>
+                
+                <div class="vendor-badges">
+                    <span class="vendor-badge">Huawei OLT</span>
+                    <span class="vendor-badge">ZTE C300/C600</span>
+                    <span class="vendor-badge">BDCOM</span>
+                    <span class="vendor-badge">V-SOL</span>
+                    <span class="vendor-badge">Optical Rx/Tx</span>
+                </div>
+
+                <a href="/olt-t-shoot/index.html" target="_blank" class="btn-launch">
+                    <span>Launch OLT T-Shoot</span>
+                    <i data-lucide="external-link" style="width: 16px; height: 16px;"></i>
+                </a>
+            </div>
+
+            <!-- Card 2: PulseTrace Latency & Ping Monitor (Active) -->
+            <div class="tool-card featured">
+                <div class="tool-card-header">
+                    <div class="tool-icon-wrapper" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.3); color: #10b981;">
+                        <i data-lucide="activity" style="width: 24px; height: 24px;"></i>
+                    </div>
+                    <span class="status-tag active">Live & Active</span>
+                </div>
+                <h3>PulseTrace (Ping & Trace Monitor)</h3>
+                <p>High-precision real-time latency monitor, multi-target ping graphs, packet loss tracker, port scanner, MTR trace, and router diagnostic shell.</p>
+                
+                <div class="vendor-badges">
+                    <span class="vendor-badge">Real-time Ping</span>
+                    <span class="vendor-badge">MTR / Trace</span>
+                    <span class="vendor-badge">Port Scanner</span>
+                    <span class="vendor-badge">BGP Diagnostics</span>
+                    <span class="vendor-badge">Router Shell</span>
+                </div>
+
+                <a href="javascript:void(0)" onclick="window.open('http://' + window.location.hostname + ':3000', '_blank')" class="btn-launch" style="background: linear-gradient(135deg, #059669, #047857); box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);">
+                    <span>Launch PulseTrace Web Tool</span>
+                    <i data-lucide="external-link" style="width: 16px; height: 16px;"></i>
+                </a>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="hub-footer">
+            <p>&copy; 2026 Link3 Network Operations &amp; Engineering | Internal Automation System</p>
+        </footer>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>

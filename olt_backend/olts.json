@@ -1,0 +1,3482 @@
+[
+    {
+        "id": "08393c5c-95e6-47c6-b735-b96019845e7f",
+        "name": "Malek_CDATA_GPON-01",
+        "host": "10.49.10.162",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "fafb81d7-9d40-4d17-8b6f-66a0a628052c",
+        "name": "Malek_VSOL_GPON-02",
+        "host": "10.49.10.166",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "184892b6-e179-4e91-bbd4-60bf17adbb84",
+        "name": "Malek_ATOP_GPON-03",
+        "host": "10.49.15.138",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "6c1d45e1-59dd-4081-b444-78509fe2221a",
+        "name": "Malek_VSOL_GPON-04",
+        "host": "10.49.15.126",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "5fa824b3-9c48-43f9-a9c3-61328f4b0c1d",
+        "name": "Dilkusha_GPON-01",
+        "host": "10.49.8.26",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "62d04eb7-8027-4eba-903b-6de461305c57",
+        "name": "Jatrabari_ATOP_GPON_1",
+        "host": "10.49.9.62",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "238b01dc-c479-4b28-b6e1-171ff9bff6f3",
+        "name": "Wari_CDATA_GPON-01_OLT",
+        "host": "10.49.8.84",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "249f1c6f-ba0d-4ef9-b915-7d63c9764ac4",
+        "name": "Wari_ATOP_GPON-02_OLT",
+        "host": "10.49.8.85",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "7ffb6173-e093-4d29-bcca-bb0638a71884",
+        "name": "Ahmed_Tower_CDATA_GPON-10_OLT",
+        "host": "10.49.8.77",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "bbfe1866-e59d-43bf-adca-007616328f87",
+        "name": "Ahmed_Tower_CDATA_GPON-11_OLT",
+        "host": "10.49.8.78",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "4b1292e0-1136-4f6a-b751-0bf8138bf2b6",
+        "name": "Ahmed_Tower_CDATA_GPON-11_OLT",
+        "host": "10.49.8.69",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "2ef4e294-aa36-487b-b8e4-113db382fd48",
+        "name": "Ahmed_Tower_CDATA_GPON-13",
+        "host": "10.49.8.68",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "fa6c1be8-97d9-4004-96aa-16510bce3cff",
+        "name": "Ahmed_Tower_CDATA_GPON-14",
+        "host": "10.49.8.75",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "def03d1e-2bf2-4da7-9200-97e45595e298",
+        "name": "Tejgaon_CDATA_GPON-01",
+        "host": "10.49.8.124",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "46926111-5c39-4a01-87a8-277ec67e497d",
+        "name": "Banani_DC_CDATA_GPON-02",
+        "host": "10.49.10.179",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "57745414-426f-4996-bd6e-7883aca9faac",
+        "name": "Banani_DC_CDATA_GPON-07_OLT",
+        "host": "10.49.10.184",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "91ffd721-5a75-45d3-8db1-ab357cbb485a",
+        "name": "Banani_DC_CDATA_GPON-09_OLT",
+        "host": "10.49.10.186",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "e3516d62-da66-4cb7-9570-49abc518a590",
+        "name": "Banani_DC_CDATA_GPON-10_OLT",
+        "host": "10.49.10.187",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "56426d5c-b292-4540-87eb-a0a15181f585",
+        "name": "Banani_DC_CDATA_GPON-11_OLT",
+        "host": "10.49.10.188",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "338fb28a-e5d6-4615-9122-683e0a58f34f",
+        "name": "Banani_DC_CDATA_GPON-12_OLT",
+        "host": "10.49.10.189",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "88850518-31ba-4345-9ad8-a40cbc8697c3",
+        "name": "Banani_DC_CDATA_GPON-13_OLT",
+        "host": "10.49.10.181",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "045534b4-24f5-48fa-9c84-bbd77b0d25cd",
+        "name": "Banani_DC_CDATA_GPON-14_OLT",
+        "host": "10.49.10.182",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "d02efd04-c02e-49b2-843a-b7102b26295c",
+        "name": "Bashundhara_CDATA_GPON-1",
+        "host": "10.49.11.74",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "e11bed89-61dc-4cae-a066-60313b313c14",
+        "name": "Bashundhara_CDATA_GPON-2",
+        "host": "10.49.11.75",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "4adb1b24-7642-42e8-9553-949c6d1615a8",
+        "name": "Bashundhara_CDATA_GPON-3",
+        "host": "10.49.11.76",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "c996f522-5efb-4b73-b830-92ff3190a6f3",
+        "name": "Bashundhara_CDATA_GPON-04",
+        "host": "10.49.12.158",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "2ed9df50-9058-4909-a22c-ca16b5010449",
+        "name": "Bashundhara_VSOL_GPON-05",
+        "host": "10.49.11.78",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "97ac9fd8-f7ed-4612-bbb7-392c21dc76a6",
+        "name": "Bashundhara_I_CDATA_GPON-01",
+        "host": "10.49.11.226",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "dd21b3df-0d1c-46a8-b70d-57af385b4704",
+        "name": "Bashundhara_I_CDATA_GPON-04",
+        "host": "10.49.11.229",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "ebfd0d73-b3bd-4145-a427-461c8f4116e3",
+        "name": "EAST_SHEWRAPARA_VSOL_GPON_01",
+        "host": "10.49.11.206",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "c7e12d6b-6559-43f5-9bdc-aca43bae6262",
+        "name": "Nakhalpara_ATOP_GPON-01",
+        "host": "10.49.11.38",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "ec8b87de-b39b-4782-a502-0cd4507a1d8e",
+        "name": "Gulshan_CDATA_GPON-01",
+        "host": "10.49.10.202",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "81044da5-f476-4e29-8a85-43db755c4cec",
+        "name": "Gulshan_CDATA_GPON-02",
+        "host": "10.49.10.203",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "09d8116c-ec05-45f3-ae57-e39f8d935cdf",
+        "name": "Gulshan_CDATA_GPON-03",
+        "host": "10.49.10.204",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "e0c084bb-7a5e-4128-aa9f-4a70bd1f1bc6",
+        "name": "Gulshan_CDATA_GPON-04",
+        "host": "10.49.10.205",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "43943378-cd8f-497d-897c-45679be48199",
+        "name": "Gulshan_CDATA_GPON-05",
+        "host": "10.49.10.206",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "e850392e-18c7-4b6c-aa6d-6919e2633a07",
+        "name": "Gulshan_CDATA_GPON-06",
+        "host": "10.49.11.130",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "1f33bc85-d089-4f35-85c6-772b1ab34b94",
+        "name": "Shahjadpur_VSOL_GPON-01",
+        "host": "10.49.8.198",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "6009ef7e-cff9-4934-bd4c-57ad98d4e4e2",
+        "name": "Banasree_CDATA_GPON-04",
+        "host": "10.49.10.110",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "1b0841b9-fc72-45b7-bbfa-b1e3301af935",
+        "name": "Banasree_VSOL_GPON-02",
+        "host": "10.49.8.150",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "b101520d-6c4f-4553-84c8-21eca71da70f",
+        "name": "DIT_Project_VSOL_GPON-01",
+        "host": "10.49.8.230",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "73330c28-d8ba-4304-8a1d-af09fe7a17e4",
+        "name": "Khilgaon_CDATA_GPON_-01",
+        "host": "10.49.10.218",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "bc6acdda-ee54-44a2-b75a-1e0ef3237c5b",
+        "name": "Khilgaon_CDATA_GPON_-02",
+        "host": "10.49.10.219",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "dc602d92-3d5a-4eaf-8fbf-2800da5c3221",
+        "name": "Khilgaon_CDATA_GPON-03",
+        "host": "10.49.10.220",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "9f76c250-ab4d-4cf0-9128-c7004e86591e",
+        "name": "Mohanagar_CDATA_GPON-01",
+        "host": "10.49.8.218",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "41bbda86-b726-4737-b604-8846845a6102",
+        "name": "sbagicha_cdata_gpon-18",
+        "host": "10.49.10.150",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "0fa07ada-9573-40df-a7f2-e43d6d57d3f2",
+        "name": "sbagicha_cdata_gpon-19",
+        "host": "10.49.10.151",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "0a07dbb7-fc73-4d1e-b579-17ecf422fc50",
+        "name": "Segunbagicha_GPON-20",
+        "host": "10.49.10.152",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "37574971-9ba7-4a9f-8eec-5bf8475e4ee0",
+        "name": "Segunbagicha_CDATA_GPON-01",
+        "host": "10.49.10.130",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "ca2624e3-a974-4834-a841-5fea4978ed44",
+        "name": "Segunbagicha_CDATA_GPON-02",
+        "host": "10.49.10.131",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "fd27187e-c330-4d30-a46b-30e902ed7186",
+        "name": "Segunbagicha_CDATA_GPON-03",
+        "host": "10.49.10.132",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "c27e37fc-7ac9-48a2-97f9-39372cdc65fa",
+        "name": "Eskaton_CDATA_GPON-02_OLT",
+        "host": "10.49.10.171",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "9956237a-1cd1-4d21-98c0-819016890416",
+        "name": "Eskaton_CDATA_GPON-01_OLT",
+        "host": "10.49.10.172",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "8aaf1378-cf8d-48a9-84a9-9de433782bfd",
+        "name": "Eskaton_CDATA_GPON-03_OLT",
+        "host": "10.49.10.173",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "84a99aac-601c-4db8-a730-c562b74ab298",
+        "name": "Imamgonj_VSOL_GPON-01",
+        "host": "10.49.8.94",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "55c05f44-6245-4c3a-934a-98a3d1391caa",
+        "name": "Narayangonj_CDATA_GPON-06",
+        "host": "10.49.10.226",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "e1856e63-e797-4dab-87db-f5cd377c6c5d",
+        "name": "Narayangonj_CDATA_GPON-08",
+        "host": "10.49.10.228",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "29b72686-4fa3-4147-a580-a9a15d342e97",
+        "name": "Narayangonj_VSOL_GPON-9",
+        "host": "10.49.10.229",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "96730b54-76b3-4e31-bddb-19a0c57f846b",
+        "name": "Narayangonj_HUAWEI_GPON-01",
+        "host": "10.49.15.66",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "54425b93-7853-4840-ad24-f675fc6696d6",
+        "name": "Narayangonj_HUAWEI_GPON-10",
+        "host": "10.49.10.230",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "8dc84947-8774-416b-b611-4fa218dea757",
+        "name": "Siddirgonj_CDATA_GPON-01",
+        "host": "10.49.8.98",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "63d6c2f7-52f1-4d2e-aac8-8dbc771df335",
+        "name": "Siddirgonj_VSOL_GPON-02",
+        "host": "10.49.8.110",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "c0faad39-5d0b-45fd-9fba-ebaee4b68ff5",
+        "name": "Siddirgonj_ATOP_GPON-03",
+        "host": "10.49.8.109",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "dbd719c9-bdd2-40c9-b356-906ea4ce1ce9",
+        "name": "Siddirgonj_VSOL_GPON-04",
+        "host": "10.49.8.107",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "a5eb9205-7381-4a6f-916e-8a17a7c2ea47",
+        "name": "Siddirgonj_VSOL_GPON-06",
+        "host": "10.49.8.106",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "fef503b5-1da0-4d10-8b71-10c4f012c458",
+        "name": "DHN_CDATA_GPON-02_OLT",
+        "host": "10.49.11.19",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "c664e5d5-68ef-4dd7-a1e5-04da2e9cd217",
+        "name": "Dhn_CDATA_GPON-03",
+        "host": "10.49.11.20",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "66d8c116-4910-421b-b0a5-fe3e66e8e642",
+        "name": "Dhn_CDATA_GPON-04",
+        "host": "10.49.11.21",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "917dc633-b86d-4335-8481-214ce911e5df",
+        "name": "Dhn_CDATA_GPON-06",
+        "host": "10.49.11.23",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "c16468d2-2bce-45db-83c0-e85de9c0687a",
+        "name": "DHN_CDATA_GPON-13_OLT",
+        "host": "10.49.11.30",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "3d1444e5-d986-4255-ab1f-9301d7620041",
+        "name": "DHN_CDATA_GPON-14",
+        "host": "10.49.11.50",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "eeaca551-1d29-4f51-b920-fe5c4706133c",
+        "name": "Lalmatia_CDATA_GPON-01",
+        "host": "10.49.11.178",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "a4eac83c-156d-4a65-af19-dffcf83dbcc3",
+        "name": "Lalmatia_CDATA_GPON-02",
+        "host": "10.49.15.130",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "ed081549-c0b7-44f7-a612-7541a70d0c4e",
+        "name": "Mohammadpur_GPON-01_OLT",
+        "host": "10.49.10.252",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "6e9d2c20-1877-4904-9afb-83dbaa787091",
+        "name": "Mohammadpur_GPON-02_OLT",
+        "host": "10.49.10.253",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "3da1e05e-a84d-4258-956c-21cf398e7ca4",
+        "name": "Mohammadpur_GPON-03_OLT",
+        "host": "10.49.10.242",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "c43b2cdf-c999-4e6c-8e5d-a35df0b07ad8",
+        "name": "Mohammadpur_GPON-04_OLT",
+        "host": "10.49.10.243",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "ce8005a7-e4ba-4439-bac3-7e212e127661",
+        "name": "Concord_CDATA-GPON-01",
+        "host": "10.49.11.146",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "b609b27c-9ddd-455a-b84b-52e133fc7ab1",
+        "name": "Concord_CDATA-GPON-02",
+        "host": "10.49.11.147",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "72587d2c-8d70-41f8-b253-ebca452d8edd",
+        "name": "Concord_CDATA-GPON-03",
+        "host": "10.49.11.148",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "44f6bb58-cfe1-4eb8-a790-5ee2f64965e2",
+        "name": "Hatirpool_CDATA_GPON-01",
+        "host": "10.49.8.10",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "f2ac2bc4-9639-4e4e-b968-651df9d5f4b6",
+        "name": "Hatirpool_CDATA_GPON-02",
+        "host": "10.49.8.11",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "59a0dbf9-73ae-464f-9844-631d228f1d80",
+        "name": "Hatirpool_CDATA_GPON-03",
+        "host": "10.49.8.12",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "31e6d436-a3e3-4bd8-b505-a133ad57d4b1",
+        "name": "Hatirpool_CDATA_GPON-04",
+        "host": "10.49.8.13",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "764b7ed0-d793-4034-b7d7-01c94cd76352",
+        "name": "Hatirpool_CDATA_GPON-05",
+        "host": "10.49.8.14",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "cd3cba2d-daf8-4041-8493-7614bcc71337",
+        "name": "Shahjahanpur_ATOP_GPON-01",
+        "host": "10.49.11.254",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "6784f503-e4d8-4987-813d-c5d16ff135f5",
+        "name": "Kawranbazar_CDATA_GPON-01",
+        "host": "10.49.8.154",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "dcd6a8d3-eee4-475c-8d40-706ec2b59e04",
+        "name": "Monipuripara_CDATA_GPON-01_OLT",
+        "host": "10.49.13.46",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "d0c42e8a-c5ca-4d7d-8eda-cdb969f8bc2d",
+        "name": "BNS_CDATA_GPON_01_OLT",
+        "host": "10.49.10.194",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "63dec15c-a6d7-474b-885e-7bf9e1633fb6",
+        "name": "BNS_CDATA_GPON_02_OLT",
+        "host": "10.49.10.195",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "c2868800-d812-47ea-929d-86e8d3c07b7e",
+        "name": "BNS_CDATA_GPON_03_OLT",
+        "host": "10.49.10.196",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "5bdb314e-501e-439e-a87f-abc86b007bc7",
+        "name": "BNS_CDATA_GPON_04_OLT",
+        "host": "10.49.10.197",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "c5ab4e29-783b-461c-9bf7-ec1fb14640ce",
+        "name": "Airport_VSOL_GPON-01",
+        "host": "10.49.10.90",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "256c3c7d-397c-463a-90d2-ae8ad71909aa",
+        "name": "Nikunjo_GPON-01_OLT",
+        "host": "10.49.10.30",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "cf94ff44-2c54-4437-9523-40341796ef86",
+        "name": "Nikunjo_CDATA_GPON-02",
+        "host": "10.49.10.26",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "7e5a6099-0375-406a-bfe1-e6832c44eb06",
+        "name": "DSE_CDATA_GPON-01",
+        "host": "10.49.10.78",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "f47c885e-838b-4013-ad3b-cd555dd87fdf",
+        "name": "Uttara_Office_GPON-01",
+        "host": "10.49.8.35",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "ffa0cad8-b21e-4c3e-baae-e7f13732deda",
+        "name": "Uttara_Office_GPON-02",
+        "host": "10.49.8.36",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "2e35aa74-8c80-4b8e-a779-139e7af6c03a",
+        "name": "Uttara_Office_GPON-03",
+        "host": "10.49.8.37",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "e8ea70ec-0a3d-4ac5-bc69-179272aa6944",
+        "name": "Dakshinkhan_CDATA_GPON-01",
+        "host": "10.49.8.158",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "1621acae-8d5a-408e-8e1e-f9f3e88458a1",
+        "name": "Dakshinkhan_CDATA_GPON-02",
+        "host": "10.49.11.174",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "012e27d0-c1c9-44d4-b6af-4fbce497e9d6",
+        "name": "Uttara_Sector_13_GPON-10_OLT",
+        "host": "10.49.8.140",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "abac45f9-9a6c-4e53-b1b7-c4ad5ca46bd6",
+        "name": "Uttara_Sec-13_VSOL_GPON-1",
+        "host": "10.49.8.139",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "31be9088-efe6-4260-a261-ff459dfcee05",
+        "name": "Uttara_Sec-13_VSOL_GPON-2",
+        "host": "10.49.8.141",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "569f9a04-4b92-425d-bdc0-3975753ca90a",
+        "name": "Uttara_Sec-13_VSOL_GPON-4",
+        "host": "10.49.8.138",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "a65f7414-b201-4d48-afd9-db5cda2b715a",
+        "name": "Uttara_Sec-13_VSOL_GPON-3",
+        "host": "10.49.8.142",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "168dad22-1f56-45d5-8ea8-2f77f53805f1",
+        "name": "Agargaon_VSOL_GPON-01",
+        "host": "10.49.8.226",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "576d6d69-51a3-4878-80a9-5941883c0500",
+        "name": "Mirpur-10_GPON_01_OLT",
+        "host": "10.49.8.173",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "01aece84-311a-43c5-b2b5-80a6ebf691d2",
+        "name": "Mirpur-10_GPON_02_OLT",
+        "host": "10.49.8.174",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "dcd5d474-d2ee-4a2c-96b3-9e2d6bb09fce",
+        "name": "Mirpur-2_GPON-01_OLT",
+        "host": "10.49.8.18",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "a0be0f47-1815-48e5-a6ec-7b1f86e3400b",
+        "name": "Mirpur-2_GPON-02_OLT",
+        "host": "10.49.8.19",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "8adf0abf-48ee-47e1-9416-e92b9ab66d23",
+        "name": "Mirpur-2_CDATA_GPON-03",
+        "host": "10.49.8.20",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "a36e8099-01f4-4f4e-96c0-5e6a7ccc50d7",
+        "name": "Mirpur-2_VSOL_GPON-04",
+        "host": "10.49.8.21",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "914b4041-6fe2-4da7-b23b-6ec6ce1766c4",
+        "name": "Mirpur_DOHS_GPON-01_OLT",
+        "host": "10.49.11.186",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "f36a9e29-d483-4818-8f68-03b1d703188d",
+        "name": "Mirpur_DOHS_GPON-02_OLT",
+        "host": "10.49.11.187",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "21b350a3-64b3-485f-a535-d836bf0e4e27",
+        "name": "Mirpur_DOHS_CDATA_GPON-03",
+        "host": "10.49.11.188",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "3f7da7a8-eb00-4960-82c0-3eb252ccca76",
+        "name": "Mirpur_DOHS_GPON-05_OLT",
+        "host": "10.49.11.190",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "3f66be7f-6f76-46bb-88b0-6e75fc157f67",
+        "name": "Savar_Office_Dist_CDATA_GPON-01",
+        "host": "10.49.10.22",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "e59d03fd-9f7c-4dc0-bedc-10957da8fb21",
+        "name": "Savar_Bazar_CDATA_GPON-01",
+        "host": "10.49.11.126",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "a6244a66-049e-4f68-9f9e-0d5cd6b2a784",
+        "name": "Savar_Bzr_BT_VSOL_GPON-02(Bank",
+        "host": "Town)",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "05d77183-cf25-4201-8476-be142a90b2b6",
+        "name": "Savar_Bazar_ATOP_GPON-03",
+        "host": "10.49.15.222",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "0ac94584-fd4d-4395-8e8c-f6bd956c1f57",
+        "name": "SavarEPZ_GPON-01_OLT",
+        "host": "10.49.15.206",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "0c0ba3a9-8223-4846-a205-31d4700c8809",
+        "name": "Dhamrai_ATOP_GPON-01",
+        "host": "10.49.11.242",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "346a6e56-b4d2-4a24-8268-c71e43a31465",
+        "name": "Gazipur_CDATA_GPON-02",
+        "host": "10.49.8.182",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "ae8901ee-01bb-47cd-885c-f1da2ec29819",
+        "name": "Gazipur_Office_VSOL_GPON-01",
+        "host": "10.49.10.114",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "991d0e8f-575b-450a-9bb8-ee9bcf242d89",
+        "name": "Gazipur_CDATA_GPON-03",
+        "host": "10.49.8.146",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "f220f638-e2d1-465c-a9d9-0af327f4581a",
+        "name": "Gazipur_VSOL_GPON-04",
+        "host": "10.49.15.218",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "a003db93-aae0-4ab4-9f9a-e04f900ae224",
+        "name": "Salna_ATOP_GPON-01",
+        "host": "10.49.11.210",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "b7d217b7-d773-4c65-ba2a-dde3f056d76b",
+        "name": "Tongi_VSOL_GPON-01",
+        "host": "10.49.15.114",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "f3d46181-033a-42b2-8efe-bd5d603cc210",
+        "name": "Mymensing_VSOL_GPON-01",
+        "host": "10.49.12.106",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "1ff217ed-f36e-449b-b758-6bb5cdb2f1e2",
+        "name": "Mymensing_VSOL_GPON-03",
+        "host": "10.49.12.108",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "3718f194-a1dd-4885-8792-8ce4e2372dde",
+        "name": "Mymensing_VSOL_GPON-04",
+        "host": "10.49.12.235",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "0ba02104-b189-4c6e-bfbb-456cfe7aa6c2",
+        "name": "Mymensing_CDATA_GPON-08",
+        "host": "10.49.12.236",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "a1320618-c077-425f-b709-35388ba09dae",
+        "name": "Mymensing_CDATA_GPON-12",
+        "host": "10.49.12.237",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "9795a009-612d-47cb-95bd-81a9f275408d",
+        "name": "Mymensing_CDATA_GPON-10",
+        "host": "10.49.12.238",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "d0ef1336-b276-46e7-a04f-bdea937a3db7",
+        "name": "Mymensing_CDATA_GPON-11",
+        "host": "10.49.10.98",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "b3247519-73eb-4000-b593-8b434691d1a3",
+        "name": "Bhaluka_CDATA_GPON-01",
+        "host": "10.49.8.162",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "9a959cb7-5b18-43d8-8caf-0a5efd97494a",
+        "name": "Jamalpur_VSOL_GPON-01",
+        "host": "10.49.15.134",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "dcc7e3d1-1d45-4d50-adbf-43cab4396499",
+        "name": "Comilla_CDATA_GPON-01",
+        "host": "10.49.13.210",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "039b7fd0-7cd3-4bfa-b0c0-91edd7f8b00d",
+        "name": "Comilla_CDATA_GPON-02",
+        "host": "10.49.11.82",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "55bb0a82-e7ae-43bb-a065-aaf6bd32eece",
+        "name": "Comilla_CDATA_GPON-04",
+        "host": "10.49.11.83",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "112c2f55-7a5d-417c-889a-96ccb543a063",
+        "name": "Comilla_CDATA_GPON-05",
+        "host": "10.49.11.84",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "e760c5b6-b752-4d5d-bdf1-3397e34b69a1",
+        "name": "Comilla_CDATA_GPON-06",
+        "host": "10.49.11.85",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "be22c682-bd31-43f0-8737-3654ec93a1b7",
+        "name": "CHOUDDOGRAM_VSOL_GPON-1",
+        "host": "10.49.12.126",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "10f9c29b-6df9-49cd-83fc-a90181dbbfeb",
+        "name": "ASHUGONJ_VSOL_GPON-01",
+        "host": "10.49.9.98",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "4b369c5e-6801-4e5a-be5c-75a765b14dee",
+        "name": "B.Baria_VSOL_GPON-02",
+        "host": "10.49.13.178",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "596cc631-cc45-4257-9740-1bcada762bf0",
+        "name": "B.Baria_VSOL_GPON-01",
+        "host": "10.49.13.94",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "17659d6f-1567-4eeb-8eb7-a39bed009d45",
+        "name": "Bhairab_CDATA_GPON-01",
+        "host": "10.49.13.182",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "89f953be-1dd3-4572-bda0-50890f2b418f",
+        "name": "Munshigonj_VSOL_GPON-01",
+        "host": "10.49.8.243",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "d5c6a230-22d5-4f8d-a4e9-f53f312ca901",
+        "name": "Munshigonj_VSOL_GPON-06",
+        "host": "10.49.8.246",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "bc1ed310-8538-4d7a-8483-3492b8f1b1be",
+        "name": "Joydebpur_CDATA_GPON-01",
+        "host": "10.49.15.214",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "344f1384-e991-438b-b41a-73470a226698",
+        "name": "Haluaghat_CDATA_GPON-03",
+        "host": "10.49.10.102",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "501f2510-92f9-45c5-a801-dd1c080ff519",
+        "name": "Haluaghat_ATOP_GPON-04",
+        "host": "10.49.12.182",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "c1181565-0bd1-489c-b492-418cc38b17d2",
+        "name": "Tangail_VSOL_GPON-01",
+        "host": "10.49.13.237",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "2e0c3912-0881-4aa0-a91b-43f768f1e61b",
+        "name": "Tangail_VSOL_GPON-02",
+        "host": "10.49.13.238",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "2a7f57ff-a937-4f91-abb8-f8e049a7faae",
+        "name": "Tangail_ATOP_GPON-03",
+        "host": "10.49.13.235",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "4d4ce97a-174c-4bc5-ab59-13ba1d3cb3df",
+        "name": "Shokhipur_VSOL_GPON-01",
+        "host": "10.49.15.186",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "cd5f4def-476c-4a33-b5a5-07535167c73f",
+        "name": "Netrokona_ATOP_GPON-01",
+        "host": "10.49.9.54",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "3fa3e90a-5aed-4539-b57d-9715e3b44d9c",
+        "name": "UTTARKHAN_VSOL_GPON-01",
+        "host": "10.49.15.146",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "b2893626-ebda-4f96-b56b-12376360f97c",
+        "name": "C&F_CDATA_GPON_01",
+        "host": "10.49.9.196",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "fcf45f58-8a41-490d-8e19-a02b9f84eac0",
+        "name": "C&F_CDATA_GPON_02",
+        "host": "10.49.9.200",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "3d944544-c272-4e61-9681-cea35077ed42",
+        "name": "C&F_CDATA_GPON-03",
+        "host": "10.49.9.199",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "79e67a18-24dd-4e30-ae6d-7c7ed4b9c323",
+        "name": "C&F_VSOL_GPON-04",
+        "host": "10.49.9.206",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "21d67ddf-c0a0-4d92-8cb2-cd15b6976bbc",
+        "name": "Ali_Plaza_VSOL_GPON-01",
+        "host": "10.49.9.162",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "a41b0aef-9772-43ed-bb7b-3d8f99a07fda",
+        "name": "Mehedi_GPON-01_OLT",
+        "host": "10.49.9.154",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "327be50e-627e-4e5f-88d5-65d673d6009e",
+        "name": "Mehedi_GPON-03_OLT",
+        "host": "10.49.12.73",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "a35e9a5a-cc51-4dc9-bb84-34266d5343de",
+        "name": "Mehedi_GPON-04_OLT",
+        "host": "10.49.12.68",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "0f01f4af-10a3-471b-9dcc-1790f6310986",
+        "name": "Mehedi_GPON-05_OLT",
+        "host": "10.49.12.74",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "f7e82fe1-0e82-4fde-9104-84e9f6406de0",
+        "name": "Mehedi_CDATA_GPON-06",
+        "host": "10.49.12.75",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "3038c425-d7e5-49ea-8ffc-460daa1d3b23",
+        "name": "Mehedi_CDATA_GPON-08",
+        "host": "10.49.12.76",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "fcb251fb-20d7-440c-ba18-2d2d213c3cd8",
+        "name": "Mehedi_GPON-21_OLT",
+        "host": "10.49.12.71",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "01b3fcf0-eca0-4ac3-a29a-857dc7bf5e46",
+        "name": "Mehedi_GPON-22_OLT",
+        "host": "10.49.12.72",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "b26ef6ff-011b-427f-818f-976c4d066bcd",
+        "name": "Mehedi_CDATA_GPON-09",
+        "host": "10.49.12.77",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "af762277-da86-456a-bd8e-52435192a862",
+        "name": "Khulshi_CDATA_GPON-01_OLT",
+        "host": "10.49.9.247",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "05879268-2b62-4c8b-8161-d1d726f33a30",
+        "name": "Khulshi_CDATA_GPON-02_OLT",
+        "host": "10.49.9.242",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "3ee5c92c-089a-4d68-aba5-d13add93232c",
+        "name": "Khulshi_CDATA_GPON-03_OLT",
+        "host": "10.49.9.250",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "4bd1d966-1a96-4a39-8bdb-1b16fdc99442",
+        "name": "Khulshi_VSOL_GPON-04",
+        "host": "10.49.9.245",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "71599062-b6ec-4309-9b58-f17ab7ba9bd1",
+        "name": "Khulshi_CDATA_GPON-11_OLT",
+        "host": "10.49.9.243",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "f83d466c-614b-4858-9df9-9057a303d1b2",
+        "name": "KALURGHAT_VSOL_GPON-01",
+        "host": "10.49.9.222",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "34eb2fc2-5bf0-428c-b4c6-c35277dce23f",
+        "name": "Oxygen_VSOL_GPON-01",
+        "host": "10.49.12.154",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "3e234792-55fd-424b-a2de-e4cbb928bcd5",
+        "name": "Coxs_Bazar_CDATA_GPON-08",
+        "host": "10.49.13.34",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "820b5c99-7bad-40e4-a8b6-b4d18382c211",
+        "name": "Coxs_Bazar_CDATA_GPON-01",
+        "host": "10.49.13.35",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "863fac91-70e0-4e6c-9189-69ea70f21655",
+        "name": "Coxs_Bazar_CDATA_GPON-02",
+        "host": "10.49.13.36",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "fdb8e0c5-34c9-4ccf-957f-8c3d8455ec6b",
+        "name": "Coxs_Bazar_VSOL_GPON-03",
+        "host": "10.49.13.37",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "ee4ced8c-5652-4992-8323-bd7484a0a66f",
+        "name": "Coxs_Bazar_CDATA_GPON-04",
+        "host": "10.49.13.38",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "78080e3c-3298-45a7-a3a0-3e0bee9ae464",
+        "name": "Khatungonj_CDATA_GPON_04_OLT",
+        "host": "10.49.9.229",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "a5140a35-eaca-41d6-aaf7-55ffa2500a5b",
+        "name": "Shagorika_VSOL_GPON-01",
+        "host": "10.49.15.226",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "22a65171-a95e-498c-9d9c-585bafdbe265",
+        "name": "Chokoria_VSOL_GPON-01",
+        "host": "10.49.8.114",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "99982d56-8e03-46b6-b60c-08f6edaa7014",
+        "name": "Chokoria_VSOL_GPON-02",
+        "host": "10.49.15.190",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "e8a9244e-f29a-4f2c-94e3-6ab9806b1db7",
+        "name": "UKHIYA_VSOL_GPON-01",
+        "host": "10.49.15.142",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "8c0c2e3e-b345-430c-8d26-85f5bfb4cdad",
+        "name": "Khagrachori_VSOL_GPON-01",
+        "host": "10.49.15.162",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "31ac0532-8522-4ab7-a73b-13bafd42db11",
+        "name": "Khagrachori_VSOL_GPON-02",
+        "host": "10.49.15.194",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "5ab3e73a-b8eb-4658-b117-1a4d6aee53c6",
+        "name": "Feni_ATOP_GPON-01",
+        "host": "10.49.8.202",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "7eae0194-335e-4aaf-9d23-c58c1567d3d4",
+        "name": "Feni_VSOL_GPON-02",
+        "host": "10.49.8.203",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "7c352f03-0ee9-47a8-b39c-e12dcf4e4ff8",
+        "name": "Maijdee_CDATA_GPON-02",
+        "host": "10.49.10.83",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "a0316171-18fd-49f2-bb6c-4017fb12503e",
+        "name": "alhamra_cdata_gpon-01",
+        "host": "10.49.12.166",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "ea69d0b2-7799-47a8-a96e-afc38e52e5cd",
+        "name": "alhamra_cdata_gpon-02",
+        "host": "10.49.12.168",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "cd36428f-bfed-4527-b3f4-48156fcc4f54",
+        "name": "alhamra_cdata_gpon-03",
+        "host": "10.49.12.169",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "c3da7f0e-cbd1-48e6-94af-8aae86e3e703",
+        "name": "Alhamra_ATOP_GPON-04",
+        "host": "10.49.12.170",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "90b4ac6e-549e-4229-bbd1-969897cbd174",
+        "name": "alhamra_cdata_gpon-34",
+        "host": "10.49.12.167",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "a164ca15-8fa3-4a61-bbd8-d35428a63811",
+        "name": "alhamra_cdata_gpon-35",
+        "host": "10.49.12.171",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "52655096-aca8-4dfb-bab3-1b471bea00e0",
+        "name": "Uposohor_cdata_gpon-12",
+        "host": "10.49.12.40",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "4fb4e68b-867d-4d7c-be3d-11471a710eed",
+        "name": "Uposohor_cdata_gpon-13",
+        "host": "10.49.12.41",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "003b97f0-cfea-4e92-b944-aebe0d31ad0d",
+        "name": "Uposohor_CDATA_GPON-16",
+        "host": "10.49.12.44",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "1fe2a8a5-e5bc-4e1c-8a85-5bdd2b832b3a",
+        "name": "Uposohor_CDATA_GPON-17",
+        "host": "10.49.12.39",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "f213477d-6c7d-491b-b9aa-ac88d9483b86",
+        "name": "Uposohor_VSOL_GPON-18",
+        "host": "10.49.12.42",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "d5565ce8-9abf-4057-8a0e-92b8e27b7c3d",
+        "name": "Uposohor_VSOL_GPON-19",
+        "host": "10.49.9.42",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "e43f5e69-ea48-4076-8c52-442d6a947770",
+        "name": "Khadimpara_GPON-04",
+        "host": "10.49.12.53",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "b00fa64f-d26d-447c-863a-335d2f82d537",
+        "name": "Khadimpara_VSOL_GPON-05",
+        "host": "10.49.12.52",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "8ef21848-83fd-4a9f-b10f-ba2c91a65ad2",
+        "name": "Khadimpara_VSOL_GPON_06",
+        "host": "10.49.12.50",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "b03ed834-8399-47ee-9df1-cc8eb2d0c685",
+        "name": "Madina_Market_GPON-06_OLT",
+        "host": "10.49.12.202",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "f32f3a97-7709-4037-842b-65b0abc9f1cb",
+        "name": "Madina_Market_CDATA_GPON-09",
+        "host": "10.49.13.74",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "b673dc5a-91af-4359-a166-8a23def339dc",
+        "name": "Madina_Market_VSOL_GPON-10",
+        "host": "10.49.13.75",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "e3f20586-9ced-4cc6-88f6-175bef98fa34",
+        "name": "Madina_Market_VSOL_GPON-12",
+        "host": "10.49.13.76",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "3b36c03d-b543-4d3d-93d9-4065aea406ad",
+        "name": "Shahi_Eidgah_GPON_01",
+        "host": "10.49.11.2",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "f6bf0150-80cc-444b-be5e-573750814adb",
+        "name": "Shahi_Eidgah_GPON_02",
+        "host": "10.49.11.3",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "d9cc01ba-f6d7-4435-84d4-3a4117e240a7",
+        "name": "Shahi_Eidgah_CDATA_GPON-03",
+        "host": "10.49.11.4",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "1b93444e-59be-4440-8599-98c4d105bd12",
+        "name": "Shahi_Eidgah_CDATA_GPON-04",
+        "host": "10.49.11.5",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "a296a81c-2235-4f7f-aff0-cf7714355caa",
+        "name": "Shahi_Eidgah_CDATA_GPON-06",
+        "host": "10.49.13.106",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "63f00706-8b97-4a38-a2f7-02dbc38cb628",
+        "name": "Mojumdhari_GPON_01",
+        "host": "10.49.13.2",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "e647586a-ddc3-4f1a-9e18-f8bea3364799",
+        "name": "Mojumdhari_CDATA_GPON-02",
+        "host": "10.49.13.3",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "54ca1a1e-745c-4b0c-bab7-17401bec3c1d",
+        "name": "Mojumdhari_CDATA_GPON-03",
+        "host": "10.49.13.4",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "c49106d2-5c58-415a-8ffd-591c4c6336b9",
+        "name": "Mojumdhari_CDATA_GPON-04",
+        "host": "10.49.13.5",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "ab0df3d6-ad5b-4258-b45f-de516583d7f5",
+        "name": "Mojumdhari_CDATA_GPON-06",
+        "host": "10.49.13.186",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "ed44c420-6ac6-4b60-8b64-cc70bed2adda",
+        "name": "Moulovibazar_CDATA_GPON-06",
+        "host": "10.49.13.114",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "361c307c-1569-44d1-9f2b-b374b47c73d1",
+        "name": "Moulovibazar_CDATA_GPON-07",
+        "host": "10.49.13.115",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "1f8da394-d865-477a-8553-5b2048af8c35",
+        "name": "Moulovibazar_CDATA_GPON-08",
+        "host": "10.49.13.116",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "956730a4-c8f2-4cc8-b2d6-ccbdb4db0009",
+        "name": "Moulovibazar_VSOL_GPON_09",
+        "host": "10.49.13.117",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "212862e7-7e9e-4cd4-ada1-18de2a9d2898",
+        "name": "Moulovibazar_ATOP_GPON_10",
+        "host": "10.49.13.118",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "436006dd-ec52-4126-be13-e3c437262b35",
+        "name": "Moulovibazar_CDATA_GPON_11",
+        "host": "10.49.10.238",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "a6ba7eff-9214-4bbd-8f6d-1165ee690b13",
+        "name": "Moulovibazar_CDATA_GPON_12",
+        "host": "10.49.15.118",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "33d5246e-6a72-40f1-866d-7f6865a0aa3e",
+        "name": "Sreemangal_ATOP_GPON-02",
+        "host": "10.49.13.66",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "ab2e0707-92f9-4b20-89d0-df413269af69",
+        "name": "Sreemangal_VSOL_GPON-01",
+        "host": "10.49.13.18",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "48fc349f-d479-45f0-b9b0-2f4eb0ed9ba0",
+        "name": "Sreemangal_VSOL_GPON-02",
+        "host": "10.49.15.102",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "263c971e-8cd2-4204-a152-f1100fd3753c",
+        "name": "Sreemangal_VSOL_GPON-03",
+        "host": "10.49.11.54",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "8aee55ec-4596-4ed2-b34a-708f09a1d536",
+        "name": "Sunamganj_CDATA_GPON-01",
+        "host": "10.49.12.218",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "93491168-353e-4f8c-8a2d-cf2a50da771c",
+        "name": "Suganj_GPON-02",
+        "host": "10.49.11.138",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "b56ddc86-80eb-4ab9-be47-deede375b916",
+        "name": "Nobigonj_CDATA_GPON-01",
+        "host": "10.49.15.70",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "705850e2-fc97-424c-a190-a7188027c4cf",
+        "name": "Bogra_VSOL_GPON-11",
+        "host": "10.49.12.244",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "f41a63cd-cea7-491c-b7e2-6b9efff5e8f0",
+        "name": "Bogra_CDATA_GPON-12_OLT",
+        "host": "10.49.13.26",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "e3b90643-d38a-48db-8b74-5d61b8e46e3a",
+        "name": "Bogra_CDATA_GPON-13",
+        "host": "10.49.13.27",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "d058e307-75b3-4bb9-abf6-59d44df4eecc",
+        "name": "Bogra_CDATA_GPON-14",
+        "host": "10.49.13.28",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "d94034ec-03ab-42bf-95cb-6cfc35168cbd",
+        "name": "Bogra_CDATA_GPON-15",
+        "host": "10.49.13.29",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "ced321ee-7ddc-4386-95b6-a59d90029603",
+        "name": "Bogra_CDATA_GPON-16",
+        "host": "10.49.13.30",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "443219b1-d052-4977-9ab3-4b4de1b18def",
+        "name": "Bogra_CDATA_GPON-17",
+        "host": "10.49.9.212",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "2aab91c1-6ef6-4eb1-a0d6-10f85bd611dc",
+        "name": "Bogra_CDATA_GPON-18",
+        "host": "10.49.9.213",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "879582b8-008e-40c4-8e73-d7603ebfefb2",
+        "name": "Bogra_VSOL_GPON-19",
+        "host": "10.49.9.214",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "ad1de673-97bb-4c2f-9f4c-e91c5493db6b",
+        "name": "Bogra_CDATA_GPON-20",
+        "host": "10.49.9.211",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "f0474c3d-8bc2-430d-8daf-444cadd02928",
+        "name": "Bogra_CDATA_GPON-21",
+        "host": "10.49.12.242",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "ef22130f-0e7a-4319-bae0-947e6716bf83",
+        "name": "Joypurhat_ATOP_GPON-01",
+        "host": "10.49.15.178",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "87ead5a8-6fcf-4a75-826e-910d4daf6ad7",
+        "name": "Rajshahi_CDATA_GPON-01",
+        "host": "10.49.9.109",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "e6a2d2dd-fd5a-43fd-9ebd-912d2fc4ae45",
+        "name": "Rajshahi_CDATA_GPON-02",
+        "host": "10.49.13.156",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "9336d124-a639-4039-8d5f-7c28daf1ce02",
+        "name": "Rajshahi_CDATA_GPON-03",
+        "host": "10.49.13.157",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "ca9aca12-25d0-4499-bb0c-00270989c4b7",
+        "name": "Rajshahi_CDATA_GPON-04",
+        "host": "10.49.13.158",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "84c112eb-8586-415c-a5ef-315374ee6c95",
+        "name": "Rajshahi_CDATA_GPON-06",
+        "host": "10.49.9.107",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "f2bec686-9d1f-4778-9057-a27d13e77d6e",
+        "name": "Rajshahi_VSOL_GPON-07",
+        "host": "10.49.9.108",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "b66aa185-4577-4c86-852a-46b2665d28e6",
+        "name": "Rajshahi_VSOL_GPON-08",
+        "host": "10.49.9.110",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "c4ee7ef7-025a-4978-a82e-0ef8df357a0e",
+        "name": "Rajshahi_CDATA_GPON-09",
+        "host": "10.49.9.106",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "cf087ba1-3424-42cc-b74e-eeb44f2843d1",
+        "name": "Monnafer_Mor_CDATA_GPON-01",
+        "host": "10.49.13.165",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "13a42e83-847e-480c-89cc-268e6d9d8394",
+        "name": "Monnafer_Mor_CDATA_GPON-02",
+        "host": "10.49.13.166",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "2cb69125-67be-4f38-aed7-67b2bbefb4dd",
+        "name": "Monnafer_Mor_VSOL_GPON_03",
+        "host": "10.49.13.245",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "8d36f5e1-e7e7-472b-9819-2e45625c23a4",
+        "name": "Monnafer_Mor_VSOL_GPON-04",
+        "host": "10.49.13.246",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "c343ac2e-40f4-4eae-99e1-05913461703d",
+        "name": "Jhawtola_VSOL_GPON-01",
+        "host": "10.49.13.134",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "3abb67a2-13f4-4a69-a6a7-70b8815668f1",
+        "name": "Rangpur_CDATA_GPON-02",
+        "host": "10.49.9.236",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "9f870e5a-2945-4992-bdc1-41378d9d48f4",
+        "name": "Rangpur_CDATA_GPON-01",
+        "host": "10.49.13.124",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "0898c506-a743-4785-9efe-10b3d2533f0e",
+        "name": "Rangpur_VSOL_GPON-04",
+        "host": "10.49.13.126",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "ba1357ab-d0bb-47b8-aac4-7e28b338d226",
+        "name": "Rangpur_CDATA_GPON-05",
+        "host": "10.49.13.123",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "e7ba4566-fe36-4878-8a39-75cde338630b",
+        "name": "Rangpur_CDATA_GPON-06",
+        "host": "10.49.15.166",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "257ce4a8-1c65-4679-8f78-88c2d3d441f1",
+        "name": "Rangpur_CDATA_GPON-07",
+        "host": "10.49.9.235",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "e7f2394c-8146-45dc-b696-80a0d7b86d35",
+        "name": "Thakurgaon_CDATA_GPON-01",
+        "host": "10.49.11.67",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "8820253b-0e02-446e-8959-fb9faf9c2d59",
+        "name": "Thakurgaon_CDATA_GPON-02",
+        "host": "10.49.11.68",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "dc25843c-4398-4038-9755-50f21201bc03",
+        "name": "Thakurgaon_CDATA_GPON-03",
+        "host": "10.49.15.198",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "bcf01d27-aa0a-4009-977a-d771872d5abe",
+        "name": "Thakurgaon_CDATA_GPON-04",
+        "host": "10.49.15.230",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "f4be50ae-2bf6-4489-869e-4f506a61297b",
+        "name": "Thakurgaon_CDATA_GPON-05",
+        "host": "10.49.11.66",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "fa775c10-e6ea-4af7-9286-5b1253b23950",
+        "name": "Dinajpur_CDATA_GPON-01",
+        "host": "10.49.11.92",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "c113b97d-ebe4-4103-aad2-d0fd7537d602",
+        "name": "Dinajpur_VSOL_GPON-02",
+        "host": "10.49.11.93",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "5a15bab6-9240-4938-8788-b8c6757bf394",
+        "name": "Dinajpur_CDATA_GPON-03",
+        "host": "10.49.11.94",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "d2580f9f-e9ad-46e7-86bf-74d1f25c0a19",
+        "name": "Natore_CDATA_GPON-01",
+        "host": "10.49.13.226",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "65e082e9-b2d6-4dc9-9508-da6cf7db78de",
+        "name": "Natore_CDATA_GPON-02",
+        "host": "10.49.13.227",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "6cf2c68c-a9e0-42cb-a552-f1c713252517",
+        "name": "Natore_CDATA_GPON-03",
+        "host": "10.49.13.228",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "008cc67f-c54a-40c9-815d-dd01aa6befc2",
+        "name": "Natore_CDATA_GPON-04",
+        "host": "10.49.13.229",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "757b72fd-62af-4815-8f54-5ff7c078b02c",
+        "name": "Natore_VSOL_GPON-05",
+        "host": "10.49.13.230",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "221f5093-2b81-42c6-8903-3493a0eff759",
+        "name": "Natore_VSOL_GPON-06",
+        "host": "10.49.9.34",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "c26b8afc-ea74-43a6-8647-1f72860588d7",
+        "name": "Natore_CDATA_GPON-07",
+        "host": "10.49.14.126",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "cab9ca24-397a-440f-a3f8-f02c163287b2",
+        "name": "Sirajganj_CDATA_GPON-01",
+        "host": "10.49.12.131",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "27bfe60e-91ad-4199-8d5d-f7a78a0999f0",
+        "name": "Sirajganj_VSOL_GPON-02",
+        "host": "10.49.11.156",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "a21e191d-0c32-4a07-ae11-a881b9d74ab7",
+        "name": "Sirajganj_VSOL_GPON-03",
+        "host": "10.49.11.157",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "316a4a3c-cf43-4592-a052-85ad82dae371",
+        "name": "Sirajganj_CDATA_GPON-04",
+        "host": "10.49.11.158",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "ddc31b55-07c3-4aa1-a21f-56cd959b514f",
+        "name": "Sirajganj_VSOL_GPON-05",
+        "host": "10.49.12.133",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "c0895b5d-fe04-4761-835e-71f12ab233bf",
+        "name": "Kurigram_VSOL_GPON-01",
+        "host": "10.49.15.238",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "5f49daeb-7e90-4ec7-8ce4-dd6f2b794b41",
+        "name": "Saidpur_CDATA_GPON-01",
+        "host": "10.49.11.42",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "5d8e082b-4c91-4d23-9099-fa6a98071cb3",
+        "name": "Saidpur_VSOL_GPON-02",
+        "host": "10.49.11.43",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "ce6dbdaf-f292-4a73-ab84-1c45ad8b8a84",
+        "name": "Saidpur_VSOL_GPON-03",
+        "host": "10.49.11.44",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "56b99942-2214-4161-b4d7-38f082d5b55f",
+        "name": "Gaibandha_ATOP_GPON-01",
+        "host": "10.49.11.195",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "2f7ba070-8db6-424a-88ed-ad9fa565221e",
+        "name": "Gaibandha_VSOL_GPON-02",
+        "host": "10.49.11.197",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "b19bf4be-76e0-45fc-9935-fca3c46b6517",
+        "name": "Pabna_VSOL_GPON-01",
+        "host": "10.49.15.242",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "c475f249-3f09-477b-a54c-88f59d052f22",
+        "name": "Ishwardi_CDATA_GPON-01",
+        "host": "10.49.11.214",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "7409db27-c3e5-4b45-9926-2d12e97ddd67",
+        "name": "Nowgong_ATOP_GPON-01",
+        "host": "10.49.11.246",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "c7b7b7ea-53c8-402e-af36-7cbe6e484d1d",
+        "name": "Nowgong_ATOP_GPON-02",
+        "host": "10.49.9.50",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "0b3ee796-e1cf-4054-8dc8-a84e624491cc",
+        "name": "Naogaon_ATOP_GPON-03",
+        "host": "10.49.15.234",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "c4fecd77-7c3f-4347-a6fe-9ef6c8bd53e1",
+        "name": "Chapainawabgonj_CDATA_GPON-01",
+        "host": "10.49.11.122",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "e0e2a599-0132-4661-98fb-2f1a1e4075c0",
+        "name": "Chapainawabgonj_VSOL_GPON-02",
+        "host": "10.49.11.114",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "5f1b2148-44cb-4f74-bb16-a054d5346074",
+        "name": "Khulna_GPON-01_OLT",
+        "host": "10.49.12.26",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "6d108a6c-ade7-4ed7-acca-bc7f2056134d",
+        "name": "Khulna_GPON-02_OLT",
+        "host": "10.49.12.27",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "cef42fcd-f974-4fa0-8cb6-ce161854a5e5",
+        "name": "Khulna_GPON-03_OLT",
+        "host": "10.49.12.28",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "a9eea338-112a-4177-8222-7554f9ee5464",
+        "name": "Khulna_GPON-04_OLT",
+        "host": "10.49.12.29",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "7ef43f43-4933-43ee-8aeb-99e58797bd61",
+        "name": "Khulna_CDATA_GPON-05",
+        "host": "10.49.12.21",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "81c4f929-561d-422d-a577-2ab08625246f",
+        "name": "Khulna_CDATA_GPON-06",
+        "host": "10.49.9.74",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "1d99c7b5-732c-413e-8863-b056998ad0c7",
+        "name": "Khulna_CDATA_GPON-07",
+        "host": "10.49.9.75",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "bc19f609-792a-4055-85ec-381f5f2e8527",
+        "name": "Khulna_VSOL_GPON-08",
+        "host": "10.49.9.76",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "69f62171-e60b-4d12-b8b0-c4cc14bea34e",
+        "name": "Daulatpur_GPON-01_OLT",
+        "host": "10.49.12.148",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "aa4dc010-45ad-4e30-8b48-8de74339e661",
+        "name": "Daulatpur_GPON-02_OLT",
+        "host": "10.49.12.149",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "ed31abb1-538a-4f0e-b323-f5e494b2c2d3",
+        "name": "Daulatpur_VSOL_GPON-03",
+        "host": "10.49.12.146",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "963d8eef-e3eb-4c08-ac60-fbf7fb4c516a",
+        "name": "Satkhira_ATOP_GPON-01",
+        "host": "10.49.13.90",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "1ae64126-2e6f-40d5-afea-13be6fc3367c",
+        "name": "Satkhira_ATOP_GPON-02",
+        "host": "10.49.11.218",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "234ffa31-bd0a-4f3a-86f3-a9d0144cc36d",
+        "name": "Glaxo_CDATA_GPON-03_OLT",
+        "host": "10.49.12.140",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "7e0bd1c1-b273-4b0d-b96e-a2d0ed0d9ad9",
+        "name": "Glaxo_CDATA_GPON-01_OLT",
+        "host": "10.49.12.141",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "fef6b7d7-8f52-4c0c-a729-967a731aa805",
+        "name": "Barishal_CDATA_GPON-01",
+        "host": "10.49.12.197",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "dc6a9eb3-99e6-4a87-8c92-3963ae2d893b",
+        "name": "Barishal_VSOL_GPON-02",
+        "host": "10.49.12.198",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "56b251da-ef90-4c4a-811c-99df6b49add6",
+        "name": "Barishal_VSOL_GPON-03",
+        "host": "10.49.12.195",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "5db78ab9-d8e9-4b91-b940-beddca3e7bb4",
+        "name": "Barishal_CDATA_GPON-10",
+        "host": "10.49.12.90",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "91b4cfde-8311-4f62-b566-c09b15c45bde",
+        "name": "Barishal_CDATA_GPON-11",
+        "host": "10.49.12.91",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "be738242-4167-4b2a-b1af-6d08538bc338",
+        "name": "Barishal_CDATA_GPON-12",
+        "host": "10.49.13.195",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "9bddfc68-5f7f-40f0-af3e-dca54ba10b0b",
+        "name": "Barishal_CDATA_GPON-13",
+        "host": "10.49.13.196",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "5cd88090-c13c-4bb7-ad19-3cce095703d3",
+        "name": "Barishal_CDATA_GPON-14",
+        "host": "10.49.13.197",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "c0d93d77-23d2-419c-9d7e-d26ee8b90884",
+        "name": "Barishal_VSOL_GPON-15",
+        "host": "10.49.13.198",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "ad08968e-8f4f-419d-ba35-d804033d6842",
+        "name": "Barishal_CDATA_GPON-16",
+        "host": "10.49.12.92",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "8a0a64a5-1bae-4969-88e2-d66855831746",
+        "name": "Patuakhali_CDATA_GPON-02",
+        "host": "10.49.13.170",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "7db5577d-db83-45b4-bfc1-77b94ef02dca",
+        "name": "Patuakhali_VSOL_GPON-01",
+        "host": "10.49.13.171",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "f8bcec97-4321-43d3-8034-a11f76eb0074",
+        "name": "Noapara_BL_POP_VSOL_GPON-01",
+        "host": "10.49.9.66",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "56a85b3d-fd5c-485d-bf8c-edd6a60f11e9",
+        "name": "Jashore_CDATA-GPON_10_OLT",
+        "host": "10.49.10.214",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "381c38f3-9c7c-4dcc-bc21-2b5cde5a070d",
+        "name": "Jashore_CDATA_GPON-11",
+        "host": "10.49.9.114",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "8d6a801f-7f4e-4962-a334-255d69a31ef2",
+        "name": "Jashore_CDATA_GPON-12",
+        "host": "10.49.9.116",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "30bdec96-c79e-4fe5-9803-b782f188d142",
+        "name": "Jashore_CDATA_GPON-13",
+        "host": "10.49.10.210",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "93c6847c-6436-4ae6-83b1-c4e65c0d8a47",
+        "name": "Jashore_CDATA_GPON-14",
+        "host": "10.49.12.186",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "956dca4d-fd49-43dd-862d-e1f0ea735856",
+        "name": "Jashore_CDATA_GPON-15",
+        "host": "10.49.12.210",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "593b3d59-d5a0-46c0-9972-eb2707388ef2",
+        "name": "Jashore_VSOL_GPON-16",
+        "host": "10.49.10.213",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "46824637-0b92-4a47-9bdd-82001810c489",
+        "name": "Jashore_VSOL_GPON-17",
+        "host": "10.49.10.211",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "176d948d-08b8-456b-8f1e-64c463b2826f",
+        "name": "Kushtia_VSOL_GPON-01",
+        "host": "10.49.9.58",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "8bdf40f2-ca12-461a-a99b-36d07f01aada",
+        "name": "Kushtia_VSOL_GPON-02",
+        "host": "10.49.9.138",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "ace65e37-3c8a-41af-8979-cb6d98608f5c",
+        "name": "Faridpur_VSOL_GPON-01",
+        "host": "10.49.11.62",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "35236ba7-df70-4232-847d-6c645839759d",
+        "name": "Faridpur_VSOL_GPON-02",
+        "host": "10.49.11.14",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "dba00207-5bfb-40a0-8d52-8c0dbda2f00f",
+        "name": "Jhenaidah_CDATA_GPON-01",
+        "host": "10.49.15.110",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "cdata"
+    },
+    {
+        "id": "3931ad98-c05a-4625-ba14-e026ee0e7f88",
+        "name": "Jhenaidah_VSOL_GPON-02",
+        "host": "10.49.15.122",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "0f70262c-826d-424a-a024-51d7af43d61c",
+        "name": "JHENAIDAH_KALIGONJ_GPON_OLT-01",
+        "host": "10.49.15.150",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "b5c992d1-97d0-4857-90b3-7e07a6969263",
+        "name": "Chuadanga_ATOP_GPON-01",
+        "host": "10.49.11.118",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "atop"
+    },
+    {
+        "id": "7083521c-275c-4537-9716-4686b594571b",
+        "name": "Borguna_VSOL_GPON-01",
+        "host": "10.49.13.10",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    },
+    {
+        "id": "6ad38552-0de4-4980-8b2f-3e85b7b028f3",
+        "name": "SHELTECH_VSOL_GPON-01",
+        "host": "10.49.15.74",
+        "port": 23,
+        "username": "",
+        "password": "",
+        "enable_password": "",
+        "brand": "vsol"
+    }
+]

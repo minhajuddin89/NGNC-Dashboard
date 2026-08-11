@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  task-manager:
+    build: .
+    ports:
+      - "9000:5050"
+    environment:
+      - PORT=5050
+    volumes:
+      - ./tasks.xlsx:/app/tasks.xlsx
+    restart: unless-stopped

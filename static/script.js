@@ -1,0 +1,3324 @@
+document.addEventListener('DOMContentLoaded', () => {
+    const API_BASE = '/api';
+
+    // Theme Mode Init
+    const btnThemeToggle = document.getElementById('btnThemeToggle');
+    const themeToggleIcon = document.getElementById('themeToggleIcon');
+    
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-theme');
+        if (themeToggleIcon) {
+            themeToggleIcon.setAttribute('data-lucide', 'moon');
+        }
+    } else {
+        document.body.classList.remove('light-theme');
+        if (themeToggleIcon) {
+            themeToggleIcon.setAttribute('data-lucide', 'sun');
+        }
+    }
+
+    if (btnThemeToggle) {
+        btnThemeToggle.addEventListener('click', () => {
+            const isLight = document.body.classList.toggle('light-theme');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            if (themeToggleIcon) {
+                themeToggleIcon.setAttribute('data-lucide', isLight ? 'moon' : 'sun');
+            }
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+            updateWorkloadChart();
+        });
+    }
+
+    // Auth State
+    let currentUser = null;
+
+    // State Variables
+    let allTasks = [];
+    let allUsers = [];
+    let allRoster = [];
+    let activeShifts = {};
+    let allQuickLinks = [];
+    let currentView = 'table';
+    let selectedStatusFilter = 'ALL';
+    let selectedScopeFilter = 'ALL';
+    let searchQuery = '';
+    let selectedDependencyTaskId = null;
+    let selectedDependencyTaskDesc = null;
+    let selectedEscalationTaskId = null;
+    let selectedEscalationTaskDesc = null;
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    // DOM Elements - Auth & Workspace
+    const loginOverlay = document.getElementById('loginOverlay');
+    const loginForm = document.getElementById('loginForm');
+    const loginUsernameInput = document.getElementById('loginUsername');
+    const loginPasswordInput = document.getElementById('loginPassword');
+    
+    const appWorkspace = document.getElementById('appWorkspace');
+    const headerUserName = document.getElementById('headerUserName');
+    const headerUserRole = document.getElementById('headerUserRole');
+    const btnLogout = document.getElementById('btnLogout');
+    const btnAdminConsole = document.getElementById('btnAdminConsole');
+    const activeOwnerNameLabel = document.getElementById('activeOwnerName');
+
+    // DOM Elements - Control Deck (User Sketch)
+    const taskDescriptionInput = document.getElementById('taskDescription');
+    const timeDisplay = document.getElementById('timeDisplay');
+    const btnStart = document.getElementById('btnStart');
+    const btnFinish = document.getElementById('btnFinish');
+    const btnExportFull = document.getElementById('btnExportFull');
+    const btnExportDateWise = document.getElementById('btnExportDateWise');
+    const taskControlCenter = document.querySelector('.task-control-center');
+
+    // DOM Elements - Dashboard Filters
+    const searchQueryInput = document.getElementById('searchQuery');
+    const filterStatusSelect = document.getElementById('filterStatus');
+    const filterScopeSelect = document.getElementById('filterScope');
+    const viewGridBtn = document.getElementById('viewGrid');
+    const viewTableBtn = document.getElementById('viewTable');
+
+    // DOM Elements - Display Areas
+    const tasksGrid = document.getElementById('tasksGrid');
+    const tasksTableContainer = document.getElementById('tasksTableContainer');
+    const tasksTableBody = document.getElementById('tasksTableBody');
+    const emptyState = document.getElementById('emptyState');
+
+    // DOM Elements - Metrics
+    const metricTotal = document.getElementById('metricTotal');
+    const metricPending = document.getElementById('metricPending');
+    const metricProgress = document.getElementById('metricProgress');
+    const metricCompleted = document.getElementById('metricCompleted');
+
+    // DOM Elements - Edit Modal
+    const editModal = document.getElementById('editModal');
+    const editTaskForm = document.getElementById('editTaskForm');
+    const editTaskIdInput = document.getElementById('editTaskId');
+    const modalTaskIdLabel = document.getElementById('modalTaskId');
+    const editDescriptionInput = document.getElementById('editDescription');
+    const editOwnerInput = document.getElementById('editOwner');
+    const editStartTimeInput = document.getElementById('editStartTime');
+    const editEndTimeInput = document.getElementById('editEndTime');
+    const editStatusSelect = document.getElementById('editStatus');
+    const editPendingReasonGroup = document.getElementById('editPendingReasonGroup');
+    const editPendingReasonInput = document.getElementById('editPendingReason');
+    const editEscalationHistoryGroup = document.getElementById('editEscalationHistoryGroup');
+    const editEscalationHistoryInput = document.getElementById('editEscalationHistory');
+    const btnCloseModal = document.getElementById('btnCloseModal');
+    const btnCancelEdit = document.getElementById('btnCancelEdit');
+
+    // DOM Elements - Task Detail Terminal Modal
+    const taskDetailModal = document.getElementById('taskDetailModal');
+    const btnCloseDetailModal = document.getElementById('btnCloseDetailModal');
+    const btnCloseDetailModalFooter = document.getElementById('btnCloseDetailModalFooter');
+    const terminalTimestamp = document.getElementById('terminalTimestamp');
+    const detailTaskId = document.getElementById('detailTaskId');
+    const detailDescription = document.getElementById('detailDescription');
+    const detailReference = document.getElementById('detailReference');
+    const detailCategory = document.getElementById('detailCategory');
+    const detailOwner = document.getElementById('detailOwner');
+    const detailStatus = document.getElementById('detailStatus');
+    const detailStartTime = document.getElementById('detailStartTime');
+    const detailEndTime = document.getElementById('detailEndTime');
+    const detailDuration = document.getElementById('detailDuration');
+    const detailPendingReason = document.getElementById('detailPendingReason');
+    const detailEscalationHistory = document.getElementById('detailEscalationHistory');
+    const detailAssignedTime = document.getElementById('detailAssignedTime');
+    const detailAssignmentHistory = document.getElementById('detailAssignmentHistory');
+
+    // DOM Elements - Implementation Tracker
+    const btnOpenImplTracker = document.getElementById('btnOpenImplTracker');
+    const implTrackerModal = document.getElementById('implTrackerModal');
+    const btnCloseImplTrackerModal = document.getElementById('btnCloseImplTrackerModal');
+    const implTrackerSearch = document.getElementById('implTrackerSearch');
+    const implTrackerStatusFilter = document.getElementById('implTrackerStatusFilter');
+    const implTrackerVerifyFilter = document.getElementById('implTrackerVerifyFilter');
+    const implTrackerTableBody = document.getElementById('implTrackerTableBody');
+    const statImplTotal = document.getElementById('statImplTotal');
+    const statImplProgress = document.getElementById('statImplProgress');
+    const statImplCompleted = document.getElementById('statImplCompleted');
+    const statImplVerified = document.getElementById('statImplVerified');
+
+    // DOM Elements - Admin Modal
+    const adminModal = document.getElementById('adminModal');
+    const btnCloseAdminModal = document.getElementById('btnCloseAdminModal');
+    const createUserForm = document.getElementById('createUserForm');
+    const newUsernameInput = document.getElementById('newUsername');
+    const newFullNameInput = document.getElementById('newFullName');
+    const newPasswordInput = document.getElementById('newPassword');
+    const adminUsersTableBody = document.getElementById('adminUsersTableBody');
+    const importRosterForm = document.getElementById('importRosterForm');
+    const rosterFileInput = document.getElementById('rosterFile');
+    const btnClearAllTasks = document.getElementById('btnClearAllTasks');
+    const shiftsConfigContainer = document.getElementById('shiftsConfigContainer');
+    const btnAddShiftRow = document.getElementById('btnAddShiftRow');
+    const btnSaveShiftsConfig = document.getElementById('btnSaveShiftsConfig');
+    
+    // Workload Chart Elements
+    const adminDashboardSection = document.getElementById('adminDashboardSection');
+    const workloadChartType = document.getElementById('workloadChartType');
+
+    // Quick Links Elements
+    const quickLinksContainer = document.getElementById('quickLinksContainer');
+    const quickLinksConfigContainer = document.getElementById('quickLinksConfigContainer');
+    const btnAddLinkRow = document.getElementById('btnAddLinkRow');
+    const btnSaveLinksConfig = document.getElementById('btnSaveLinksConfig');
+
+    // DOM Elements - Roster Modal
+    const btnOpenTShoot = document.getElementById('btnOpenTShoot');
+    const btnOpenScriptGen = document.getElementById('btnOpenScriptGen');
+    const btnViewRoster = document.getElementById('btnViewRoster');
+    const rosterModal = document.getElementById('rosterModal');
+    const btnCloseRosterModal = document.getElementById('btnCloseRosterModal');
+    const rosterModalAdminSection = document.getElementById('rosterModalAdminSection');
+    const rosterModalUploadForm = document.getElementById('rosterModalUploadForm');
+    const rosterModalFileInput = document.getElementById('rosterModalFile');
+    const btnSaveRosterChanges = document.getElementById('btnSaveRosterChanges');
+    const rosterModalFooter = document.getElementById('rosterModalFooter');
+    
+    // DOM Elements - Finish Task Selection Modal
+    const finishTaskModal = document.getElementById('finishTaskModal');
+    const btnCloseFinishModal = document.getElementById('btnCloseFinishModal');
+    const btnCancelFinishModal = document.getElementById('btnCancelFinishModal');
+    const finishTasksList = document.getElementById('finishTasksList');
+
+    // DOM Elements - Pending Dependency Wizard Modal & Button
+    const btnPendingDependency = document.getElementById('btnPendingDependency');
+    const dependencyModal = document.getElementById('dependencyModal');
+    const dependencyStepSelect = document.getElementById('dependencyStepSelect');
+    const dependencyStepInput = document.getElementById('dependencyStepInput');
+    const dependencyTasksList = document.getElementById('dependencyTasksList');
+    const dependencyTaskPreview = document.getElementById('dependencyTaskPreview');
+    const dependencyReasonInput = document.getElementById('dependencyReasonInput');
+    const btnSubmitDependency = document.getElementById('btnSubmitDependency');
+
+    // DOM Elements - Task Escalation Wizard Modal & Button
+    const btnEscalateTask = document.getElementById('btnEscalateTask');
+    const escalationModal = document.getElementById('escalationModal');
+    const escalationStepSelect = document.getElementById('escalationStepSelect');
+    const escalationStepInput = document.getElementById('escalationStepInput');
+    const escalationTasksList = document.getElementById('escalationTasksList');
+    const escalationTaskPreview = document.getElementById('escalationTaskPreview');
+    const escalationRecipientSelect = document.getElementById('escalationRecipientSelect');
+    const escalationReasonInput = document.getElementById('escalationReasonInput');
+    const btnSubmitEscalation = document.getElementById('btnSubmitEscalation');
+
+    // DOM Elements - Toast Container
+    const toastContainer = document.getElementById('toastContainer');
+
+    // Initialize Lucide Icons
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+
+    // --- Live System Clock (Current Time box) ---
+    function updateClock() {
+        if (!timeDisplay) return;
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        timeDisplay.textContent = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock(); // Initial run
+
+    // --- Session / Authentication State Check ---
+    function checkAuth() {
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
+            currentUser = JSON.parse(storedUser);
+            
+            // Set UI details
+            headerUserName.textContent = currentUser.name;
+            headerUserRole.textContent = currentUser.role === 'admin' ? 'Administrator' : 'Operator';
+            activeOwnerNameLabel.textContent = currentUser.name;
+            
+            // Show admin features and apply themes based on user role
+            if (currentUser.role === 'admin') {
+                document.body.classList.remove('operator-theme');
+                btnAdminConsole.classList.remove('hidden');
+                if (rosterModalAdminSection) rosterModalAdminSection.classList.remove('hidden');
+                if (rosterModalFooter) rosterModalFooter.classList.remove('hidden');
+                if (taskControlCenter) taskControlCenter.classList.add('hidden');
+            } else {
+                document.body.classList.add('operator-theme');
+                btnAdminConsole.classList.add('hidden');
+                if (rosterModalAdminSection) rosterModalAdminSection.classList.add('hidden');
+                if (rosterModalFooter) rosterModalFooter.classList.add('hidden');
+                if (taskControlCenter) taskControlCenter.classList.remove('hidden');
+            }
+            if (adminDashboardSection) adminDashboardSection.classList.remove('hidden');
+            
+            // Toggle view visibility
+            loginOverlay.classList.add('hidden');
+            appWorkspace.classList.remove('hidden');
+            
+            // Fetch initial tasks
+            fetchTasks();
+            fetchQuickLinks();
+        } else {
+            currentUser = null;
+            document.body.classList.remove('operator-theme');
+            if (taskControlCenter) taskControlCenter.classList.remove('hidden');
+            if (adminDashboardSection) adminDashboardSection.classList.add('hidden');
+            loginOverlay.classList.remove('hidden');
+            appWorkspace.classList.add('hidden');
+        }
+    }
+
+    // Handle Login Form Submission
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = loginUsernameInput.value.trim();
+        const password = loginPasswordInput.value;
+
+        try {
+            const response = await fetch(`${API_BASE}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                showToast(`Welcome back, ${data.user.name}!`, 'success');
+                localStorage.setItem('currentUser', JSON.stringify(data.user));
+                loginForm.reset();
+                checkAuth();
+            } else {
+                showToast(data.message || 'Login failed. Please check credentials.', 'error');
+            }
+        } catch (error) {
+            console.error('Error logging in:', error);
+            showToast('Unable to connect to local authentication server.', 'error');
+        }
+    });
+
+    // Handle Logout
+    btnLogout.addEventListener('click', () => {
+        localStorage.removeItem('currentUser');
+        showToast('Successfully logged out.', 'info');
+        checkAuth();
+    });
+
+    // --- Admin Console Operations ---
+    
+    btnAdminConsole.addEventListener('click', () => {
+        adminModal.classList.remove('hidden');
+        fetchUsers();
+        fetchShifts();
+        renderQuickLinksConfig();
+    });
+
+    // Close Admin Modal
+    btnCloseAdminModal.addEventListener('click', () => {
+        adminModal.classList.add('hidden');
+    });
+
+    // Open T-Shoot Tools Hub
+    if (btnOpenTShoot) {
+        btnOpenTShoot.addEventListener('click', () => {
+            window.open('/t-shoot', '_blank');
+        });
+    }
+
+    // Open Script Generator Hub
+    if (btnOpenScriptGen) {
+        btnOpenScriptGen.addEventListener('click', () => {
+            window.open('/script-gen', '_blank');
+        });
+    }
+
+    // Open Roster Modal
+    btnViewRoster.addEventListener('click', () => {
+        if (rosterModal) {
+            rosterModal.classList.remove('hidden');
+            renderRosterGrid();
+        }
+    });
+
+    // Close Roster Modal
+    if (btnCloseRosterModal) {
+        btnCloseRosterModal.addEventListener('click', () => {
+            rosterModal.classList.add('hidden');
+        });
+    }
+
+    // Close Finish Task Selection Modal
+    if (btnCloseFinishModal) {
+        btnCloseFinishModal.addEventListener('click', () => {
+            finishTaskModal.classList.add('hidden');
+        });
+    }
+    if (btnCancelFinishModal) {
+        btnCancelFinishModal.addEventListener('click', () => {
+            finishTaskModal.classList.add('hidden');
+        });
+    }
+
+    // Close Dependency Wizard Modal
+    document.querySelectorAll('.btn-close-dep').forEach(el => {
+        el.addEventListener('click', () => {
+            if (dependencyModal) dependencyModal.classList.add('hidden');
+        });
+    });
+
+    // Handle "Pending for Dependency" Button Click
+    if (btnPendingDependency) {
+        btnPendingDependency.addEventListener('click', () => {
+            if (!currentUser) return;
+            const owner = currentUser.name;
+
+            // Find all active running or pending tasks of the user
+            const activeTasks = allTasks.filter(t => t.owner.toLowerCase() === owner.toLowerCase() && (t.status === "In Progress" || t.status === "Pending"));
+
+            if (activeTasks.length === 0) {
+                showToast("No active running or pending tasks to set to pending.", "warning");
+                return;
+            }
+
+            // Reset text input
+            if (dependencyReasonInput) dependencyReasonInput.value = '';
+
+            if (activeTasks.length === 1) {
+                // Exactly one active task. Skip selection step, go straight to reason input
+                selectedDependencyTaskId = activeTasks[0].id;
+                selectedDependencyTaskDesc = activeTasks[0].description;
+                
+                if (dependencyStepSelect) dependencyStepSelect.classList.add('hidden');
+                if (dependencyStepInput) {
+                    dependencyStepInput.classList.remove('hidden');
+                    dependencyTaskPreview.textContent = `Task: "${selectedDependencyTaskDesc}"`;
+                }
+            } else {
+                // Multiple tasks. Show selection list step
+                if (dependencyStepInput) dependencyStepInput.classList.add('hidden');
+                if (dependencyStepSelect) {
+                    dependencyStepSelect.classList.remove('hidden');
+                    if (dependencyTasksList) {
+                        dependencyTasksList.innerHTML = '';
+                        activeTasks.forEach(task => {
+                            const btn = document.createElement('button');
+                            btn.className = 'finish-task-option-btn';
+                            btn.type = 'button';
+                            
+                            const timeInfo = task.start_time ? `Started: ${task.start_time.split(' ')[1] || task.start_time}` : '';
+                            btn.innerHTML = `
+                                <span style="font-weight: 600; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 300px;">
+                                    ${task.description}
+                                </span>
+                                <span class="task-time">${timeInfo}</span>
+                            `;
+                            
+                            btn.addEventListener('click', () => {
+                                selectedDependencyTaskId = task.id;
+                                selectedDependencyTaskDesc = task.description;
+                                dependencyStepSelect.classList.add('hidden');
+                                dependencyStepInput.classList.remove('hidden');
+                                dependencyTaskPreview.textContent = `Task: "${task.description}"`;
+                                dependencyReasonInput.focus();
+                            });
+                            
+                            dependencyTasksList.appendChild(btn);
+                        });
+                    }
+                }
+            }
+
+            if (dependencyModal) dependencyModal.classList.remove('hidden');
+        });
+    }
+
+    // Handle Dependency Wizard Submit
+    if (btnSubmitDependency) {
+        btnSubmitDependency.addEventListener('click', async () => {
+            const reason = dependencyReasonInput.value.trim();
+            if (!reason) {
+                showToast("Please describe the dependency block.", "warning");
+                dependencyReasonInput.focus();
+                return;
+            }
+
+            if (!selectedDependencyTaskId) return;
+
+            try {
+                showToast("Setting task to pending for dependency...", "info");
+                const response = await fetch(`${API_BASE}/tasks/${selectedDependencyTaskId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: "Pending",
+                        pending_reason: reason
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.status === 423) {
+                    showToast(data.message, 'warning');
+                    return;
+                }
+
+                if (response.ok) {
+                    showToast(`Task ${selectedDependencyTaskId} is now set to Pending.`, "success");
+                    if (dependencyModal) dependencyModal.classList.add('hidden');
+                    fetchTasks();
+                } else {
+                    showToast(data.message || 'Failed to update task status.', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating dependency status:', error);
+                showToast('Connection error updating task status.', 'error');
+            }
+        });
+    }
+
+    // Handle "Escalation" Button Click
+    if (btnEscalateTask) {
+        btnEscalateTask.addEventListener('click', () => {
+            if (!currentUser) return;
+            const owner = currentUser.name;
+
+            // Find all active running or pending tasks of the user
+            const activeTasks = allTasks.filter(t => t.owner.toLowerCase() === owner.toLowerCase() && (t.status === "In Progress" || t.status === "Pending"));
+
+            if (activeTasks.length === 0) {
+                showToast("No active running or pending tasks to escalate.", "warning");
+                return;
+            }
+
+            // Populate the dropdown with other engineers
+            if (escalationRecipientSelect) {
+                escalationRecipientSelect.innerHTML = '';
+                
+                // Get all users from the user list, plus default owners
+                // We'll deduplicate by name, excluding current user
+                const uniqueEngineers = new Set();
+                
+                // Add registered users
+                allUsers.forEach(u => {
+                    if (u.name && u.name.toLowerCase() !== owner.toLowerCase() && u.name.toLowerCase() !== 'system administrator') {
+                        uniqueEngineers.add(u.name);
+                    }
+                });
+
+                // Add roster members
+                allRoster.forEach(r => {
+                    if (r.owner && r.owner.toLowerCase() !== owner.toLowerCase() && r.owner.toLowerCase() !== 'system administrator') {
+                        uniqueEngineers.add(r.owner);
+                    }
+                });
+
+                // Sort names
+                const sortedEngineers = Array.from(uniqueEngineers).sort();
+                
+                if (sortedEngineers.length === 0) {
+                    showToast("No other engineers available to escalate to.", "warning");
+                    return;
+                }
+
+                sortedEngineers.forEach(engName => {
+                    const opt = document.createElement('option');
+                    opt.value = engName;
+                    opt.textContent = engName;
+                    escalationRecipientSelect.appendChild(opt);
+                });
+            }
+
+            // Reset text input
+            if (escalationReasonInput) escalationReasonInput.value = '';
+
+            if (activeTasks.length === 1) {
+                // Exactly one active task. Skip selection step, go straight to reason/recipient input
+                selectedEscalationTaskId = activeTasks[0].id;
+                selectedEscalationTaskDesc = activeTasks[0].description;
+                
+                if (escalationStepSelect) escalationStepSelect.classList.add('hidden');
+                if (escalationStepInput) {
+                    escalationStepInput.classList.remove('hidden');
+                    escalationTaskPreview.textContent = `Task: "${selectedEscalationTaskDesc}"`;
+                }
+            } else {
+                // Multiple tasks. Show selection list step
+                if (escalationStepInput) escalationStepInput.classList.add('hidden');
+                if (escalationStepSelect) {
+                    escalationStepSelect.classList.remove('hidden');
+                    if (escalationTasksList) {
+                        escalationTasksList.innerHTML = '';
+                        activeTasks.forEach(task => {
+                            const btn = document.createElement('button');
+                            btn.className = 'finish-task-option-btn';
+                            btn.type = 'button';
+                            
+                            const timeInfo = task.start_time ? `Started: ${task.start_time.split(' ')[1] || task.start_time}` : '';
+                            btn.innerHTML = `
+                                <span style="font-weight: 600; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 300px;">
+                                    ${task.description}
+                                </span>
+                                <span class="task-time">${timeInfo}</span>
+                            `;
+                            
+                            btn.addEventListener('click', () => {
+                                selectedEscalationTaskId = task.id;
+                                selectedEscalationTaskDesc = task.description;
+                                escalationStepSelect.classList.add('hidden');
+                                escalationStepInput.classList.remove('hidden');
+                                escalationTaskPreview.textContent = `Task: "${task.description}"`;
+                                if (escalationReasonInput) escalationReasonInput.focus();
+                            });
+                            
+                            escalationTasksList.appendChild(btn);
+                        });
+                    }
+                }
+            }
+
+            if (escalationModal) escalationModal.classList.remove('hidden');
+        });
+    }
+
+    // Close buttons for Escalation Modal
+    document.querySelectorAll('.btn-close-esc').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (escalationModal) escalationModal.classList.add('hidden');
+        });
+    });
+
+    if (escalationModal) {
+        escalationModal.addEventListener('click', (e) => {
+            if (e.target === escalationModal) {
+                escalationModal.classList.add('hidden');
+            }
+        });
+    }
+
+    // Handle Escalation Modal Submit
+    if (btnSubmitEscalation) {
+        btnSubmitEscalation.addEventListener('click', async () => {
+            const recipient = escalationRecipientSelect.value;
+            const reason = escalationReasonInput.value.trim();
+            
+            if (!recipient) {
+                showToast("Please select an engineer to escalate to.", "warning");
+                return;
+            }
+            if (!reason) {
+                showToast("Please describe the reason for escalation.", "warning");
+                escalationReasonInput.focus();
+                return;
+            }
+
+            if (!selectedEscalationTaskId) return;
+
+            const task = allTasks.find(t => t.id === selectedEscalationTaskId);
+            if (!task) return;
+
+            // Generate escalation entry format
+            const now = new Date();
+            const dateStr = now.getFullYear() + '-' + 
+                            String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                            String(now.getDate()).padStart(2, '0') + ' ' + 
+                            String(now.getHours()).padStart(2, '0') + ':' + 
+                            String(now.getMinutes()).padStart(2, '0');
+            
+            const logLine = `[Escalated by ${task.owner} to ${recipient} at ${dateStr}: ${reason}]`;
+            const newEscalationHistory = task.escalation_history ? task.escalation_history + '\n' + logLine : logLine;
+
+            try {
+                showToast("Escalating task to " + recipient + "...", "info");
+                const response = await fetch(`${API_BASE}/tasks/${selectedEscalationTaskId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        owner: recipient,
+                        status: "In Progress",  // Keep/make it active under new owner
+                        pending_reason: "",     // Clear any pending reason if it was pending
+                        escalation_history: newEscalationHistory
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.status === 423) {
+                    showToast(data.message, 'warning');
+                    return;
+                }
+
+                if (response.ok) {
+                    showToast(`Task ${selectedEscalationTaskId} successfully escalated to ${recipient}.`, "success");
+                    if (escalationModal) escalationModal.classList.add('hidden');
+                    fetchTasks();
+                } else {
+                    showToast(data.message || 'Failed to escalate task.', 'error');
+                }
+            } catch (error) {
+                console.error('Error escalating task:', error);
+                showToast('Connection error during task escalation.', 'error');
+            }
+        });
+    }
+
+    // Save Roster Changes to Excel (Admin)
+    if (btnSaveRosterChanges) {
+        btnSaveRosterChanges.addEventListener('click', async () => {
+            const container = document.getElementById('rosterTableContainer');
+            if (!container) return;
+
+            const selects = container.querySelectorAll('.roster-select');
+            const updates = [];
+            selects.forEach(sel => {
+                updates.push({
+                    owner: sel.getAttribute('data-owner'),
+                    date: sel.getAttribute('data-date'),
+                    code: sel.value
+                });
+            });
+
+            if (updates.length === 0) {
+                showToast("No roster entries found to save.", "warning");
+                return;
+            }
+
+            try {
+                showToast("Saving roster shifts to Excel...", "info");
+                const response = await fetch(`${API_BASE}/roster/batch-update`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ updates })
+                });
+                const data = await response.json();
+
+                if (response.status === 423) {
+                    showToast(data.message, 'warning');
+                    return;
+                }
+
+                if (response.ok) {
+                    showToast("Roster shifts saved successfully to Excel.", "success");
+                    
+                    // Reset save button style (remove unsaved indicator)
+                    btnSaveRosterChanges.style.border = '1px solid transparent';
+                    btnSaveRosterChanges.style.boxShadow = '0 4px 10px rgba(16, 185, 129, 0.2)';
+                    
+                    // Re-fetch all data to ensure dashboard sidebar and views are synchronized
+                    try {
+                        const responseRoster = await fetch(`${API_BASE}/roster`);
+                        if (responseRoster.ok) {
+                            allRoster = await responseRoster.json();
+                        }
+                    } catch (rosterErr) {
+                        console.error('Error fetching roster after batch update:', rosterErr);
+                    }
+                    
+                    fetchTasks(); // Reloads dashboard and runs renderEngineersStatus
+                    renderRosterGrid(); // Refresh grid view
+                } else {
+                    showToast(data.message || 'Failed to save roster shifts.', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving roster batch:', error);
+                showToast('Connection error saving roster updates.', 'error');
+            }
+        });
+    }
+
+    // Handle Roster Excel Upload inside Roster Modal
+    if (rosterModalUploadForm) {
+        rosterModalUploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!rosterModalFileInput.files || rosterModalFileInput.files.length === 0) {
+                showToast("Please select an Excel roster file first.", "warning");
+                return;
+            }
+
+            const file = rosterModalFileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                showToast("Uploading and syncing roster file...", "info");
+                const response = await fetch(`${API_BASE}/users/import`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (response.status === 423) {
+                    showToast(data.message, 'warning');
+                    return;
+                }
+
+                if (response.ok) {
+                    let msg = `Roster Synced! Registered ${data.imported_count} new users`;
+                    if (data.imported_shifts_count > 0) {
+                        msg += ` and updated ${data.imported_shifts_count} scheduled duty shifts.`;
+                    } else {
+                        msg += `.`;
+                    }
+                    showToast(msg, 'success');
+                    rosterModalUploadForm.reset();
+                    
+                    // Fetch updated roster
+                    try {
+                        const rosterResponse = await fetch(`${API_BASE}/roster`);
+                        if (rosterResponse.ok) {
+                            allRoster = await rosterResponse.json();
+                            renderRosterGrid();
+                        }
+                    } catch (rosterErr) {
+                        console.error('Error fetching roster after upload:', rosterErr);
+                    }
+                    
+                    fetchUsers();
+                    fetchTasks();
+                } else {
+                    showToast(data.message || 'Failed to import roster.', 'error');
+                }
+            } catch (error) {
+                console.error('Error importing roster:', error);
+                showToast('Connection error uploading roster spreadsheet.', 'error');
+            }
+        });
+    }
+
+    // Retrieve users list
+    async function fetchUsers() {
+        try {
+            const usernameParam = currentUser ? encodeURIComponent(currentUser.username) : '';
+            const response = await fetch(`${API_BASE}/users?username=${usernameParam}`);
+            if (!response.ok) throw new Error('Failed to load users list.');
+            const users = await response.json();
+            
+            adminUsersTableBody.innerHTML = '';
+            users.forEach(user => {
+                const tr = document.createElement('tr');
+                
+                // Don't show delete button for master admin
+                const isMasterAdmin = user.username.toLowerCase() === 'admin';
+                const actionBtn = isMasterAdmin ? 
+                    `<span style="color: var(--text-muted); font-size: 0.8rem; font-style: italic;">Protected</span>` :
+                    `<button class="btn-user-delete" title="Delete User" data-username="${user.username}">
+                        <i data-lucide="trash-2" style="width: 15px; height: 15px;"></i>
+                     </button>`;
+
+                // Check online status
+                const statusBadge = user.is_online ?
+                    `<span class="user-status-pill online"><span class="status-indicator-dot pulse"></span>Online</span>` :
+                    `<span class="user-status-pill offline"><span class="status-indicator-dot"></span>Offline</span>`;
+
+                tr.innerHTML = `
+                    <td><strong>${user.username}</strong></td>
+                    <td>${user.name}</td>
+                    <td><span style="font-size: 0.75rem; text-transform: uppercase; color: ${user.role === 'admin' ? '#c084fc' : 'var(--text-muted)'}; font-weight: 600;">${user.role}</span></td>
+                    <td>${statusBadge}</td>
+                    <td>${actionBtn}</td>
+                `;
+                adminUsersTableBody.appendChild(tr);
+            });
+            
+            // Bind delete events
+            document.querySelectorAll('.btn-user-delete').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const username = e.currentTarget.getAttribute('data-username');
+                    deleteUser(username);
+                });
+            });
+            
+            if (window.lucide) window.lucide.createIcons();
+        } catch (error) {
+            console.error('Error fetching users:', error);
+            showToast('Failed to load registered users from Excel.', 'error');
+        }
+    }
+
+    // Fetch and render shifts schedule mapping config
+    async function fetchShifts() {
+        if (!shiftsConfigContainer) return;
+        try {
+            const response = await fetch(`${API_BASE}/shifts`);
+            if (!response.ok) throw new Error('Failed to load shifts list.');
+            const shifts = await response.json();
+            
+            shiftsConfigContainer.innerHTML = '';
+            
+            // Sort keys to maintain a clean list order
+            const sortedCodes = Object.keys(shifts).sort();
+            sortedCodes.forEach(code => {
+                const details = shifts[code];
+                const row = document.createElement('div');
+                row.className = 'shift-config-row';
+                row.style.display = 'grid';
+                row.style.gridTemplateColumns = '50px 1.2fr 1fr 1fr 20px';
+                row.style.gap = '0.5rem';
+                row.style.alignItems = 'center';
+                row.style.background = 'rgba(30, 41, 59, 0.4)';
+                row.style.padding = '0.4rem 0.5rem';
+                row.style.borderRadius = 'var(--radius-sm)';
+                row.style.border = '1px solid var(--border-color)';
+                
+                row.innerHTML = `
+                    <span class="shift-code-span" style="font-weight: 700; color: #38bdf8; font-size: 0.85rem; text-align: center;">${code}</span>
+                    <input type="text" class="shift-name-input" data-code="${code}" value="${details.name || ''}" placeholder="Shift Name" style="padding: 0.35rem; font-size: 0.8rem; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); color: #f1f5f9; border-radius: var(--radius-sm); outline: none;">
+                    <input type="time" class="shift-start-input" data-code="${code}" value="${details.start || ''}" style="padding: 0.35rem; font-size: 0.8rem; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); color: #f1f5f9; border-radius: var(--radius-sm); outline: none;">
+                    <input type="time" class="shift-end-input" data-code="${code}" value="${details.end || ''}" style="padding: 0.35rem; font-size: 0.8rem; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); color: #f1f5f9; border-radius: var(--radius-sm); outline: none;">
+                    <button type="button" class="btn-delete-shift" data-code="${code}" style="background: transparent; color: #ef4444; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; opacity: 0.8; transition: opacity 0.2s;">
+                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                    </button>
+                `;
+                shiftsConfigContainer.appendChild(row);
+            });
+            
+            // Bind delete event listeners
+            shiftsConfigContainer.querySelectorAll('.btn-delete-shift').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const row = e.currentTarget.closest('.shift-config-row');
+                    if (row) row.remove();
+                });
+                // Hover effect
+                btn.addEventListener('mouseenter', () => btn.style.opacity = '1');
+                btn.addEventListener('mouseleave', () => btn.style.opacity = '0.8');
+            });
+            
+            if (window.lucide) window.lucide.createIcons();
+        } catch (error) {
+            console.error('Error fetching shifts:', error);
+            showToast('Failed to load roster shift configuration.', 'error');
+        }
+    }
+
+    // Add shift row button click handler
+    if (btnAddShiftRow) {
+        btnAddShiftRow.addEventListener('click', () => {
+            if (!shiftsConfigContainer) return;
+            const row = document.createElement('div');
+            row.className = 'shift-config-row new-shift-row';
+            row.style.display = 'grid';
+            row.style.gridTemplateColumns = '50px 1.2fr 1fr 1fr 20px';
+            row.style.gap = '0.5rem';
+            row.style.alignItems = 'center';
+            row.style.background = 'rgba(56, 189, 248, 0.05)';
+            row.style.padding = '0.4rem 0.5rem';
+            row.style.borderRadius = 'var(--radius-sm)';
+            row.style.border = '1px dashed #38bdf8';
+            
+            row.innerHTML = `
+                <input type="text" class="new-shift-code" placeholder="Code" style="padding: 0.35rem; font-size: 0.8rem; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); color: #f1f5f9; border-radius: var(--radius-sm); outline: none; font-weight: 700; text-align: center; text-transform: uppercase;">
+                <input type="text" class="new-shift-name" placeholder="Shift Name" style="padding: 0.35rem; font-size: 0.8rem; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); color: #f1f5f9; border-radius: var(--radius-sm); outline: none;">
+                <input type="time" class="new-shift-start" style="padding: 0.35rem; font-size: 0.8rem; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); color: #f1f5f9; border-radius: var(--radius-sm); outline: none;">
+                <input type="time" class="new-shift-end" style="padding: 0.35rem; font-size: 0.8rem; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); color: #f1f5f9; border-radius: var(--radius-sm); outline: none;">
+                <button type="button" class="btn-remove-new-row" style="background: transparent; color: #64748b; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;">
+                    <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+                </button>
+            `;
+            shiftsConfigContainer.appendChild(row);
+            
+            // Bind remove listener for new row
+            row.querySelector('.btn-remove-new-row').addEventListener('click', () => {
+                row.remove();
+            });
+            
+            if (window.lucide) window.lucide.createIcons();
+            
+            // Scroll container to bottom to show new row
+            shiftsConfigContainer.scrollTop = shiftsConfigContainer.scrollHeight;
+        });
+    }
+
+    // Save shift timings config click handler
+    if (btnSaveShiftsConfig) {
+        btnSaveShiftsConfig.addEventListener('click', async () => {
+            if (!shiftsConfigContainer) return;
+            const payload = {};
+            let hasValidationErrors = false;
+            
+            // 1. Gather existing rows
+            shiftsConfigContainer.querySelectorAll('.shift-config-row:not(.new-shift-row)').forEach(row => {
+                const span = row.querySelector('.shift-code-span');
+                if (!span) return;
+                const code = span.textContent.trim().toUpperCase();
+                const name = row.querySelector('.shift-name-input').value.trim();
+                const start = row.querySelector('.shift-start-input').value;
+                const end = row.querySelector('.shift-end-input').value;
+                
+                if (!name || !start || !end) {
+                    hasValidationErrors = true;
+                    return;
+                }
+                payload[code] = { name, start, end };
+            });
+            
+            // 2. Gather new rows
+            shiftsConfigContainer.querySelectorAll('.new-shift-row').forEach(row => {
+                const codeInput = row.querySelector('.new-shift-code');
+                const nameInput = row.querySelector('.new-shift-name');
+                const startInput = row.querySelector('.new-shift-start');
+                const endInput = row.querySelector('.new-shift-end');
+                
+                if (!codeInput || !nameInput || !startInput || !endInput) return;
+                const code = codeInput.value.trim().toUpperCase();
+                const name = nameInput.value.trim();
+                const start = startInput.value;
+                const end = endInput.value;
+                
+                if (!code || !name || !start || !end) {
+                    hasValidationErrors = true;
+                    return;
+                }
+                payload[code] = { name, start, end };
+            });
+            
+            if (hasValidationErrors) {
+                showToast("Please fill all fields for each shift configuration.", "warning");
+                return;
+            }
+            
+            try {
+                showToast("Saving shift timings to Excel...", "info");
+                const response = await fetch(`${API_BASE}/shifts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (response.status === 423) {
+                    showToast(data.message, 'warning');
+                    return;
+                }
+                
+                if (response.ok) {
+                    showToast('Shift timings successfully saved and synced to Excel.', 'success');
+                    fetchShifts();
+                    // If roster grid view is open, refresh it
+                    if (rosterModal && !rosterModal.classList.contains('hidden')) {
+                        renderRosterGrid();
+                    }
+                } else {
+                    throw new Error(data.message || 'Failed to save shifts.');
+                }
+            } catch (error) {
+                console.error('Error saving shifts:', error);
+                showToast('Error saving shift timings: ' + error.message, 'error');
+            }
+        });
+    }
+
+    // Render Quick Links on User Dashboard
+    function renderQuickLinks() {
+        if (!quickLinksContainer) return;
+        quickLinksContainer.innerHTML = '';
+        
+        if (allQuickLinks.length === 0) {
+            quickLinksContainer.innerHTML = `
+                <div style="color: var(--text-muted); font-size: 0.8rem; padding: 0.5rem 0;">
+                    No portal links configured.
+                </div>
+            `;
+            return;
+        }
+        
+        // Group links by category (delimited by ">")
+        const groupedLinks = [];
+        const categoriesMap = {};
+        
+        allQuickLinks.forEach(link => {
+            if (link.name.includes('>')) {
+                const parts = link.name.split('>');
+                const category = parts[0].trim();
+                const subName = parts[1].trim();
+                
+                if (!categoriesMap[category]) {
+                    categoriesMap[category] = [];
+                    groupedLinks.push({ isGroup: true, name: category, items: categoriesMap[category] });
+                }
+                categoriesMap[category].push({ name: subName, url: link.url });
+            } else {
+                groupedLinks.push({ isGroup: false, name: link.name, url: link.url });
+            }
+        });
+        
+        groupedLinks.forEach(item => {
+            if (item.isGroup) {
+                // Render category dropdown group
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'quick-link-group-container';
+                groupDiv.style.position = 'relative';
+                groupDiv.style.display = 'inline-block';
+                
+                const header = document.createElement('button');
+                header.type = 'button';
+                header.className = 'quick-link-btn';
+                header.style.display = 'flex';
+                header.style.alignItems = 'center';
+                header.style.gap = '0.35rem';
+                header.style.padding = '0.4rem 0.75rem';
+                header.style.borderRadius = 'var(--radius-sm)';
+                header.style.fontSize = '0.8rem';
+                header.style.fontWeight = '600';
+                header.style.cursor = 'pointer';
+                
+                header.innerHTML = `
+                    <i data-lucide="folder" style="width: 13px; height: 13px; color: #fbbf24;"></i>
+                    <span>${item.name}</span>
+                    <i class="group-chevron" data-lucide="chevron-down" style="width: 12px; height: 12px; color: var(--text-muted); transition: transform 0.2s;"></i>
+                `;
+                
+                const subItemsDiv = document.createElement('div');
+                subItemsDiv.className = 'quick-link-subitems';
+                subItemsDiv.style.display = 'none'; // Initially hidden
+                subItemsDiv.style.position = 'absolute';
+                subItemsDiv.style.top = 'calc(100% + 5px)';
+                subItemsDiv.style.left = '0';
+                subItemsDiv.style.zIndex = '100';
+                subItemsDiv.style.minWidth = '290px';
+                subItemsDiv.style.maxWidth = '380px';
+                subItemsDiv.style.background = 'var(--bg-header)'; // solid theme background
+                subItemsDiv.style.border = '1px solid var(--border-color)';
+                subItemsDiv.style.borderRadius = 'var(--radius-sm)';
+                subItemsDiv.style.padding = '0.4rem';
+                subItemsDiv.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.3)';
+                subItemsDiv.style.flexDirection = 'column';
+                subItemsDiv.style.gap = '0.25rem';
+                
+                item.items.forEach(sub => {
+                    const subA = document.createElement('a');
+                    subA.href = sub.url;
+                    subA.target = '_blank';
+                    subA.rel = 'noopener noreferrer';
+                    subA.style.display = 'flex';
+                    subA.style.alignItems = 'center';
+                    subA.style.justifyContent = 'space-between';
+                    subA.style.padding = '0.45rem 0.65rem';
+                    subA.style.borderRadius = 'var(--radius-sm)';
+                    subA.style.color = 'var(--text-main)';
+                    subA.style.textDecoration = 'none';
+                    subA.style.fontSize = '0.78rem';
+                    subA.style.fontWeight = '500';
+                    subA.style.transition = 'var(--transition-fast)';
+                    
+                    subA.innerHTML = `
+                        <span style="display: inline-flex; align-items: center; gap: 0.45rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            <i data-lucide="file-spreadsheet" style="width: 13px; height: 13px; color: #10b981; flex-shrink: 0;"></i>
+                            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${sub.name}</span>
+                        </span>
+                        <i data-lucide="external-link" style="width: 11px; height: 11px; opacity: 0.6; flex-shrink: 0; margin-left: 0.5rem;"></i>
+                    `;
+                    
+                    subA.addEventListener('mouseenter', () => {
+                        subA.style.background = 'rgba(56, 189, 248, 0.08)';
+                        subA.style.color = '#38bdf8';
+                    });
+                    subA.addEventListener('mouseleave', () => {
+                        subA.style.background = 'transparent';
+                        subA.style.color = 'var(--text-main)';
+                    });
+                    subItemsDiv.appendChild(subA);
+                });
+                
+                let autoCloseTimeout = null;
+
+                function startAutoCloseTimer() {
+                    if (autoCloseTimeout) clearTimeout(autoCloseTimeout);
+                    autoCloseTimeout = setTimeout(() => {
+                        subItemsDiv.style.display = 'none';
+                        const chev = header.querySelector('.group-chevron');
+                        if (chev) chev.style.transform = 'rotate(0deg)';
+                        header.style.background = 'rgba(255, 255, 255, 0.03)';
+                        header.style.borderColor = 'var(--border-color)';
+                    }, 10000);
+                }
+
+                function stopAutoCloseTimer() {
+                    if (autoCloseTimeout) clearTimeout(autoCloseTimeout);
+                }
+
+                header.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Close other submenus
+                    document.querySelectorAll('.quick-link-subitems').forEach(el => {
+                        if (el !== subItemsDiv) {
+                            el.style.display = 'none';
+                            const pHeader = el.previousElementSibling;
+                            if (pHeader) {
+                                const pChevron = pHeader.querySelector('.group-chevron');
+                                if (pChevron) pChevron.style.transform = 'rotate(0deg)';
+                                pHeader.style.background = 'rgba(255, 255, 255, 0.03)';
+                                pHeader.style.borderColor = 'var(--border-color)';
+                            }
+                        }
+                    });
+
+                    const isHidden = subItemsDiv.style.display === 'none';
+                    if (isHidden) {
+                        subItemsDiv.style.display = 'flex';
+                        header.querySelector('.group-chevron').style.transform = 'rotate(180deg)';
+                        header.style.background = 'rgba(255, 255, 255, 0.07)';
+                        header.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                        startAutoCloseTimer();
+                    } else {
+                        subItemsDiv.style.display = 'none';
+                        header.querySelector('.group-chevron').style.transform = 'rotate(0deg)';
+                        header.style.background = 'rgba(255, 255, 255, 0.03)';
+                        header.style.borderColor = 'var(--border-color)';
+                        stopAutoCloseTimer();
+                    }
+                });
+
+                // Keep open when hover on dropdown items, reset timer on leave
+                subItemsDiv.addEventListener('mouseenter', () => {
+                    stopAutoCloseTimer();
+                });
+                subItemsDiv.addEventListener('mouseleave', () => {
+                    startAutoCloseTimer();
+                });
+
+                // Global click to close popovers
+                document.addEventListener('click', () => {
+                    subItemsDiv.style.display = 'none';
+                    const chev = header.querySelector('.group-chevron');
+                    if (chev) chev.style.transform = 'rotate(0deg)';
+                    header.style.background = 'rgba(255, 255, 255, 0.03)';
+                    header.style.borderColor = 'var(--border-color)';
+                    stopAutoCloseTimer();
+                });
+                
+                header.addEventListener('mouseenter', () => {
+                    if (subItemsDiv.style.display === 'none') {
+                        header.style.background = 'rgba(255, 255, 255, 0.05)';
+                    }
+                });
+                header.addEventListener('mouseleave', () => {
+                    if (subItemsDiv.style.display === 'none') {
+                        header.style.background = 'rgba(255, 255, 255, 0.03)';
+                    }
+                });
+                
+                groupDiv.appendChild(header);
+                groupDiv.appendChild(subItemsDiv);
+                quickLinksContainer.appendChild(groupDiv);
+            } else {
+                // Render direct link item
+                const a = document.createElement('a');
+                a.href = item.url;
+                a.target = '_blank';
+                a.rel = 'noopener noreferrer';
+                a.className = 'quick-link-btn';
+                a.style.display = 'flex';
+                a.style.alignItems = 'center';
+                a.style.gap = '0.35rem';
+                a.style.padding = '0.4rem 0.75rem';
+                a.style.borderRadius = 'var(--radius-sm)';
+                a.style.textDecoration = 'none';
+                a.style.fontSize = '0.8rem';
+                a.style.fontWeight = '500';
+                a.style.transition = 'var(--transition-fast)';
+                
+                a.addEventListener('mouseenter', () => {
+                    a.style.background = 'rgba(56, 189, 248, 0.08)';
+                    a.style.borderColor = 'rgba(56, 189, 248, 0.3)';
+                    a.style.transform = 'translateY(-1px)';
+                });
+                a.addEventListener('mouseleave', () => {
+                    a.style.background = '';
+                    a.style.borderColor = '';
+                    a.style.transform = 'none';
+                });
+                
+                a.innerHTML = `
+                    <span style="width: 5px; height: 5px; background-color: #38bdf8; border-radius: 50%;"></span>
+                    <span>${item.name}</span>
+                `;
+                quickLinksContainer.appendChild(a);
+            }
+        });
+        
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    // Render Quick Links config panel inside Admin Console
+    function renderQuickLinksConfig() {
+        if (!quickLinksConfigContainer) return;
+        quickLinksConfigContainer.innerHTML = '';
+        
+        allQuickLinks.forEach((link, idx) => {
+            const row = document.createElement('div');
+            row.className = 'link-config-row';
+            row.style.display = 'grid';
+            row.style.gridTemplateColumns = '1fr 2.5fr 20px';
+            row.style.gap = '0.5rem';
+            row.style.alignItems = 'center';
+            row.style.background = 'rgba(30, 41, 59, 0.4)';
+            row.style.padding = '0.4rem 0.5rem';
+            row.style.borderRadius = 'var(--radius-sm)';
+            row.style.border = '1px solid var(--border-color)';
+            
+            row.innerHTML = `
+                <input type="text" class="link-name-input" value="${link.name}" placeholder="Name (e.g. IPAM)" style="padding: 0.35rem; font-size: 0.8rem; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); color: #f1f5f9; border-radius: var(--radius-sm); outline: none; font-weight: 600;">
+                <input type="url" class="link-url-input" value="${link.url}" placeholder="URL Link (http://...)" style="padding: 0.35rem; font-size: 0.8rem; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); color: #f1f5f9; border-radius: var(--radius-sm); outline: none;">
+                <button type="button" class="btn-delete-link" style="background: transparent; color: #ef4444; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; opacity: 0.8;">
+                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                </button>
+            `;
+            quickLinksConfigContainer.appendChild(row);
+        });
+        
+        // Bind delete listeners
+        quickLinksConfigContainer.querySelectorAll('.btn-delete-link').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.currentTarget.closest('.link-config-row').remove();
+            });
+        });
+        
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    // Add Link Row click handler
+    if (btnAddLinkRow) {
+        btnAddLinkRow.addEventListener('click', () => {
+            if (!quickLinksConfigContainer) return;
+            const row = document.createElement('div');
+            row.className = 'link-config-row new-link-row';
+            row.style.display = 'grid';
+            row.style.gridTemplateColumns = '1fr 2.5fr 20px';
+            row.style.gap = '0.5rem';
+            row.style.alignItems = 'center';
+            row.style.background = 'rgba(56, 189, 248, 0.05)';
+            row.style.padding = '0.4rem 0.5rem';
+            row.style.borderRadius = 'var(--radius-sm)';
+            row.style.border = '1px dashed #38bdf8';
+            
+            row.innerHTML = `
+                <input type="text" class="link-name-input" placeholder="Portal Name" style="padding: 0.35rem; font-size: 0.8rem; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); color: #f1f5f9; border-radius: var(--radius-sm); outline: none; font-weight: 600;">
+                <input type="url" class="link-url-input" placeholder="http://..." style="padding: 0.35rem; font-size: 0.8rem; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); color: #f1f5f9; border-radius: var(--radius-sm); outline: none;">
+                <button type="button" class="btn-remove-new-link" style="background: transparent; color: #64748b; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;">
+                    <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+                </button>
+            `;
+            quickLinksConfigContainer.appendChild(row);
+            
+            row.querySelector('.btn-remove-new-link').addEventListener('click', () => {
+                row.remove();
+            });
+            
+            if (window.lucide) window.lucide.createIcons();
+            quickLinksConfigContainer.scrollTop = quickLinksConfigContainer.scrollHeight;
+        });
+    }
+
+    // Save Links config handler
+    if (btnSaveLinksConfig) {
+        btnSaveLinksConfig.addEventListener('click', async () => {
+            if (!quickLinksConfigContainer) return;
+            const links = [];
+            let hasValidationErrors = false;
+            
+            quickLinksConfigContainer.querySelectorAll('.link-config-row').forEach(row => {
+                const nameInput = row.querySelector('.link-name-input');
+                const urlInput = row.querySelector('.link-url-input');
+                if (!nameInput || !urlInput) return;
+                
+                const name = nameInput.value.trim();
+                const url = urlInput.value.trim();
+                
+                if (!name || !url) {
+                    hasValidationErrors = true;
+                    return;
+                }
+                links.push({ name, url });
+            });
+            
+            if (hasValidationErrors) {
+                showToast("Please fill in both Name and URL for all link entries.", "warning");
+                return;
+            }
+            
+            try {
+                showToast("Saving portal quick links to Excel...", "info");
+                const response = await fetch(`${API_BASE}/quicklinks`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ links })
+                });
+                
+                const data = await response.json();
+                
+                if (response.status === 423) {
+                    showToast(data.message, 'warning');
+                    return;
+                }
+                
+                if (response.ok) {
+                    showToast('Quick links successfully saved and updated.', 'success');
+                    allQuickLinks = links;
+                    renderQuickLinks();
+                    renderQuickLinksConfig();
+                } else {
+                    throw new Error(data.message || 'Failed to save quick links.');
+                }
+            } catch (error) {
+                console.error('Error saving quick links:', error);
+                showToast('Error saving quick links: ' + error.message, 'error');
+            }
+        });
+    }
+
+    // Create a new user ID (Admin)
+    createUserForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = newUsernameInput.value.trim();
+        const name = newFullNameInput.value.trim();
+        const password = newPasswordInput.value;
+
+        try {
+            const response = await fetch(`${API_BASE}/users`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, name, password })
+            });
+            const data = await response.json();
+
+            if (response.status === 423) {
+                showToast(data.message, 'warning');
+                return;
+            }
+
+            if (response.ok) {
+                showToast(`User ID "${username}" created successfully and saved in Excel database.`, 'success');
+                createUserForm.reset();
+                fetchUsers();
+            } else {
+                showToast(`Failed to create user: ${data.message}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error creating user:', error);
+            showToast('Server error creating user.', 'error');
+        }
+    });
+
+    // Import Roster Spreadsheet (Admin)
+    importRosterForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        if (!rosterFileInput.files || rosterFileInput.files.length === 0) {
+            showToast("Please select an Excel roster file first.", "warning");
+            return;
+        }
+
+        const file = rosterFileInput.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            showToast("Uploading and syncing roster file...", "info");
+            const response = await fetch(`${API_BASE}/users/import`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            if (response.status === 423) {
+                showToast(data.message, 'warning');
+                return;
+            }
+
+            if (response.ok) {
+                let msg = `Roster Synced! Registered ${data.imported_count} new users`;
+                if (data.imported_shifts_count > 0) {
+                    msg += ` and added ${data.imported_shifts_count} scheduled duty shifts.`;
+                } else {
+                    msg += `.`;
+                }
+                showToast(msg, 'success');
+                importRosterForm.reset();
+                fetchUsers();
+                fetchTasks();
+            } else {
+                showToast(data.message || 'Failed to import roster.', 'error');
+            }
+        } catch (error) {
+            console.error('Error importing roster:', error);
+            showToast('Connection error uploading roster spreadsheet.', 'error');
+        }
+    });
+
+    // Delete a user ID (Admin)
+    async function deleteUser(username) {
+        if (!confirm(`Are you sure you want to delete user ID "${username}"? This will remove them from the Excel database.`)) return;
+
+        try {
+            const response = await fetch(`${API_BASE}/users/${username}`, {
+                method: 'DELETE'
+            });
+            const data = await response.json();
+
+            if (response.status === 423) {
+                showToast(data.message, 'warning');
+                return;
+            }
+
+            if (response.ok) {
+                showToast(`User "${username}" deleted successfully.`, 'info');
+                fetchUsers();
+            } else {
+                showToast(`Failed to delete user: ${data.message}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            showToast('Server error deleting user.', 'error');
+        }
+    }
+
+    // Clear All Tasks Database Operation (Admin)
+    btnClearAllTasks.addEventListener('click', async () => {
+        if (!confirm("Are you sure you want to delete ALL tasks in the database? This will clear the entire Tasks sheet in Excel and cannot be undone.")) {
+            return;
+        }
+
+        try {
+            showToast("Clearing tasks database...", "info");
+            const response = await fetch(`${API_BASE}/tasks`, {
+                method: 'DELETE'
+            });
+            const data = await response.json();
+
+            if (response.status === 423) {
+                showToast(data.message, 'warning');
+                return;
+            }
+
+            if (response.ok) {
+                showToast("All tasks have been successfully cleared from Excel database.", "success");
+                adminModal.classList.add('hidden');
+                fetchTasks();
+            } else {
+                showToast(data.message || 'Failed to clear tasks.', 'error');
+            }
+        } catch (error) {
+            console.error('Error clearing tasks:', error);
+            showToast('Connection error clearing tasks database.', 'error');
+        }
+    });
+
+    // --- Tasks Operations ---
+
+    // Fetch quick links config from local server
+    async function fetchQuickLinks() {
+        if (!currentUser) return;
+        try {
+            const linksResponse = await fetch(`${API_BASE}/quicklinks`);
+            if (linksResponse.ok) {
+                allQuickLinks = await linksResponse.json();
+                renderQuickLinks();
+            }
+        } catch (linksErr) {
+            console.error('Error fetching quick links:', linksErr);
+        }
+    }
+
+    // Fetch tasks from local server
+    async function fetchTasks() {
+        if (!currentUser) return;
+        try {
+            const usernameParam = currentUser ? encodeURIComponent(currentUser.username) : '';
+            const response = await fetch(`${API_BASE}/dashboard-state?username=${usernameParam}`);
+            if (!response.ok) throw new Error('Failed to fetch dashboard state');
+            const data = await response.json();
+            
+            allTasks = data.tasks || [];
+            allUsers = data.users || [];
+            allRoster = data.roster || [];
+            activeShifts = data.shifts || {};
+
+            updateDashboard();
+        } catch (error) {
+            console.error('Error fetching tasks:', error);
+            showToast('Could not load tasks. Ensure local backend is running.', 'error');
+        }
+    }
+
+    // "Start" button action: Create In-Progress Task under logged in user
+    btnStart.addEventListener('click', async () => {
+        if (!currentUser) return;
+        const desc = taskDescriptionInput.value.trim();
+        const owner = currentUser.name;
+
+        if (!desc) {
+            showToast("Please enter the task details in the detail window first.", "warning");
+            taskDescriptionInput.focus();
+            return;
+        }
+
+        const payload = {
+            description: desc,
+            owner: owner,
+            status: "In Progress"
+        };
+
+        try {
+            const response = await fetch(`${API_BASE}/tasks`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if (response.status === 423) {
+                showToast(data.message, 'warning');
+                return;
+            }
+
+            if (!response.ok) throw new Error(data.message || 'Failed to start task');
+
+            showToast(`Task ${data.id} started successfully under your name.`, 'success');
+            taskDescriptionInput.value = ""; // Clear task details
+            fetchTasks();
+        } catch (error) {
+            console.error('Error starting task:', error);
+            showToast(`Error starting task: ${error.message}`, 'error');
+        }
+    });
+
+    // Helper function to complete a specific task by ID
+    async function completeSpecificTask(taskId, taskDesc) {
+        try {
+            showToast(`Completing task: "${taskDesc}"...`, 'info');
+            const response = await fetch(`${API_BASE}/tasks/${taskId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: "Completed" })
+            });
+
+            const data = await response.json();
+
+            if (response.status === 423) {
+                showToast(data.message, 'warning');
+                return;
+            }
+
+            if (!response.ok) throw new Error(data.message || 'Failed to complete task');
+
+            showToast(`Task completed successfully! Duration: ${data.duration}`, 'success');
+            taskDescriptionInput.value = ""; // Clear details input
+            fetchTasks();
+        } catch (error) {
+            console.error('Error completing task:', error);
+            showToast(`Error completing task: ${error.message}`, 'error');
+        }
+    }
+
+    // "Finish" button action: Complete Active Task or Create Direct Completed Task
+    btnFinish.addEventListener('click', async () => {
+        if (!currentUser) return;
+        const owner = currentUser.name;
+        const desc = taskDescriptionInput.value.trim();
+
+        // Get all active "In Progress" tasks for this user
+        const activeTasks = allTasks.filter(t => t.owner.toLowerCase() === owner.toLowerCase() && t.status === "In Progress");
+
+        if (activeTasks.length > 1) {
+            // Multiple tasks running. Show choice modal!
+            if (finishTasksList) {
+                finishTasksList.innerHTML = '';
+                activeTasks.forEach(task => {
+                    const btn = document.createElement('button');
+                    btn.className = 'finish-task-option-btn';
+                    btn.type = 'button';
+                    
+                    const timeInfo = task.start_time ? `Started: ${task.start_time.split(' ')[1] || task.start_time}` : '';
+                    btn.innerHTML = `
+                        <span style="font-weight: 600; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 300px;">
+                            ${task.description}
+                        </span>
+                        <span class="task-time">${timeInfo}</span>
+                    `;
+                    
+                    btn.addEventListener('click', async () => {
+                        finishTaskModal.classList.add('hidden');
+                        await completeSpecificTask(task.id, task.description);
+                    });
+                    
+                    finishTasksList.appendChild(btn);
+                });
+            }
+            if (finishTaskModal) {
+                finishTaskModal.classList.remove('hidden');
+            }
+        } else if (activeTasks.length === 1) {
+            // Exactly one active task. Complete it directly!
+            await completeSpecificTask(activeTasks[0].id, activeTasks[0].description);
+        } else {
+            // No active running task. Check if details are filled.
+            if (!desc) {
+                showToast(`No running task found under your name. Write details first to create a completed task.`, "warning");
+                taskDescriptionInput.focus();
+                return;
+            }
+
+            // Create a new Completed task directly
+            try {
+                const response = await fetch(`${API_BASE}/tasks`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        description: desc,
+                        owner: owner,
+                        status: "Completed"
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.status === 423) {
+                    showToast(data.message, 'warning');
+                    return;
+                }
+
+                if (!response.ok) throw new Error(data.message || 'Failed to create completed task');
+
+                showToast(`Direct completed task ${data.id} added.`, 'success');
+                taskDescriptionInput.value = "";
+                fetchTasks();
+            } catch (error) {
+                console.error('Error creating completed task:', error);
+                showToast(`Error creating completed task: ${error.message}`, 'error');
+            }
+        }
+    });
+
+    // Update task details in Edit Modal
+    editTaskForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const taskId = editTaskIdInput.value;
+        const payload = {
+            description: editDescriptionInput.value,
+            owner: editOwnerInput.value,
+            start_time: editStartTimeInput.value,
+            end_time: editEndTimeInput.value,
+            status: editStatusSelect.value,
+            pending_reason: editStatusSelect.value === 'Pending' ? editPendingReasonInput.value.trim() : '',
+            escalation_history: editEscalationHistoryInput ? editEscalationHistoryInput.value.trim() : ''
+        };
+
+        try {
+            const response = await fetch(`${API_BASE}/tasks/${taskId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if (response.status === 423) {
+                showToast(data.message, 'warning');
+                return;
+            }
+
+            if (!response.ok) throw new Error(data.message || 'Failed to update task');
+
+            showToast(`Task ${taskId} details updated and saved to Excel.`, 'success');
+            closeModal();
+            fetchTasks();
+        } catch (error) {
+            console.error('Error updating task:', error);
+            showToast(`Error updating task: ${error.message}`, 'error');
+        }
+    });
+
+    // Delete a task (Grid/Table trigger)
+    async function deleteTask(taskId) {
+        if (!confirm(`Are you sure you want to delete task ${taskId}? This will remove it from Excel.`)) return;
+
+        try {
+            const response = await fetch(`${API_BASE}/tasks/${taskId}`, {
+                method: 'DELETE'
+            });
+
+            const data = await response.json();
+
+            if (response.status === 423) {
+                showToast(data.message, 'warning');
+                return;
+            }
+
+            if (!response.ok) throw new Error(data.message || 'Failed to delete task');
+
+            showToast(`Task ${taskId} deleted successfully.`, 'info');
+            fetchTasks();
+        } catch (error) {
+            console.error('Error deleting task:', error);
+            showToast(`Error deleting task: ${error.message}`, 'error');
+        }
+    }
+
+    // Toggle task status quickly
+    async function changeTaskStatus(taskId, newStatus) {
+        try {
+            const response = await fetch(`${API_BASE}/tasks/${taskId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            const data = await response.json();
+
+            if (response.status === 423) {
+                showToast(data.message, 'warning');
+                return;
+            }
+
+            if (!response.ok) throw new Error(data.message || 'Failed to transition status');
+
+            showToast(`Task ${taskId} status changed to ${newStatus}.`, 'success');
+            fetchTasks();
+        } catch (error) {
+            console.error('Error updating status:', error);
+            showToast(`Error updating status: ${error.message}`, 'error');
+        }
+    }
+
+    // Export database options (Admin Console)
+    if (btnExportFull) {
+        btnExportFull.addEventListener('click', () => {
+            showToast('Downloading full Excel database...', 'info');
+            window.location.href = `${API_BASE}/tasks/export`;
+        });
+    }
+
+    if (btnExportDateWise) {
+        btnExportDateWise.addEventListener('click', () => {
+            const startDate = document.getElementById('exportStartDate').value;
+            const endDate = document.getElementById('exportEndDate').value;
+
+            if (!startDate && !endDate) {
+                showToast('Please select at least one date filter.', 'warning');
+                return;
+            }
+
+            showToast('Generating date-wise Excel report...', 'info');
+            window.location.href = `${API_BASE}/tasks/export?start_date=${startDate}&end_date=${endDate}`;
+        });
+    }
+
+    // --- UI Layout & Rendering ---
+
+    function updateDashboard() {
+        const total = allTasks.length;
+        const pending = allTasks.filter(t => t.status === 'Pending').length;
+        const progress = allTasks.filter(t => t.status === 'In Progress').length;
+        const completed = allTasks.filter(t => t.status === 'Completed').length;
+
+        // Render metrics
+        metricTotal.textContent = total;
+        metricPending.textContent = pending;
+        metricProgress.textContent = progress;
+        metricCompleted.textContent = completed;
+
+        // Filter search results
+        let filteredTasks = allTasks;
+
+        if (selectedStatusFilter !== 'ALL') {
+            filteredTasks = filteredTasks.filter(t => t.status === selectedStatusFilter);
+        }
+
+        if (selectedScopeFilter === 'OWN' && currentUser) {
+            const owner = currentUser.name.toLowerCase();
+            filteredTasks = filteredTasks.filter(t => t.owner.toLowerCase() === owner);
+        }
+
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase();
+            filteredTasks = filteredTasks.filter(t => 
+                t.description.toLowerCase().includes(query) || 
+                t.owner.toLowerCase().includes(query) ||
+                t.id.toLowerCase().includes(query)
+            );
+        }
+
+        if (filteredTasks.length === 0) {
+            emptyState.classList.remove('hidden');
+            tasksGrid.classList.add('hidden');
+            tasksTableContainer.classList.add('hidden');
+        } else {
+            emptyState.classList.add('hidden');
+            if (currentView === 'grid') {
+                tasksGrid.classList.remove('hidden');
+                tasksTableContainer.classList.add('hidden');
+                renderGridView(filteredTasks);
+            } else {
+                tasksGrid.classList.add('hidden');
+                tasksTableContainer.classList.remove('hidden');
+                renderTableView(filteredTasks);
+            }
+        }
+
+        // Render On-Duty status panel
+        renderEngineersStatus();
+
+        // Update workload chart
+        if (currentUser) {
+            updateWorkloadChart();
+        }
+    }
+
+    let workloadChartInstance = null;
+    let lastChartFingerprint = "";
+
+    function updateWorkloadChart() {
+        const ctx = document.getElementById('workloadChart');
+        if (!ctx) return;
+
+        const isLight = document.body.classList.contains('light-theme');
+        
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const todayStr = `${year}-${month}-${day}`;
+
+        // Robust helper to match engineer and date in roster
+        function findRosterShift(rosterList, ownerName, targetDateStr) {
+            if (!rosterList || !ownerName || !targetDateStr) return null;
+            const cleanOwner = ownerName.trim().toLowerCase();
+            const cleanDate = targetDateStr.trim();
+            
+            return rosterList.find(r => {
+                if (!r || !r.owner || !r.date) return false;
+                const rOwner = String(r.owner).trim().toLowerCase();
+                const nameMatch = (rOwner === cleanOwner || cleanOwner.includes(rOwner) || rOwner.includes(cleanOwner));
+                if (!nameMatch) return false;
+                
+                let rDate = String(r.date).trim();
+                if (rDate.includes('T')) rDate = rDate.split('T')[0];
+                if (rDate.includes(' ')) rDate = rDate.split(' ')[0];
+                return rDate === cleanDate;
+            });
+        }
+
+        const fingerprint = JSON.stringify({
+            tasks: allTasks.map(t => ({ id: t.id, owner: t.owner, status: t.status })),
+            roster: allRoster.map(r => ({ owner: r.owner, date: r.date, code: r.code })),
+            isLight: isLight,
+            today: todayStr
+        });
+
+        if (fingerprint === lastChartFingerprint && workloadChartInstance) {
+            return;
+        }
+        lastChartFingerprint = fingerprint;
+
+        // Group tasks by owner
+        const ownersMap = {};
+        allTasks.forEach(task => {
+            const owner = task.owner ? task.owner.trim() : 'Unassigned';
+            if (owner.toLowerCase() === 'system administrator') return;
+            
+            if (!ownersMap[owner]) {
+                ownersMap[owner] = { pending: 0, progress: 0, completed: 0, total: 0 };
+            }
+            
+            const status = task.status;
+            if (status === 'Pending') ownersMap[owner].pending++;
+            else if (status === 'In Progress') ownersMap[owner].progress++;
+            else if (status === 'Completed') ownersMap[owner].completed++;
+            ownersMap[owner].total++;
+        });
+
+        // Add all registered active engineers from allUsers so everyone appears on the chart
+        allUsers.forEach(u => {
+            if (!u || !u.name) return;
+            const uName = u.name.trim();
+            if (uName.toLowerCase() === 'admin' || uName.toLowerCase() === 'system administrator') return;
+            if (!ownersMap[uName]) {
+                ownersMap[uName] = { pending: 0, progress: 0, completed: 0, total: 0 };
+            }
+        });
+
+        // Add all on-shift / on-duty engineers from allRoster who don't have tasks
+        const rosterOwners = [...new Set(allRoster.map(r => r.owner))];
+        rosterOwners.forEach(owner => {
+            const trimmedOwner = owner ? owner.trim() : '';
+            if (!trimmedOwner || trimmedOwner.toLowerCase() === 'system administrator') return;
+            if (!ownersMap[trimmedOwner]) {
+                ownersMap[trimmedOwner] = { pending: 0, progress: 0, completed: 0, total: 0 };
+            }
+        });
+
+        const sortedOwners = Object.keys(ownersMap).sort();
+        
+        const labels = sortedOwners;
+        const pendingData = sortedOwners.map(o => ownersMap[o].pending);
+        const progressData = sortedOwners.map(o => ownersMap[o].progress);
+        const completedData = sortedOwners.map(o => ownersMap[o].completed);
+        const totalData = sortedOwners.map(o => ownersMap[o].total);
+
+        // Dynamic theme configurations for chart text and grid lines
+        const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.05)';
+        const textColor = isLight ? '#475569' : '#94a3b8';
+        const legendColor = isLight ? '#0f172a' : '#f1f5f9';
+
+        // Destroy previous instance to clean redraws
+        if (workloadChartInstance) {
+            workloadChartInstance.destroy();
+        }
+
+        workloadChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'In Progress',
+                        data: progressData,
+                        backgroundColor: '#3b82f6',
+                        borderColor: '#2563eb',
+                        borderWidth: 1,
+                        barPercentage: 0.85,
+                        categoryPercentage: 0.9
+                    },
+                    {
+                        label: 'Pending',
+                        data: pendingData,
+                        backgroundColor: '#f59e0b',
+                        borderColor: '#d97706',
+                        borderWidth: 1,
+                        barPercentage: 0.85,
+                        categoryPercentage: 0.9
+                    },
+                    {
+                        label: 'Completed',
+                        data: completedData,
+                        backgroundColor: '#10b981',
+                        borderColor: '#059669',
+                        borderWidth: 1,
+                        barPercentage: 0.85,
+                        categoryPercentage: 0.9
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: { color: gridColor },
+                        ticks: { color: textColor, font: { family: 'Outfit', size: 10 } }
+                    },
+                    y: {
+                        stacked: true,
+                        grid: { color: gridColor },
+                        ticks: { color: textColor, font: { family: 'Outfit', size: 10 }, stepSize: 1 },
+                        suggestedMax: 5
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { color: legendColor, font: { family: 'Outfit', size: 10 } }
+                    },
+                    tooltip: {
+                        titleFont: { family: 'Outfit', size: 11 },
+                        bodyFont: { family: 'Outfit', size: 10 }
+                    }
+                }
+            },
+            plugins: [{
+                id: 'offDutyPlugin',
+                beforeDraw(chart) {
+                    const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
+                    ctx.save();
+                    
+                    sortedOwners.forEach((owner, idx) => {
+                        const shift = findRosterShift(allRoster, owner, todayStr);
+                        const isOff = shift && (
+                            shift.code.toUpperCase() === 'D/O' || 
+                            shift.code.toUpperCase() === 'DO' || 
+                            shift.code.toUpperCase() === 'LEAVE' ||
+                            shift.code.toUpperCase() === 'OFF' ||
+                            (shift.shift_name && shift.shift_name.toLowerCase().includes('day off')) ||
+                            (shift.shift_name && shift.shift_name.toLowerCase().includes('duty off'))
+                        );
+                        if (isOff) {
+                            let xPos = x.getPixelForTick ? x.getPixelForTick(idx) : x.getPixelForValue(idx);
+                            if (isNaN(xPos) || xPos === undefined) xPos = x.getPixelForValue(owner);
+                            const barWidth = Math.max(20, (x.width / sortedOwners.length) * 0.75);
+                            
+                            // Draw a distinct semi-transparent gray block for this column
+                            ctx.fillStyle = isLight ? 'rgba(148, 163, 184, 0.16)' : 'rgba(255, 255, 255, 0.06)';
+                            ctx.strokeStyle = isLight ? 'rgba(148, 163, 184, 0.35)' : 'rgba(255, 255, 255, 0.12)';
+                            ctx.lineWidth = 1;
+                            
+                            const rectX = xPos - barWidth / 2;
+                            const rectHeight = bottom - top;
+                            
+                            ctx.fillRect(rectX, top + 4, barWidth, rectHeight - 8);
+                            ctx.strokeRect(rectX, top + 4, barWidth, rectHeight - 8);
+                        }
+                    });
+                    ctx.restore();
+                },
+                afterDatasetsDraw(chart) {
+                    const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
+                    ctx.save();
+                    
+                    sortedOwners.forEach((owner, idx) => {
+                        const shift = findRosterShift(allRoster, owner, todayStr);
+                        const isOff = shift && (
+                            shift.code.toUpperCase() === 'D/O' || 
+                            shift.code.toUpperCase() === 'DO' || 
+                            shift.code.toUpperCase() === 'LEAVE' ||
+                            shift.code.toUpperCase() === 'OFF' ||
+                            (shift.shift_name && shift.shift_name.toLowerCase().includes('day off')) ||
+                            (shift.shift_name && shift.shift_name.toLowerCase().includes('duty off'))
+                        );
+                        if (isOff) {
+                            let xPos = x.getPixelForTick ? x.getPixelForTick(idx) : x.getPixelForValue(idx);
+                            if (isNaN(xPos) || xPos === undefined) xPos = x.getPixelForValue(owner);
+                            const rectHeight = bottom - top;
+                            
+                            // Draw text "DAY OFF" or "LEAVE" with vertically stacked letters on top of bars
+                            ctx.fillStyle = isLight ? '#0f172a' : '#38bdf8';
+                            ctx.font = "bold 10px Outfit, sans-serif";
+                            ctx.textAlign = "center";
+                            ctx.textBaseline = "middle";
+                            
+                            const label = (shift.code.toUpperCase() === 'LEAVE') ? 'LEAVE' : 'DAY OFF';
+                            const chars = label.split('');
+                            const charHeight = 12; // vertical gap
+                            const totalHeight = chars.length * charHeight;
+                            const startY = top + (rectHeight - totalHeight) / 2 + charHeight / 2;
+                            
+                            chars.forEach((char, charIdx) => {
+                                ctx.fillText(char, xPos, startY + (charIdx * charHeight));
+                            });
+                        }
+                    });
+                    ctx.restore();
+                }
+            }]
+        });
+    }
+
+    function renderEngineersStatus() {
+        const engineersList = document.getElementById('engineersList');
+        if (!engineersList) return;
+        
+        engineersList.innerHTML = '';
+        
+        // Filter out 'admin' master username to show active engineers
+        const activeEngineers = allUsers.filter(u => u.username.toLowerCase() !== 'admin');
+        
+        if (activeEngineers.length === 0) {
+            engineersList.innerHTML = `
+                <div style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 1rem 0; grid-column: 1 / -1;">
+                    No engineers registered.
+                </div>
+            `;
+            return;
+        }
+        
+        // Get today's date in YYYY-MM-DD format
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const todayStr = `${year}-${month}-${day}`;
+        
+        const listToRender = [];
+        
+        activeEngineers.forEach(eng => {
+            // Find their shift in the roster for today using flexible name and date match
+            const shift = (function() {
+                if (!allRoster || !eng.name) return null;
+                const cleanOwner = eng.name.trim().toLowerCase();
+                return allRoster.find(r => {
+                    if (!r || !r.owner || !r.date) return false;
+                    const rOwner = String(r.owner).trim().toLowerCase();
+                    const nameMatch = (rOwner === cleanOwner || cleanOwner.includes(rOwner) || rOwner.includes(cleanOwner));
+                    if (!nameMatch) return false;
+                    let rDate = String(r.date).trim();
+                    if (rDate.includes('T')) rDate = rDate.split('T')[0];
+                    if (rDate.includes(' ')) rDate = rDate.split(' ')[0];
+                    return rDate === todayStr;
+                });
+            })();
+            
+            // Check if they are scheduled on roster shift today (not D/O or LEAVE)
+            const isOff = shift && (
+                shift.code.toUpperCase() === 'D/O' || 
+                shift.code.toUpperCase() === 'DO' || 
+                shift.code.toUpperCase() === 'LEAVE' ||
+                shift.code.toUpperCase() === 'OFF' ||
+                (shift.shift_name && shift.shift_name.toLowerCase().includes('day off'))
+            );
+            const isOnDutyRoster = !!shift && !isOff;
+            const isOnline = !!eng.is_online;
+            
+            // Check if they have an active task in progress
+            const activeTask = allTasks.find(t => 
+                t.owner.toLowerCase() === eng.name.toLowerCase() && 
+                t.status === 'In Progress'
+            );
+            const isBusy = !!activeTask;
+            
+            if (isBusy) {
+                listToRender.push({
+                    eng,
+                    color: '#ef4444', // Red (Busy)
+                    statusClass: 'busy',
+                    tooltip: `${eng.name} is Busy: ${activeTask.description}`
+                });
+            } else if (isOnDutyRoster) {
+                if (isOnline) {
+                    listToRender.push({
+                        eng,
+                        color: '#10b981', // Green (Available)
+                        statusClass: 'online',
+                        tooltip: `${eng.name} is On Duty & Online`
+                    });
+                } else {
+                    listToRender.push({
+                        eng,
+                        color: '#eab308', // Yellow (Offline)
+                        statusClass: 'offline',
+                        tooltip: `${eng.name} is On Duty (Offline)`
+                    });
+                }
+            } else if (isOnline) {
+                listToRender.push({
+                    eng,
+                    color: '#0ea5e9', // Sky Blue (Online off-shift)
+                    statusClass: 'offduty-online',
+                    tooltip: `${eng.name} is Off Duty but Online`
+                });
+            }
+        });
+        
+        if (listToRender.length === 0) {
+            engineersList.innerHTML = `
+                <div style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 1.5rem 0; grid-column: 1 / -1; line-height: 1.4;">
+                    No engineers scheduled or active online at this time.
+                </div>
+            `;
+            return;
+        }
+        
+        listToRender.forEach(item => {
+            const eng = item.eng;
+            const row = document.createElement('div');
+            row.className = `engineer-row-compact status-${item.statusClass}`;
+            row.setAttribute('title', item.tooltip);
+            
+            row.innerHTML = `
+                <span class="engineer-name-compact">${eng.name}</span>
+                <span class="status-indicator-dot pulse" style="color: ${item.color};"></span>
+            `;
+            
+            engineersList.appendChild(row);
+        });
+    }
+
+    function renderRosterGrid() {
+        const container = document.getElementById('rosterTableContainer');
+        if (!container) return;
+        
+        if (allRoster.length === 0) {
+            container.innerHTML = `
+                <div style="color: var(--text-muted); font-size: 0.95rem; text-align: center; padding: 3rem 0;">
+                    No roster schedule uploaded yet. ${currentUser && currentUser.role === 'admin' ? 'Please upload a roster Excel file above.' : ''}
+                </div>
+            `;
+            return;
+        }
+        
+        // Find if user is admin
+        const isAdmin = currentUser && currentUser.role === 'admin';
+        
+        // Get unique sorted dates
+        const dates = [...new Set(allRoster.map(r => r.date))].sort();
+        
+        // Get unique operators
+        const operators = [...new Set(allRoster.map(r => r.owner))].sort();
+        
+        let html = `
+            <table class="roster-grid-table">
+                <thead>
+                    <tr>
+                        <th>Engineer</th>
+        `;
+        
+        // Add dates headers
+        dates.forEach(d => {
+            const dateObj = new Date(d);
+            const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+            html += `<th>${formattedDate}</th>`;
+        });
+        
+        html += `
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        // Add rows for each operator
+        operators.forEach(op => {
+            html += `<tr><td><strong>${op}</strong></td>`;
+            
+            dates.forEach(d => {
+                // Find shift code for this operator on this date
+                const shift = allRoster.find(r => r.owner.toLowerCase() === op.toLowerCase() && r.date === d);
+                
+                // Helper function to resolve shift badges and select style classes dynamically
+                function getRosterClass(c) {
+                    const codeUpper = c.toUpperCase();
+                    if (codeUpper === 'D/O') return 'shift-do';
+                    if (codeUpper === 'LEAVE') return 'shift-leave';
+                    return 'shift-' + codeUpper.toLowerCase();
+                }
+
+                if (isAdmin) {
+                    const code = shift ? shift.code.toUpperCase() : 'D/O';
+                    const selectClass = 'roster-select-badge ' + getRosterClass(code);
+                    
+                    // Generate options dynamically
+                    let optionsHtml = '';
+                    const sortedShiftCodes = Object.keys(activeShifts).sort();
+                    sortedShiftCodes.forEach(sc => {
+                        optionsHtml += `<option value="${sc}" ${code === sc ? 'selected' : ''}>${sc}</option>`;
+                    });
+                    // Fallbacks
+                    if (!sortedShiftCodes.includes('M')) optionsHtml += `<option value="M" ${code === 'M' ? 'selected' : ''}>M</option>`;
+                    if (!sortedShiftCodes.includes('EE')) optionsHtml += `<option value="EE" ${code === 'EE' ? 'selected' : ''}>EE</option>`;
+                    if (!sortedShiftCodes.includes('E')) optionsHtml += `<option value="E" ${code === 'E' ? 'selected' : ''}>E</option>`;
+                    if (!sortedShiftCodes.includes('LE')) optionsHtml += `<option value="LE" ${code === 'LE' ? 'selected' : ''}>LE</option>`;
+                    
+                    optionsHtml += `<option value="D/O" ${code === 'D/O' ? 'selected' : ''}>D/O</option>`;
+                    optionsHtml += `<option value="LEAVE" ${code === 'LEAVE' ? 'selected' : ''}>LEAVE</option>`;
+                    
+                    const selectHtml = `
+                        <select class="roster-select ${selectClass}" data-owner="${op}" data-date="${d}">
+                            ${optionsHtml}
+                        </select>
+                    `;
+                    html += `<td>${selectHtml}</td>`;
+                } else {
+                    let badgeHtml = '';
+                    if (shift) {
+                        const code = shift.code.toUpperCase();
+                        const badgeClass = getRosterClass(code);
+                        const hoverText = `${shift.shift_name} (${shift.start_time} - ${shift.end_time})`;
+                        badgeHtml = `<span class="roster-badge ${badgeClass}" title="${hoverText}">${code}</span>`;
+                    } else {
+                        badgeHtml = `<span class="roster-badge shift-do" title="Day Off">D/O</span>`;
+                    }
+                    html += `<td>${badgeHtml}</td>`;
+                }
+            });
+            
+            html += `</tr>`;
+        });
+        
+        html += `
+                </tbody>
+            </table>
+        `;
+        
+        container.innerHTML = html;
+        
+        // Attach change listeners to selects for live admin roster modification
+        if (isAdmin) {
+            container.querySelectorAll('.roster-select').forEach(select => {
+                select.addEventListener('change', (e) => {
+                    const selectEl = e.target;
+                    const code = selectEl.value;
+                    
+                    // Update style classes locally
+                    selectEl.className = 'roster-select';
+                    selectEl.classList.add('roster-select-badge');
+                    
+                    // Helper function repeated inside listener scope
+                    function getRosterClassLocal(c) {
+                        const codeUpper = c.toUpperCase();
+                        if (codeUpper === 'D/O') return 'shift-do';
+                        if (codeUpper === 'LEAVE') return 'shift-leave';
+                        return 'shift-' + codeUpper.toLowerCase();
+                    }
+                    selectEl.classList.add(getRosterClassLocal(code));
+                    
+                    // Highlight the Save button to remind user to save changes
+                    if (btnSaveRosterChanges) {
+                        btnSaveRosterChanges.style.border = '2px solid #eab308';
+                        btnSaveRosterChanges.style.boxShadow = '0 0 15px rgba(234, 179, 8, 0.5)';
+                    }
+                });
+            });
+        }
+    }
+
+    function convertToInputFormat(datetimeStr) {
+        if (!datetimeStr) return '';
+        return datetimeStr.trim().replace(' ', 'T');
+    }
+
+    function extractReference(description) {
+        if (!description) return '';
+        const regex = /\b(CR|TKI|L3)\s*[-_]?\s*\d[a-z0-9-_]*/i;
+        const match = description.match(regex);
+        if (match) {
+            return match[0].toUpperCase().replace(/\s+/g, '');
+        }
+        return '';
+    }
+
+    function formatDateTimeMultiLine(dtStr) {
+        if (!dtStr || dtStr === '—' || dtStr.trim() === '') {
+            return '<span style="color: var(--text-muted); font-style: italic;">—</span>';
+        }
+        try {
+            const parts = dtStr.trim().split(' ');
+            if (parts.length < 2) {
+                return dtStr;
+            }
+            const datePart = parts[0];
+            const timePart = parts[1];
+            
+            const timeSubParts = timePart.split(':');
+            if (timeSubParts.length < 2) {
+                return dtStr;
+            }
+            let hours = parseInt(timeSubParts[0], 10);
+            const minutes = timeSubParts[1];
+            
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            const hourStr = String(hours).padStart(2, '0');
+            const time12 = `${hourStr}:${minutes} ${ampm}`;
+            
+            return `<div style="font-weight: 500; white-space: nowrap;">${datePart}</div><div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem; font-weight: 400; white-space: nowrap;">${time12}</div>`;
+        } catch (e) {
+            return dtStr;
+        }
+    }
+
+    // Render Grid View Cards
+    function renderGridView(tasks) {
+        tasksGrid.innerHTML = '';
+        tasks.forEach(task => {
+            const card = document.createElement('div');
+            card.className = `task-card ${task.status.toLowerCase().replace(' ', '-')}`;
+            
+            const startDisplay = task.start_time || '—';
+            const endDisplay = task.end_time || '—';
+            const durationHtml = task.duration ? `
+                <div class="meta-item">
+                    <span class="meta-label">Duration</span>
+                    <span class="meta-value" style="color: #38bdf8; font-weight: 600;"><i data-lucide="hourglass"></i>${task.duration}</span>
+                </div>
+            ` : '';
+            const refCode = extractReference(task.description);
+            const refHtml = refCode ? `
+                <div class="meta-item">
+                    <span class="meta-label">Reference</span>
+                    <span class="meta-value" style="color: #f59e0b; font-weight: 600;"><i data-lucide="tag"></i>${refCode}</span>
+                </div>
+            ` : '';
+
+            // Calculate Category dynamically
+            let category = '—';
+            const descLower = task.description.toLowerCase();
+            if (refCode && (refCode.startsWith('TKI') || refCode.startsWith('CR'))) {
+                category = 'IMPLEMENTATION';
+            } else if (descLower.includes('backbone')) {
+                category = 'BACKBONE';
+            } else if (descLower.includes('project')) {
+                category = 'PROJECT';
+            }
+
+            const categoryHtml = category !== '—' ? `
+                <div class="meta-item">
+                    <span class="meta-label">Category</span>
+                    <span class="meta-value" style="color: ${category === 'IMPLEMENTATION' ? '#38bdf8' : (category === 'BACKBONE' ? '#fb7185' : '#a78bfa')}; font-weight: 600;"><i data-lucide="layers"></i>${category}</span>
+                </div>
+            ` : '';
+            let pendingReasonHtml = '';
+            if (task.pending_reason) {
+                const fullReason = task.pending_reason;
+                const truncatedReason = fullReason.length > 20 ? fullReason.substring(0, 20) + '...' : fullReason;
+                pendingReasonHtml = `
+                    <div class="meta-item" title="${fullReason.replace(/"/g, '&quot;')}" style="grid-column: 1 / -1; background: rgba(234, 179, 8, 0.05); padding: 0.5rem; border-left: 2px solid #eab308; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; margin-top: 0.25rem; cursor: help;">
+                        <span class="meta-label" style="color: #eab308; display: block; margin-bottom: 0.15rem;">Dependency</span>
+                        <span class="meta-value" style="color: #f1f5f9; word-break: break-word; font-size: 0.78rem; font-weight: 500; display: inline-flex; align-items: center; gap: 0.25rem;"><i data-lucide="alert-circle" style="color: #eab308; width: 13px; height: 13px;"></i>${truncatedReason}</span>
+                    </div>
+                `;
+            }
+
+            let escalationCardHtml = '';
+            if (task.escalation_history) {
+                const fullEsc = task.escalation_history;
+                const singleLineEsc = fullEsc.replace(/\n/g, ' ');
+                const truncatedEsc = singleLineEsc.length > 20 ? singleLineEsc.substring(0, 20) + '...' : singleLineEsc;
+                escalationCardHtml = `
+                    <div class="meta-item" title="${fullEsc.replace(/"/g, '&quot;')}" style="grid-column: 1 / -1; background: rgba(129, 140, 248, 0.05); padding: 0.5rem; border-left: 2px solid #818cf8; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; margin-top: 0.25rem; cursor: help;">
+                        <span class="meta-label" style="color: #818cf8; display: block; margin-bottom: 0.15rem;">Escalation Log</span>
+                        <span class="meta-value" style="color: #f1f5f9; word-break: break-word; font-size: 0.78rem; font-weight: 500; display: inline-flex; align-items: center; gap: 0.25rem;"><i data-lucide="trending-up" style="color: #818cf8; width: 13px; height: 13px;"></i>${truncatedEsc}</span>
+                    </div>
+                `;
+            }
+
+            // User can edit/delete their own task, or if they are admin, they can edit/delete anything.
+            const canManage = currentUser.role === 'admin' || task.owner === currentUser.name;
+
+            let actionButtons = `
+                <button class="action-btn btn-detail" title="View Console Details" data-id="${task.id}" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; border-color: rgba(56, 189, 248, 0.2);">
+                    <i data-lucide="terminal"></i>
+                </button>
+            `;
+            if (task.status === 'Pending' && canManage) {
+                actionButtons += `
+                    <button class="action-btn btn-start" title="Start Task" data-id="${task.id}">
+                        <i data-lucide="play"></i>
+                    </button>
+                `;
+            }
+            if (task.status !== 'Completed' && canManage) {
+                actionButtons += `
+                    <button class="action-btn btn-complete" title="Mark Completed" data-id="${task.id}">
+                        <i data-lucide="check"></i>
+                    </button>
+                `;
+            }
+            if (canManage) {
+                actionButtons += `
+                    <button class="action-btn btn-edit" title="Edit Task" data-id="${task.id}">
+                        <i data-lucide="edit-3"></i>
+                    </button>
+                `;
+                // Only admin can delete tasks
+                if (currentUser.role === 'admin') {
+                    actionButtons += `
+                        <button class="action-btn btn-delete" title="Delete Task" data-id="${task.id}">
+                            <i data-lucide="trash-2"></i>
+                        </button>
+                    `;
+                }
+            }
+
+            card.innerHTML = `
+                <div class="task-card-header">
+                    <span></span>
+                    <span class="status-badge ${task.status.toLowerCase().replace(' ', '-')}">
+                        <span class="badge-dot"></span>
+                        ${task.status}
+                    </span>
+                </div>
+                <div class="task-description">${task.description}</div>
+                <div class="task-meta-grid">
+                    <div class="meta-item">
+                        <span class="meta-label">Owner</span>
+                        <span class="meta-value"><i data-lucide="user"></i>${task.owner}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Updated</span>
+                        <span class="meta-value"><i data-lucide="calendar"></i>${task.last_updated.split(' ')[0]}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Start Time</span>
+                        <span class="meta-value" title="${startDisplay}"><i data-lucide="clock"></i>${startDisplay}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">End Time</span>
+                        <span class="meta-value" title="${endDisplay}"><i data-lucide="flag"></i>${endDisplay}</span>
+                    </div>
+                    ${refHtml}
+                    ${categoryHtml}
+                    ${durationHtml}
+                    ${pendingReasonHtml}
+                    ${escalationCardHtml}
+                </div>
+                <div class="task-actions">
+                    ${actionButtons}
+                </div>
+            `;
+            
+            tasksGrid.appendChild(card);
+        });
+
+        addTaskCardActionListeners();
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    // Render Table View Rows
+    function renderTableView(tasks) {
+        tasksTableBody.innerHTML = '';
+        
+        // Append existing tasks
+        tasks.forEach(task => {
+            const tr = document.createElement('tr');
+            
+            const startDisplay = formatDateTimeMultiLine(task.start_time);
+            const endDisplay = formatDateTimeMultiLine(task.end_time);
+            const durationDisplay = task.duration || '—';
+            
+            let statusClass = task.status.toLowerCase().replace(' ', '-');
+
+            const canManage = currentUser.role === 'admin' || task.owner === currentUser.name;
+
+            let actionButtons = `
+                <button class="action-btn btn-detail" title="View Console Details" data-id="${task.id}" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; border-color: rgba(56, 189, 248, 0.2);">
+                    <i data-lucide="terminal" style="width: 14px; height: 14px;"></i>
+                </button>
+            `;
+            if (canManage) {
+                if (task.status === 'Pending') {
+                    actionButtons += `
+                        <button class="action-btn btn-start" title="Start Task" data-id="${task.id}">
+                            <i data-lucide="play" style="width: 14px; height: 14px;"></i>
+                        </button>
+                    `;
+                }
+                if (task.status !== 'Completed') {
+                    actionButtons += `
+                        <button class="action-btn btn-complete" title="Complete Task" data-id="${task.id}">
+                            <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+                        </button>
+                    `;
+                }
+                actionButtons += `
+                    <button class="action-btn btn-edit" title="Edit Task" data-id="${task.id}">
+                        <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
+                    </button>
+                    <button class="action-btn btn-delete" title="Delete Task" data-id="${task.id}">
+                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                    </button>
+                `;
+
+            }
+
+            const refCode = extractReference(task.description);
+            const refDisplay = refCode ? `<span style="font-weight: 600; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem;"><i data-lucide="tag" style="width: 11px; height: 11px; display: inline-block; margin-right: 0.15rem; vertical-align: middle;"></i>${refCode}</span>` : '<span style="color: var(--text-muted); font-style: italic;">—</span>';
+
+            // Calculate Category dynamically
+            let category = '—';
+            const descLower = task.description.toLowerCase();
+            if (refCode && (refCode.startsWith('TKI') || refCode.startsWith('CR'))) {
+                category = 'IMPLEMENTATION';
+            } else if (descLower.includes('backbone')) {
+                category = 'BACKBONE';
+            } else if (descLower.includes('project')) {
+                category = 'PROJECT';
+            }
+
+            let categoryDisplay = '<span style="color: var(--text-muted); font-style: italic;">—</span>';
+            if (category !== '—') {
+                const isLight = document.body.classList.contains('light-theme');
+                let badgeColor = isLight ? '#475569' : '#94a3b8'; // Default slate gray
+                let bgOpacity = isLight ? 'rgba(71, 85, 105, 0.08)' : 'rgba(148, 163, 184, 0.1)';
+                let borderOpacity = isLight ? 'rgba(71, 85, 105, 0.2)' : 'rgba(148, 163, 184, 0.2)';
+                
+                if (category === 'IMPLEMENTATION') {
+                    badgeColor = isLight ? '#0284c7' : '#38bdf8'; // Sky Blue
+                    bgOpacity = isLight ? 'rgba(2, 132, 199, 0.08)' : 'rgba(56, 189, 248, 0.1)';
+                    borderOpacity = isLight ? 'rgba(2, 132, 199, 0.2)' : 'rgba(56, 189, 248, 0.25)';
+                } else if (category === 'BACKBONE') {
+                    badgeColor = isLight ? '#e11d48' : '#fb7185'; // Rose Red
+                    bgOpacity = isLight ? 'rgba(225, 29, 72, 0.08)' : 'rgba(251, 113, 133, 0.1)';
+                    borderOpacity = isLight ? 'rgba(225, 29, 72, 0.2)' : 'rgba(251, 113, 133, 0.25)';
+                } else if (category === 'PROJECT') {
+                    badgeColor = isLight ? '#7c3aed' : '#a78bfa'; // Violet/Purple
+                    bgOpacity = isLight ? 'rgba(124, 58, 237, 0.08)' : 'rgba(167, 139, 250, 0.1)';
+                    borderOpacity = isLight ? 'rgba(124, 58, 237, 0.2)' : 'rgba(167, 139, 250, 0.25)';
+                }
+                
+                categoryDisplay = `<span style="font-weight: 600; color: ${badgeColor}; background: ${bgOpacity}; border: 1px solid ${borderOpacity}; padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.72rem; display: inline-flex; align-items: center; gap: 0.25rem;"><i data-lucide="layers" style="width: 11px; height: 11px;"></i>${category}</span>`;
+            }
+
+            // Stylize the forwarded_by text if present
+            let forwardedDisplay = '<span style="color: var(--text-muted); font-style: italic;">—</span>';
+            if (task.forwarded_by) {
+                const isLight = document.body.classList.contains('light-theme');
+                
+                // Determine a nice color based on the department
+                let badgeColor = isLight ? '#2563eb' : '#60a5fa'; // Default blue
+                let bgOpacity = isLight ? 'rgba(37, 99, 235, 0.08)' : 'rgba(96, 165, 250, 0.1)';
+                let borderOpacity = isLight ? 'rgba(37, 99, 235, 0.2)' : 'rgba(96, 165, 250, 0.2)';
+                
+                const fLower = task.forwarded_by.toLowerCase();
+                
+                if (fLower.includes('ncss')) {
+                    badgeColor = isLight ? '#7c3aed' : '#c084fc'; // Purple
+                    bgOpacity = isLight ? 'rgba(124, 58, 237, 0.08)' : 'rgba(168, 85, 247, 0.1)';
+                    borderOpacity = isLight ? 'rgba(124, 58, 237, 0.2)' : 'rgba(168, 85, 247, 0.2)';
+                } else if (fLower.includes('bnoc')) {
+                    badgeColor = isLight ? '#059669' : '#34d399'; // Emerald Green
+                    bgOpacity = isLight ? 'rgba(5, 150, 105, 0.08)' : 'rgba(52, 211, 153, 0.1)';
+                    borderOpacity = isLight ? 'rgba(5, 150, 105, 0.2)' : 'rgba(52, 211, 153, 0.2)';
+                } else if (fLower.includes('sat')) {
+                    badgeColor = isLight ? '#ea580c' : '#fb923c'; // Orange
+                    bgOpacity = isLight ? 'rgba(234, 88, 12, 0.08)' : 'rgba(251, 146, 60, 0.1)';
+                    borderOpacity = isLight ? 'rgba(234, 88, 12, 0.2)' : 'rgba(251, 146, 60, 0.2)';
+                } else if (fLower.includes('sales')) {
+                    badgeColor = isLight ? '#db2777' : '#f472b6'; // Pink
+                    bgOpacity = isLight ? 'rgba(219, 39, 119, 0.08)' : 'rgba(244, 114, 182, 0.1)';
+                    borderOpacity = isLight ? 'rgba(219, 39, 119, 0.2)' : 'rgba(244, 114, 182, 0.2)';
+                } else if (fLower.includes('nmc')) {
+                    badgeColor = isLight ? '#0891b2' : '#22d3ee'; // Cyan
+                    bgOpacity = isLight ? 'rgba(8, 145, 178, 0.08)' : 'rgba(34, 211, 238, 0.1)';
+                    borderOpacity = isLight ? 'rgba(8, 145, 178, 0.2)' : 'rgba(34, 211, 238, 0.2)';
+                } else if (fLower.includes('backbone')) {
+                    badgeColor = isLight ? '#e11d48' : '#fb7185'; // Rose
+                    bgOpacity = isLight ? 'rgba(225, 29, 72, 0.08)' : 'rgba(251, 113, 133, 0.1)';
+                    borderOpacity = isLight ? 'rgba(225, 29, 72, 0.2)' : 'rgba(251, 113, 133, 0.2)';
+                } else if (fLower.includes('ini')) {
+                    badgeColor = isLight ? '#4f46e5' : '#818cf8'; // Indigo
+                    bgOpacity = isLight ? 'rgba(79, 70, 229, 0.08)' : 'rgba(129, 140, 248, 0.1)';
+                    borderOpacity = isLight ? 'rgba(79, 70, 229, 0.2)' : 'rgba(129, 140, 248, 0.2)';
+                } else if (fLower.includes('ngnc')) {
+                    badgeColor = isLight ? '#b45309' : '#fbbf24'; // Amber
+                    bgOpacity = isLight ? 'rgba(180, 83, 9, 0.08)' : 'rgba(251, 191, 36, 0.1)';
+                    borderOpacity = isLight ? 'rgba(180, 83, 9, 0.2)' : 'rgba(251, 191, 36, 0.2)';
+                } else if (fLower.includes('system team')) {
+                    badgeColor = isLight ? '#0d9488' : '#2dd4bf'; // Teal
+                    bgOpacity = isLight ? 'rgba(13, 148, 136, 0.08)' : 'rgba(45, 212, 191, 0.1)';
+                    borderOpacity = isLight ? 'rgba(13, 148, 136, 0.2)' : 'rgba(45, 212, 191, 0.2)';
+                } else if (fLower.includes('power team')) {
+                    badgeColor = isLight ? '#dc2626' : '#f87171'; // Red
+                    bgOpacity = isLight ? 'rgba(220, 38, 38, 0.08)' : 'rgba(248, 113, 113, 0.1)';
+                    borderOpacity = isLight ? 'rgba(220, 38, 38, 0.2)' : 'rgba(248, 113, 113, 0.2)';
+                } else if (fLower.includes('project')) {
+                    badgeColor = isLight ? '#9333ea' : '#c084fc'; // Purple
+                    bgOpacity = isLight ? 'rgba(147, 51, 234, 0.08)' : 'rgba(192, 132, 252, 0.1)';
+                    borderOpacity = isLight ? 'rgba(147, 51, 234, 0.2)' : 'rgba(192, 132, 252, 0.2)';
+                }
+                
+                forwardedDisplay = `<span style="font-weight: 600; color: ${badgeColor}; background: ${bgOpacity}; border: 1px solid ${borderOpacity}; padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.25rem;"><i data-lucide="forward" style="width: 12px; height: 12px;"></i>${task.forwarded_by}</span>`;
+            }
+
+            let pendingReasonDisplay = '<span style="color: var(--text-muted); font-style: italic;">—</span>';
+            if (task.pending_reason) {
+                const fullReason = task.pending_reason;
+                const truncatedReason = fullReason.length > 20 ? fullReason.substring(0, 20) + '...' : fullReason;
+                pendingReasonDisplay = `<span title="${fullReason.replace(/"/g, '&quot;')}" style="font-size: 0.8rem; color: #f59e0b; font-weight: 500; display: inline-flex; align-items: center; gap: 0.2rem; cursor: help;"><i data-lucide="alert-circle" style="width: 13px; height: 13px;"></i>${truncatedReason}</span>`;
+            }
+
+            let escalationDisplay = '<span style="color: var(--text-muted); font-style: italic;">—</span>';
+            if (task.escalation_history) {
+                const fullEsc = task.escalation_history;
+                const singleLineEsc = fullEsc.replace(/\n/g, ' ');
+                const truncatedEsc = singleLineEsc.length > 20 ? singleLineEsc.substring(0, 20) + '...' : singleLineEsc;
+                escalationDisplay = `<span title="${fullEsc.replace(/"/g, '&quot;')}" style="font-size: 0.8rem; color: #818cf8; font-weight: 500; display: inline-flex; align-items: center; gap: 0.2rem; cursor: help;"><i data-lucide="trending-up" style="width: 13px; height: 13px;"></i>${truncatedEsc}</span>`;
+            }
+
+            tr.innerHTML = `
+                <td><span style="font-weight: 500; word-break: break-word;">${task.description}</span></td>
+                <td>${refDisplay}</td>
+                <td>${categoryDisplay}</td>
+                <td>${forwardedDisplay}</td>
+                <td><span style="font-weight: 500;">${task.owner}</span></td>
+                <td>${startDisplay}</td>
+                <td>${endDisplay}</td>
+                <td><span style="font-weight: 600; color: #38bdf8; font-size: 0.85rem;">${durationDisplay}</span></td>
+                <td>
+                    <span class="status-badge ${statusClass}">
+                        <span class="badge-dot"></span>
+                        ${task.status}
+                    </span>
+                </td>
+                <td>${pendingReasonDisplay}</td>
+                <td>${escalationDisplay}</td>
+                <td>
+                    <div style="display: flex; gap: 0.25rem;">
+                        ${actionButtons}
+                    </div>
+                </td>
+            `;
+
+            tasksTableBody.appendChild(tr);
+        });
+
+        addTaskCardActionListeners();
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    function addTaskCardActionListeners() {
+        document.querySelectorAll('.btn-start').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const taskId = e.currentTarget.getAttribute('data-id');
+                changeTaskStatus(taskId, 'In Progress');
+            });
+        });
+
+        document.querySelectorAll('.btn-complete').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const taskId = e.currentTarget.getAttribute('data-id');
+                changeTaskStatus(taskId, 'Completed');
+            });
+        });
+
+        document.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const taskId = e.currentTarget.getAttribute('data-id');
+                openEditModal(taskId);
+            });
+        });
+
+        document.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const taskId = e.currentTarget.getAttribute('data-id');
+                deleteTask(taskId);
+            });
+        });
+
+        document.querySelectorAll('.btn-detail').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const taskId = e.currentTarget.getAttribute('data-id');
+                openDetailModal(taskId);
+            });
+        });
+    }
+
+    // --- Search & Filters Event Listeners ---
+
+    searchQueryInput.addEventListener('input', (e) => {
+        searchQuery = e.target.value;
+        updateDashboard();
+    });
+
+    filterStatusSelect.addEventListener('change', (e) => {
+        selectedStatusFilter = e.target.value;
+        updateDashboard();
+    });
+
+    if (filterScopeSelect) {
+        filterScopeSelect.addEventListener('change', (e) => {
+            selectedScopeFilter = e.target.value;
+            updateDashboard();
+        });
+    }
+
+    viewGridBtn.addEventListener('click', () => {
+        currentView = 'grid';
+        viewGridBtn.classList.add('active');
+        viewTableBtn.classList.remove('active');
+        updateDashboard();
+    });
+
+    viewTableBtn.addEventListener('click', () => {
+        currentView = 'table';
+        viewTableBtn.classList.add('active');
+        viewGridBtn.classList.remove('active');
+        updateDashboard();
+    });
+
+    if (editStatusSelect) {
+        editStatusSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'Pending') {
+                editPendingReasonGroup.classList.remove('hidden');
+            } else {
+                editPendingReasonGroup.classList.add('hidden');
+            }
+        });
+    }
+
+    // --- Task Detail Modal Handlers ---
+    function openDetailModal(taskId) {
+        const task = allTasks.find(t => t.id === taskId);
+        if (!task) return;
+
+        terminalTimestamp.textContent = new Date().toLocaleString();
+        detailTaskId.textContent = task.id;
+        detailDescription.textContent = task.description;
+        const ref = extractReference(task.description);
+        detailReference.textContent = ref || 'N/A';
+        
+        let cat = 'N/A';
+        const descLower = task.description.toLowerCase();
+        if (ref && (ref.startsWith('TKI') || ref.startsWith('CR'))) {
+            cat = 'IMPLEMENTATION';
+        } else if (descLower.includes('backbone')) {
+            cat = 'BACKBONE';
+        } else if (descLower.includes('project')) {
+            cat = 'PROJECT';
+        }
+        detailCategory.textContent = cat;
+        detailOwner.textContent = task.owner;
+        detailStatus.textContent = task.status;
+        detailAssignedTime.textContent = task.assigned_time || 'N/A';
+        detailStartTime.textContent = task.start_time || 'N/A';
+        detailEndTime.textContent = task.end_time || 'N/A';
+        detailDuration.textContent = task.duration || 'N/A';
+        detailPendingReason.value = task.pending_reason || 'N/A';
+        if (detailEscalationHistory) {
+            detailEscalationHistory.value = task.escalation_history || 'N/A';
+        }
+        if (detailAssignmentHistory) {
+            detailAssignmentHistory.value = task.assignment_history || 'N/A';
+            detailAssignmentHistory.style.height = 'auto';
+            detailAssignmentHistory.style.height = Math.max(detailAssignmentHistory.scrollHeight + 10, 100) + 'px';
+        }
+
+        taskDetailModal.classList.remove('hidden');
+
+        // Dynamically adjust height of pending reason textarea based on text content (after rendering)
+        detailPendingReason.style.height = 'auto';
+        detailPendingReason.style.height = Math.max(detailPendingReason.scrollHeight + 10, 100) + 'px';
+        if (detailEscalationHistory) {
+            detailEscalationHistory.style.height = 'auto';
+            detailEscalationHistory.style.height = Math.max(detailEscalationHistory.scrollHeight + 10, 100) + 'px';
+        }
+        const content = taskDetailModal.querySelector('.modal-content-deck');
+        content.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            content.style.transform = 'translateY(0)';
+        }, 10);
+    }
+
+    function closeDetailModal() {
+        const content = taskDetailModal.querySelector('.modal-content-deck');
+        content.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            taskDetailModal.classList.add('hidden');
+        }, 150);
+    }
+
+    if (btnCloseDetailModal) btnCloseDetailModal.addEventListener('click', closeDetailModal);
+    if (btnCloseDetailModalFooter) btnCloseDetailModalFooter.addEventListener('click', closeDetailModal);
+    if (taskDetailModal) {
+        taskDetailModal.addEventListener('click', (e) => {
+            if (e.target === taskDetailModal) closeDetailModal();
+        });
+    }
+
+    // --- Modal Handlers ---
+
+    function openEditModal(taskId) {
+        const task = allTasks.find(t => t.id === taskId);
+        if (!task) return;
+
+        editTaskIdInput.value = task.id;
+        modalTaskIdLabel.textContent = task.id;
+        editDescriptionInput.value = task.description;
+        editOwnerInput.value = task.owner;
+        editStartTimeInput.value = convertToInputFormat(task.start_time);
+        editEndTimeInput.value = convertToInputFormat(task.end_time);
+        editStatusSelect.value = task.status;
+        editPendingReasonInput.value = task.pending_reason || '';
+        editPendingReasonInput.style.height = 'auto';
+        editPendingReasonInput.style.height = Math.max(editPendingReasonInput.scrollHeight + 4, 80) + 'px';
+
+        if (editEscalationHistoryInput) {
+            editEscalationHistoryInput.value = task.escalation_history || '';
+            editEscalationHistoryInput.style.height = 'auto';
+            editEscalationHistoryInput.style.height = Math.max(editEscalationHistoryInput.scrollHeight + 4, 80) + 'px';
+        }
+
+        if (task.status === 'Pending') {
+            editPendingReasonGroup.classList.remove('hidden');
+        } else {
+            editPendingReasonGroup.classList.add('hidden');
+        }
+
+        editModal.classList.remove('hidden');
+        const content = editModal.querySelector('.modal-content-deck');
+        content.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            content.style.transform = 'translateY(0)';
+        }, 10);
+    }
+
+    function closeModal() {
+        const content = editModal.querySelector('.modal-content-deck');
+        content.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            editModal.classList.add('hidden');
+        }, 150);
+    }
+
+    btnCloseModal.addEventListener('click', closeModal);
+    btnCancelEdit.addEventListener('click', closeModal);
+    editModal.addEventListener('click', (e) => {
+        if (e.target === editModal) closeModal();
+    });
+
+    // --- Toast Notifications Logic ---
+
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        let iconName = 'check-circle';
+        if (type === 'error') iconName = 'alert-triangle';
+        if (type === 'warning') iconName = 'alert-circle';
+        if (type === 'info') iconName = 'info';
+
+        toast.innerHTML = `
+            <i data-lucide="${iconName}"></i>
+            <div class="toast-message">${message}</div>
+            <button class="toast-close">&times;</button>
+        `;
+
+        toastContainer.appendChild(toast);
+        
+        if (window.lucide) window.lucide.createIcons();
+
+        toast.querySelector('.toast-close').addEventListener('click', () => {
+            removeToast(toast);
+        });
+
+        setTimeout(() => {
+            removeToast(toast);
+        }, 5000);
+    }
+
+    function removeToast(toast) {
+        toast.style.animation = 'fadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+        toast.addEventListener('animationend', () => {
+            toast.remove();
+        });
+    }
+
+    // Idle Activity Tracker to prevent background requests and Werkzeug server saturation
+    let lastActivityTime = Date.now();
+    const IDLE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
+
+    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    activityEvents.forEach(evt => {
+        document.addEventListener(evt, () => {
+            const wasIdle = (Date.now() - lastActivityTime) > IDLE_THRESHOLD;
+            lastActivityTime = Date.now();
+            if (wasIdle && currentUser) {
+                // Instantly resume fetching if we were idle
+                fetchTasks();
+                fetchQuickLinks();
+            }
+        }, { passive: true });
+    });
+
+    // Periodically refresh data every 3.5 seconds (reduced rate to prevent congestion)
+    setInterval(() => {
+        if (currentUser && (Date.now() - lastActivityTime) <= IDLE_THRESHOLD) {
+            fetchTasks();
+        }
+    }, 3500);
+
+    // Automatically reload the browser page every 5 minutes (increased from 2 minutes)
+    setInterval(() => {
+        if ((Date.now() - lastActivityTime) <= IDLE_THRESHOLD) {
+            location.reload();
+        }
+    }, 300000);
+
+    // --- Implementation Tracker Modal Handlers ---
+    let allImplementations = [];
+
+    async function loadAndRenderImplTracker() {
+        try {
+            implTrackerTableBody.innerHTML = `
+                <tr>
+                    <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                        Loading implementation history records...
+                    </td>
+                </tr>
+            `;
+
+            const response = await fetch(`${API_BASE}/tasks/implementations`);
+            if (!response.ok) throw new Error('Failed to fetch implementations');
+            allImplementations = await response.json();
+
+            renderImplTrackerTable(allImplementations);
+        } catch (error) {
+            console.error('Error loading implementations:', error);
+            implTrackerTableBody.innerHTML = `
+                <tr>
+                    <td colspan="10" style="text-align: center; color: #ef4444; padding: 2rem;">
+                        <i data-lucide="alert-circle" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem; width: 16px; height: 16px;"></i>
+                        Failed to load implementation records.
+                    </td>
+                </tr>
+            `;
+            if (window.lucide) window.lucide.createIcons();
+        }
+    }
+
+    function renderImplTrackerTable(tasks) {
+        // Calculate Stats
+        const total = tasks.length;
+        const inProgress = tasks.filter(t => t.status === 'In Progress').length;
+        const completed = tasks.filter(t => t.status === 'Completed').length;
+        const verified = tasks.filter(t => t.config_status && t.config_status.trim() !== '').length;
+
+        statImplTotal.textContent = total;
+        statImplProgress.textContent = inProgress;
+        statImplCompleted.textContent = completed;
+        statImplVerified.textContent = verified;
+
+        // Apply filters
+        const searchVal = implTrackerSearch.value.toLowerCase().trim();
+        const statusFilter = implTrackerStatusFilter.value;
+        const verifyFilter = implTrackerVerifyFilter.value;
+
+        const filtered = tasks.filter(t => {
+            const matchesSearch = !searchVal || 
+                (t.reference && t.reference.toLowerCase().includes(searchVal)) ||
+                (t.owner && t.owner.toLowerCase().includes(searchVal)) ||
+                (t.description && t.description.toLowerCase().includes(searchVal));
+
+            const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
+
+            const hasVerify = t.config_status && t.config_status.trim() !== '';
+            const matchesVerify = verifyFilter === 'all' || 
+                (verifyFilter === 'verified' && hasVerify) ||
+                (verifyFilter === 'unverified' && !hasVerify);
+
+            return matchesSearch && matchesStatus && matchesVerify;
+        });
+
+        if (filtered.length === 0) {
+            implTrackerTableBody.innerHTML = `
+                <tr>
+                    <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                        No matching implementation records found.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        // Helper to format date and time in compact stacked format
+        const formatTrackerDateTime = (dtStr) => {
+            if (!dtStr || dtStr === '—' || dtStr.trim() === '') return '—';
+            if (dtStr.includes(' ')) {
+                const parts = dtStr.split(' ');
+                const datePart = parts[0];
+                const timePart = parts[1] ? parts[1].substring(0, 5) : '';
+                return `<div style="line-height: 1.2;"><span style="font-size: 0.75rem; font-weight: 500;">${datePart}</span><br><span style="font-size: 0.7rem; color: var(--text-muted);">${timePart}</span></div>`;
+            }
+            return `<span style="font-size: 0.75rem;">${dtStr}</span>`;
+        };
+
+        implTrackerTableBody.innerHTML = '';
+        filtered.forEach(task => {
+            const tr = document.createElement('tr');
+            
+            const startDisplay = formatTrackerDateTime(task.start_time);
+            const endDisplay = formatTrackerDateTime(task.end_time);
+            const durationDisplay = task.duration || '—';
+
+            const refDisplay = task.reference ? `<span style="font-weight: 600; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 0.2rem 0.4rem; border-radius: var(--radius-sm); font-size: 0.72rem; word-break: break-all;"><i data-lucide="tag" style="width: 10px; height: 10px; display: inline-block; margin-right: 0.15rem; vertical-align: middle;"></i>${task.reference}</span>` : '—';
+
+            let statusClass = 'pending';
+            if (task.status === 'Completed') statusClass = 'completed';
+            else if (task.status === 'In Progress') statusClass = 'in-progress';
+
+            const statusBadge = `
+                <span class="status-badge ${statusClass}" style="margin: 0 auto; font-size: 0.7rem; padding: 0.15rem 0.4rem; width: auto;">
+                    <span class="badge-dot"></span>
+                    ${task.status}
+                </span>
+            `;
+
+            // MIS Status Select Dropdown (or Badge for non-editable users)
+            const misStatusVal = task.mis_status || 'Not Closed';
+            const isClosed = misStatusVal === 'Closed';
+            const canEdit = currentUser.role === 'admin' || task.owner === currentUser.name;
+            
+            let misStatusHtml = '';
+            if (canEdit) {
+                misStatusHtml = `
+                    <select class="roster-select btn-mis-status-select" data-id="${task.id}" style="width: 100%; max-width: 100px; padding: 0.2rem 0.35rem; font-size: 0.72rem; font-weight: 600; border-radius: var(--radius-sm); border: 1px solid ${isClosed ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}; background: ${isClosed ? 'rgba(16, 185, 129, 0.05)' : 'rgba(239, 68, 68, 0.05)'}; color: ${isClosed ? '#10b981' : '#f87171'}; text-align: center; outline: none; cursor: pointer; display: inline-block; height: auto;">
+                        <option value="Not Closed" ${!isClosed ? 'selected' : ''} style="background: #0f172a; color: #f87171; font-weight: bold;">Not Closed</option>
+                        <option value="Closed" ${isClosed ? 'selected' : ''} style="background: #0f172a; color: #10b981; font-weight: bold;">Closed</option>
+                    </select>
+                `;
+            } else {
+                misStatusHtml = `
+                    <span class="status-badge ${isClosed ? 'completed' : 'pending'}" style="margin: 0 auto; display: inline-flex; width: auto; font-size: 0.7rem; padding: 0.15rem 0.4rem;">
+                        <span class="badge-dot" style="background-color: ${isClosed ? '#10b981' : '#ef4444'};"></span>
+                        ${misStatusVal}
+                    </span>
+                `;
+            }
+
+            // Split Verification column: Config Status and Verified By
+            let configDisplay = '';
+            let verifiedByDisplay = '—';
+            
+            if (task.config_status && task.config_status.trim() !== '') {
+                configDisplay = `
+                    <div style="color: #10b981; font-weight: 600; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.2rem;">
+                        <i data-lucide="check-circle" style="width: 13px; height: 13px; color: #10b981;"></i>
+                        Verified
+                    </div>
+                `;
+                const raw = task.config_status.replace("Verified by ", "");
+                if (raw.includes(' on ')) {
+                    const [vUser, vDate] = raw.split(' on ');
+                    verifiedByDisplay = `<div style="line-height: 1.2;"><strong style="font-size: 0.75rem; color: var(--text-main);">${vUser}</strong><br><span style="font-size: 0.68rem; color: var(--text-muted);">${vDate}</span></div>`;
+                } else {
+                    verifiedByDisplay = `<span style="font-size: 0.75rem; font-weight: 500;">${raw}</span>`;
+                }
+            } else {
+                configDisplay = `
+                    <button class="action-btn btn-verify-config" data-id="${task.id}" style="background: rgba(167, 139, 250, 0.1); color: #a78bfa; border: 1px solid rgba(167, 139, 250, 0.2); width: 100%; max-width: 85px; padding: 0.25rem 0.35rem; border-radius: var(--radius-sm); font-size: 0.7rem; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 0.2rem; height: auto; cursor: pointer; margin: 0 auto;">
+                        <i data-lucide="shield-alert" style="width: 11px; height: 11px;"></i>Verify
+                    </button>
+                `;
+            }
+
+            tr.innerHTML = `
+                <td style="text-align: center; vertical-align: top;">${refDisplay}</td>
+                <td class="col-description" style="text-align: left; vertical-align: top;"><div style="font-weight: 500; font-size: 0.8rem; line-height: 1.45; word-break: break-word; white-space: normal; color: var(--text-main);">${escapeHtml(task.description || '')}</div></td>
+                <td style="text-align: center; vertical-align: top;"><span style="font-weight: 500; font-size: 0.78rem;">${task.owner}</span></td>
+                <td style="text-align: center; vertical-align: top;">${startDisplay}</td>
+                <td style="text-align: center; vertical-align: top;">${endDisplay}</td>
+                <td style="text-align: center; vertical-align: top;"><span style="font-weight: 600; color: #38bdf8; font-size: 0.8rem;">${durationDisplay}</span></td>
+                <td style="text-align: center; vertical-align: top;">${statusBadge}</td>
+                <td style="text-align: center; vertical-align: top;">${misStatusHtml}</td>
+                <td style="text-align: center; vertical-align: top;">${configDisplay}</td>
+                <td style="text-align: center; vertical-align: top;">${verifiedByDisplay}</td>
+            `;
+
+            implTrackerTableBody.appendChild(tr);
+        });
+
+        // Add verification button event listeners
+        document.querySelectorAll('.btn-verify-config').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const taskId = btn.getAttribute('data-id');
+                const task = tasks.find(t => t.id === taskId);
+                if (!task) return;
+
+                if (!confirm(`Are you sure you want to verify the configuration for implementation ticket ${task.reference}?`)) {
+                    return;
+                }
+
+                try {
+                    const dateStr = new Date().toLocaleString();
+                    const verifyLog = `Verified by ${currentUser.name} at ${dateStr}`;
+
+                    showToast("Saving verification status...", "info");
+                    const response = await fetch(`${API_BASE}/tasks/${taskId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            config_status: verifyLog
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const data = await response.json();
+                        throw new Error(data.message || 'Failed to verify config');
+                    }
+
+                    showToast(`Configuration successfully verified!`, "success");
+                    loadAndRenderImplTracker();
+                    updateDashboard();
+                } catch (error) {
+                    console.error('Error verifying config:', error);
+                    showToast(error.message || 'Connection error during verification.', 'error');
+                }
+            });
+        });
+
+        // Add MIS Status change dropdown event listeners
+        document.querySelectorAll('.btn-mis-status-select').forEach(select => {
+            select.addEventListener('change', async (e) => {
+                const taskId = select.getAttribute('data-id');
+                const newMisStatus = select.value;
+                const task = tasks.find(t => t.id === taskId);
+                if (!task) return;
+
+                try {
+                    showToast("Updating MIS Status...", "info");
+                    const response = await fetch(`${API_BASE}/tasks/${taskId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            mis_status: newMisStatus
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const data = await response.json();
+                        throw new Error(data.message || 'Failed to update MIS status');
+                    }
+
+                    showToast(`MIS Status updated to ${newMisStatus}!`, "success");
+                    loadAndRenderImplTracker();
+                    updateDashboard();
+                } catch (error) {
+                    console.error('Error updating MIS status:', error);
+                    showToast(error.message || 'Connection error during update.', 'error');
+                    // Reset dropdown value
+                    select.value = task.mis_status || 'Not Closed';
+                }
+            });
+        });
+
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    if (btnOpenImplTracker) {
+        btnOpenImplTracker.addEventListener('click', () => {
+            implTrackerModal.classList.remove('hidden');
+            loadAndRenderImplTracker();
+            const content = implTrackerModal.querySelector('.modal-content-deck');
+            content.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                content.style.transform = 'translateY(0)';
+            }, 10);
+        });
+    }
+
+    if (btnCloseImplTrackerModal) {
+        btnCloseImplTrackerModal.addEventListener('click', () => {
+            const content = implTrackerModal.querySelector('.modal-content-deck');
+            content.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                implTrackerModal.classList.add('hidden');
+            }, 150);
+        });
+    }
+
+    if (implTrackerSearch) {
+        implTrackerSearch.addEventListener('input', () => {
+            renderImplTrackerTable(allImplementations);
+        });
+    }
+    if (implTrackerStatusFilter) {
+        implTrackerStatusFilter.addEventListener('change', () => {
+            renderImplTrackerTable(allImplementations);
+        });
+    }
+    if (implTrackerVerifyFilter) {
+        implTrackerVerifyFilter.addEventListener('change', () => {
+            renderImplTrackerTable(allImplementations);
+        });
+    }
+
+    // --- Run Auth Setup on Boot ---
+    checkAuth();
+});

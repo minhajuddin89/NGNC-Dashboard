@@ -1,0 +1,30 @@
+{
+  "name": "ping-monitor",
+  "version": "1.0.0",
+  "description": "A premium real-time ping monitoring tool with source IP binding.",
+  "main": "server.js",
+  "bin": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "package": "pkg . --targets node18-win-x64 --output ping-monitor.exe"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5",
+    "socket.io-client": "^4.8.3",
+    "ssh2": "^1.17.0"
+  },
+  "pkg": {
+    "assets": [
+      "public/**/*",
+      "plink.exe"
+    ]
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "rcedit": "^5.0.2"
+  }
+}

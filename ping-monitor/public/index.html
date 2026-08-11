@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      fetch('/api/log-error', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: message,
+          source: source,
+          lineno: lineno,
+          colno: colno,
+          stack: error ? error.stack : ''
+        })
+      }).catch(err => {});
+      return false;
+    };
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PulseTrace</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Chart.js for beautiful sparklines -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Tailwind CSS is avoided per instructions; using custom vanilla CSS in style.css -->
+  <link rel="stylesheet" href="style.css?v=5">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <h1>PULSETRACE</h1>
+          <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+            <span class="connection-dot" id="connectionDot" style="width: 6px; height: 6px; border-radius: 50%; background: #fb7185; display: inline-block; box-shadow: 0 0 8px #fb7185; transition: all 0.3s ease;"></span>
+            <span id="connectionText" style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; line-height: 1;">Connecting...</span>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <div class="nat-info" id="natInfo">
+          <span class="label">Detected Public IP:</span>
+          <span class="value" id="publicIpVal">Detecting...</span>
+        </div>
+        <a href="/router.html" class="btn" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: #10b981; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 13px; margin-bottom: 0;" title="Router Looking Glass">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+            <rect x="2" y="2" width="20" height="8" rx="2"/>
+            <rect x="2" y="14" width="20" height="8" rx="2"/>
+            <line x1="6" y1="6" x2="6.01" y2="6"/>
+            <line x1="6" y1="18" x2="6.01" y2="18"/>
+          </svg>
+          Router Looking Glass
+        </a>
+        <button id="shutdownBtn" class="btn" style="width: 36px; height: 36px; padding: 0; background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.2); color: #f43f5e; display: flex; justify-content: center; align-items: center; border-radius: 8px; cursor: pointer; transition: var(--transition-smooth); margin-bottom: 0;" title="Shutdown Server">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+            <path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="app-content">
+      <!-- Control Panel -->
+      <section class="control-panel glass-card">
+        <h2>Configuration</h2>
+        
+        <div class="form-group">
+          <label for="targetInput">Target IPs / Domains</label>
+          <span class="help-text">Enter one IP or domain per line</span>
+          <textarea id="targetInput" placeholder="e.g.&#10;8.8.8.8&#10;1.1.1.1&#10;google.com" rows="5">8.8.8.8&#10;1.1.1.1&#10;google.com</textarea>
+        </div>
+
+
+
+        <div class="form-row" style="display: flex; gap: 12px; width: 100%;">
+          <div class="form-group" style="flex: 1; margin-bottom: 12px;">
+            <label for="pingModeSelect">Ping Mode</label>
+            <div class="custom-select-wrapper">
+              <select id="pingModeSelect">
+                <option value="icmp">ICMP (System)</option>
+                <option value="tcp">TCP (Native Node)</option>
+                <option value="udp">UDP (Native Node)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" id="tcpPortGroup" style="flex: 1; display: none; margin-bottom: 12px;">
+            <label for="tcpPortInput" id="portLabel">Port</label>
+            <input type="number" id="tcpPortInput" value="80" min="1" max="65535" style="height: 38px;">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="intervalInput">Interval (seconds)</label>
+          <input type="number" id="intervalInput" value="2" min="1" max="60">
+        </div>
+
+        <div class="form-group" style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; gap: 10px; width: 100%;">
+            <button class="btn btn-primary" id="toggleBtn" style="flex: 1; height: 42px;">
+              <span class="btn-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+              </span>
+              <span class="btn-text">Start Monitor</span>
+            </button>
+            <button class="btn btn-secondary" id="checkOnceBtn" style="flex: 1; height: 42px;">
+              <span class="btn-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+              </span>
+              <span class="btn-text">Check Once</span>
+            </button>
+          </div>
+          
+          <button id="exportBtn" class="btn" style="width: 100%; height: 42px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); display: flex; justify-content: center; align-items: center; gap: 8px;">
+            <span class="btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+              </svg>
+            </span>
+            <span class="btn-text">Export to Excel</span>
+          </button>
+          <button id="clearGridBtn" class="btn" style="width: 100%; height: 42px; background: rgba(244, 63, 94, 0.05); border: 1px solid rgba(244, 63, 94, 0.15); color: #f43f5e; display: none; justify-content: center; align-items: center; gap: 8px; margin-top: 10px;">
+            <span class="btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </span>
+            <span class="btn-text">Clear Grid</span>
+          </button>
+        </div>
+
+        <div class="form-group" id="addActiveTargetGroup" style="display: none; margin-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 15px;">
+          <label for="activeTargetInput">Add Target(s) to Session</label>
+          <span class="help-text">Enter IP or domain (comma/space/newline separated)</span>
+          <div style="display: flex; gap: 8px; margin-top: 6px;">
+            <input type="text" id="activeTargetInput" placeholder="e.g. 1.1.1.1, 8.8.4.4" style="flex: 1; height: 38px;">
+            <button class="btn btn-secondary" id="addActiveTargetBtn" style="width: auto; height: 38px; padding: 0 16px; margin: 0; min-width: 60px;">Add</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Dashboard Stats & Grid -->
+      <div class="dashboard-area">
+        <!-- Global Stats Row -->
+        <section class="stats-overview">
+          <div class="stat-card glass-card">
+            <div class="stat-icon cyan">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+                <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+                <line x1="6" y1="6" x2="6.01" y2="6"/>
+                <line x1="6" y1="18" x2="6.01" y2="18"/>
+              </svg>
+            </div>
+            <div class="stat-details">
+              <span class="stat-label">Active Targets</span>
+              <span class="stat-val" id="activeCount">0</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Monitored Targets Grid -->
+        <section class="targets-grid" id="targetsGrid">
+          <div class="no-targets-msg">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <p>No targets being monitored. Configure and click "Start Monitor" to begin.</p>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Raw Logs Panel -->
+    <footer class="console-panel glass-card">
+      <div class="console-header">
+        <h3 id="terminalTitle">Live Ping Terminal (Click a target row to view logs)</h3>
+        <button id="clearConsoleBtn" class="btn-text-only">Clear Logs</button>
+      </div>
+      <div class="console-body" id="consoleBody">
+        <div class="console-line system">[System] Ready to monitor...</div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Socket.io client -->
+  <script src="socket.io.js"></script>
+  <script src="app.js?v=5"></script>
+</body>
+</html>

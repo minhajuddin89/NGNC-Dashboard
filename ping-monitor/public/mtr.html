@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      fetch('/api/log-error', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: message,
+          source: source,
+          lineno: lineno,
+          colno: colno,
+          stack: error ? error.stack : ''
+        })
+      }).catch(err => {});
+      return false;
+    };
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PulseTrace MTR</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #05080c;
+      background-image: radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.08) 0px, transparent 50%);
+      color: #f3f4f6;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      padding: 20px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 12px;
+      flex-shrink: 0;
+    }
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    h1 span {
+      color: #10b981;
+    }
+    .controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      color: #f3f4f6;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn:hover {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: #10b981;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
+    }
+    .status-area {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(6, 182, 212, 0.1);
+      border-top-color: #06b6d4;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    .spinner.hidden {
+      display: none;
+    }
+    .table-container {
+      flex: 1;
+      background: rgba(17, 25, 40, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      overflow-y: auto;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: monospace;
+      font-size: 13px;
+      text-align: left;
+    }
+    th, td {
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    th {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 600;
+      color: #9ca3af;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      background: rgba(0, 0, 0, 0.2);
+      position: sticky;
+      top: 0;
+    }
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .col-hop { width: 60px; text-align: center; color: #6b7280; }
+    .col-host { color: #f3f4f6; }
+    .col-loss { width: 90px; font-weight: 600; }
+    .col-loss.has-loss { color: #f43f5e; }
+    .col-loss.no-loss { color: #10b981; }
+    .col-sent { width: 80px; text-align: right; }
+    .col-val { width: 80px; text-align: right; }
+    .col-last { color: #10b981; }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PulseTrace MTR &rarr; <span id="targetIp">...</span></h1>
+    <div class="controls">
+      <div class="status-area">
+        <div class="spinner" id="spinner"></div>
+        <span id="statusText">Discovering route...</span>
+      </div>
+      <button class="btn" id="restartBtn">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+        </svg>
+        Reset Stats
+      </button>
+    </div>
+  </header>
+  
+  <div class="table-container">
+    <table id="mtrTable">
+      <thead>
+        <tr>
+          <th class="col-hop">Hop</th>
+          <th class="col-host">Loss %</th>
+          <th class="col-loss">Host</th>
+          <th class="col-sent">Sent</th>
+          <th class="col-val col-last">Last</th>
+          <th class="col-val">Avg</th>
+          <th class="col-val">Best</th>
+          <th class="col-val">Wrst</th>
+        </tr>
+      </thead>
+      <tbody id="mtrBody">
+        <!-- Dynamic rows -->
+      </tbody>
+    </table>
+  </div>
+
+  <script src="socket.io.js"></script>
+  <script>
+    const socket = io();
+    const mtrBody = document.getElementById('mtrBody');
+    const spinner = document.getElementById('spinner');
+    const statusText = document.getElementById('statusText');
+    const targetIpEl = document.getElementById('targetIp');
+    const restartBtn = document.getElementById('restartBtn');
+
+    // Get target, mode, and port from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const target = urlParams.get('target');
+    const mode = urlParams.get('mode') || 'icmp';
+    const port = parseInt(urlParams.get('port'), 10) || 80;
+
+    let hopStats = {}; // Map of hopNum -> { ip, sent, received, lost, last, best, worst, totalLatency }
+
+    if (!target) {
+      statusText.textContent = 'Error: No target specified';
+      spinner.classList.add('hidden');
+    } else {
+      targetIpEl.textContent = target + (mode === 'tcp' ? ` (TCP:${port})` : '');
+      document.title = 'PulseTrace MTR - ' + target;
+      
+      socket.on('connect', () => {
+        startMtr();
+      });
+
+      socket.on('mtr-message', (msg) => {
+        statusText.textContent = msg;
+      });
+
+      socket.on('mtr-hop-discovered', (data) => {
+        const { hopNum, ip } = data;
+        if (!hopStats[hopNum]) {
+          hopStats[hopNum] = {
+            ip: ip,
+            sent: 0,
+            received: 0,
+            lost: 0,
+            last: null,
+            best: null,
+            worst: null,
+            totalLatency: 0
+          };
+          renderRow(hopNum, ip);
+        }
+      });
+
+      // Load accumulated background stats immediately
+      socket.on('mtr-init-stats', (hops) => {
+        hops.forEach(h => {
+          if (!hopStats[h.hopNum]) {
+            hopStats[h.hopNum] = {
+              ip: h.ip,
+              sent: h.sent,
+              received: h.received,
+              lost: h.lost,
+              last: h.last,
+              best: h.best,
+              worst: h.worst,
+              totalLatency: h.totalLatency
+            };
+            renderRow(h.hopNum, h.ip);
+          } else {
+            Object.assign(hopStats[h.hopNum], h);
+          }
+          updateRowUI(h.hopNum);
+        });
+      });
+
+      socket.on('mtr-route-complete', () => {
+        spinner.classList.add('hidden');
+        statusText.textContent = 'Route discovered. Monitoring...';
+      });
+
+      socket.on('mtr-ping-result', (data) => {
+        const { hopNum, status, latency } = data;
+        const stats = hopStats[hopNum];
+        if (!stats) return;
+
+        stats.sent++;
+        if (status === 'online') {
+          stats.received++;
+          stats.last = latency;
+          stats.totalLatency += latency;
+          if (stats.best === null || latency < stats.best) stats.best = latency;
+          if (stats.worst === null || latency > stats.worst) stats.worst = latency;
+        } else {
+          stats.lost++;
+          stats.last = null;
+        }
+
+        updateRowUI(hopNum);
+      });
+
+      restartBtn.addEventListener('click', () => {
+        // Reset stats in backend
+        socket.emit('reset-mtr-stats', { target });
+
+        // Reset stats in frontend
+        Object.keys(hopStats).forEach(hopNum => {
+          const stats = hopStats[hopNum];
+          stats.sent = 0;
+          stats.received = 0;
+          stats.lost = 0;
+          stats.last = null;
+          stats.best = null;
+          stats.worst = null;
+          stats.totalLatency = 0;
+          updateRowUI(hopNum);
+        });
+      });
+    }
+
+    function startMtr() {
+      hopStats = {};
+      mtrBody.innerHTML = '';
+      spinner.classList.remove('hidden');
+      statusText.textContent = 'Discovering route...';
+
+      const routerType = urlParams.get('routerType');
+      const routerHost = urlParams.get('routerHost');
+      const routerPort = parseInt(urlParams.get('routerPort'), 10) || 22;
+      const routerUser = urlParams.get('routerUser');
+      const routerPass = urlParams.get('routerPass') ? decodeURIComponent(urlParams.get('routerPass')) : '';
+      const routerSource = urlParams.get('routerSource');
+      const routerNeedsPty = urlParams.get('routerNeedsPty') === 'true';
+      const routerNeedsPasswordOption = urlParams.get('routerNeedsPasswordOption') === 'true';
+
+      const routerConfig = routerHost ? {
+        type: routerType,
+        host: routerHost,
+        port: routerPort,
+        username: routerUser,
+        password: routerPass,
+        source: routerSource,
+        needsPty: routerNeedsPty,
+        needsPasswordOption: routerNeedsPasswordOption
+      } : null;
+
+      socket.emit('start-mtr', { target, mode, port, routerConfig });
+    }
+
+    function renderRow(hopNum, ip) {
+      const rowId = `hop-row-${hopNum}`;
+      if (document.getElementById(rowId)) return;
+
+      const html = `
+        <tr id="${rowId}">
+          <td class="col-hop">${hopNum}</td>
+          <td class="col-loss no-loss" id="${rowId}-loss">0.0%</td>
+          <td class="col-host">${ip}</td>
+          <td class="col-sent" id="${rowId}-sent">0</td>
+          <td class="col-val col-last" id="${rowId}-last">--</td>
+          <td class="col-val" id="${rowId}-avg">--</td>
+          <td class="col-val" id="${rowId}-best">--</td>
+          <td class="col-val" id="${rowId}-worst">--</td>
+        </tr>
+      `;
+
+      // Sort rows as they are added
+      const rows = Array.from(mtrBody.children);
+      const insertIndex = rows.findIndex(row => {
+        const id = parseInt(row.id.replace('hop-row-', ''), 10);
+        return id > hopNum;
+      });
+
+      if (insertIndex === -1) {
+        mtrBody.insertAdjacentHTML('beforeend', html);
+      } else {
+        rows[insertIndex].insertAdjacentHTML('beforebegin', html);
+      }
+    }
+
+    function updateRowUI(hopNum) {
+      const rowId = `hop-row-${hopNum}`;
+      const stats = hopStats[hopNum];
+      if (!stats) return;
+
+      const lossEl = document.getElementById(`${rowId}-loss`);
+      const sentEl = document.getElementById(`${rowId}-sent`);
+      const lastEl = document.getElementById(`${rowId}-last`);
+      const avgEl = document.getElementById(`${rowId}-avg`);
+      const bestEl = document.getElementById(`${rowId}-best`);
+      const worstEl = document.getElementById(`${rowId}-worst`);
+
+      if (!lossEl) return;
+
+      const lossPercent = stats.sent > 0 ? ((stats.lost / stats.sent) * 100) : 0;
+      lossEl.textContent = `${lossPercent.toFixed(1)}%`;
+      
+      if (lossPercent > 0) {
+        lossEl.className = 'col-loss has-loss';
+      } else {
+        lossEl.className = 'col-loss no-loss';
+      }
+
+      sentEl.textContent = stats.sent;
+      lastEl.textContent = stats.last !== null ? `${stats.last} ms` : '--';
+      
+      const avg = stats.received > 0 ? Math.round(stats.totalLatency / stats.received) : 0;
+      avgEl.textContent = stats.received > 0 ? `${avg} ms` : '--';
+      bestEl.textContent = stats.best !== null ? `${stats.best} ms` : '--';
+      worstEl.textContent = stats.worst !== null ? `${stats.worst} ms` : '--';
+    }
+  </script>
+</body>
+</html>

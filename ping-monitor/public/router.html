@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PulseTrace Looking Glass</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Chart.js for beautiful sparklines -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css?v=3">
+  <style>
+    body {
+      background: #080b11;
+      color: #f3f4f6;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    
+    /* Login Screen Styling */
+    #loginScreen {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.08), transparent), #080b11;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .login-card {
+      width: 100%;
+      max-width: 420px;
+      background: rgba(17, 25, 40, 0.45);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 40px 32px;
+      box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+    }
+    .login-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .login-logo {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      color: #10b981;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0 auto 16px auto;
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+    }
+    .login-header h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0;
+    }
+    .login-header p {
+      color: #9ca3af;
+      font-size: 13px;
+      margin: 6px 0 0 0;
+    }
+    
+    /* Form fields */
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: #9ca3af;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      color: #f3f4f6;
+      padding: 12px;
+      font-size: 14px;
+      box-sizing: border-box;
+      transition: all 0.2s ease;
+    }
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: #10b981;
+      background: rgba(255, 255, 255, 0.06);
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    }
+    /* Override browser autocomplete autofill style */
+    .form-group input:-webkit-autofill,
+    .form-group input:-webkit-autofill:hover, 
+    .form-group input:-webkit-autofill:focus,
+    .form-group input:-webkit-autofill:active {
+      -webkit-text-fill-color: #f3f4f6 !important;
+      -webkit-box-shadow: 0 0 0 1000px #0e131d inset !important;
+      box-shadow: 0 0 0 1000px #0e131d inset !important;
+      border-color: rgba(255, 255, 255, 0.08) !important;
+      transition: background-color 5000s ease-in-out 0s;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 12px;
+    }
+    .btn-submit {
+      width: 100%;
+      background: #10b981;
+      border: none;
+      border-radius: 8px;
+      color: #080b11;
+      padding: 14px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+    .btn-submit:hover {
+      background: #059669;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+    }
+    .btn-submit:active {
+      transform: translateY(0);
+    }
+
+    /* Router session info in dashboard header */
+    .router-badge {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #10b981;
+    }
+    .router-badge span.indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+
+    /* Checkboxes list styling */
+    .checkbox-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.02);
+      margin-top: 8px;
+    }
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      font-size: 13px;
+      user-select: none;
+      padding: 4px 0;
+    }
+    .checkbox-item input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: #10b981;
+      cursor: pointer;
+      margin: 0;
+    }
+    .badge-pub {
+      display: inline-block;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-left: auto;
+    }
+    .badge-public {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+    .badge-private {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+    
+    .card-via-text {
+      font-size: 11px;
+      color: #10b981;
+      font-weight: 600;
+      display: block;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== 1. LOGIN SCREEN ==================== -->
+  <div id="loginScreen">
+    <div style="width: 100%; max-width: 420px; margin-bottom: 12px; display: flex; justify-content: flex-start;">
+      <a href="/index.html" style="display: inline-flex; align-items: center; gap: 8px; color: #9ca3af; text-decoration: none; font-size: 13px; font-weight: 500; transition: color 0.2s ease; outline: none;" onmouseover="this.style.color='#f3f4f6'" onmouseout="this.style.color='#9ca3af'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 16px; height: 16px;">
+          <line x1="19" y1="12" x2="5" y2="12"/>
+          <polyline points="12 19 5 12 12 5"/>
+        </svg>
+        Back to Ping Dashboard
+      </a>
+    </div>
+    <div class="login-card">
+      <div class="login-header">
+        <div class="login-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 28px; height: 28px;">
+            <rect x="2" y="2" width="20" height="8" rx="2"/>
+            <rect x="2" y="14" width="20" height="8" rx="2"/>
+            <line x1="6" y1="6" x2="6.01" y2="6"/>
+            <line x1="6" y1="18" x2="6.01" y2="18"/>
+          </svg>
+        </div>
+        <h2>PulseTrace LG</h2>
+        <p>Log in to your router to monitor targets from there</p>
+      </div>
+
+      <div class="form-group">
+        <label>Router Brand</label>
+        <select id="routerType">
+          <option value="mikrotik">Mikrotik (RouterOS)</option>
+          <option value="cisco">Cisco (IOS)</option>
+          <option value="huawei">Huawei (VRP)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <div class="form-row">
+          <div>
+            <label>Host / IP</label>
+            <input type="text" id="routerHost" placeholder="e.g. 27.147.254.37" value="27.147.254.37">
+          </div>
+          <div>
+            <label>SSH Port</label>
+            <input type="number" id="routerPort" placeholder="22" value="2200">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="routerUser" placeholder="admin">
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="routerPass" placeholder="••••••••">
+      </div>
+
+      <!-- Plink UI fields removed. Automatically handled in background. -->
+
+      <button id="btnLogin" class="btn-submit">
+        Login & Enter Dashboard
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== 2. DASHBOARD SCREEN ==================== -->
+  <div id="dashboardScreen" class="app-container" style="display: none;">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <div class="logo-icon" style="color: #10b981;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <rect x="2" y="2" width="20" height="8" rx="2"/>
+            <rect x="2" y="14" width="20" height="8" rx="2"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <h1>PULSETRACE LG</h1>
+          <span>Multi-Source Diagnostics</span>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <div class="router-badge" id="activeRouterBadge">
+          <span class="indicator"></span>
+          <span id="activeRouterText">Connected to ...</span>
+        </div>
+        <button id="btnDisconnect" class="btn" style="background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.2); color: #f43f5e; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;" title="Disconnect Router">
+          Disconnect
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="app-content">
+      <!-- Control Panel -->
+      <section class="control-panel glass-card">
+        <h2>Configuration</h2>
+        
+        <div class="form-group">
+          <label for="targetHostInput">Target Host / IP</label>
+          <span class="help-text">Enter a single IP or Domain to test</span>
+          <input type="text" id="targetHostInput" value="8.8.8.8" placeholder="e.g. 8.8.8.8">
+        </div>
+
+        <div class="form-group">
+          <label style="display: flex; justify-content: space-between; align-items: center;">
+            <span>Source Interfaces / IPs</span>
+            <span id="discoveredCount" style="display: none; font-size: 11px; font-weight: 600; color: #10b981; background: rgba(16, 185, 129, 0.1); padding: 2px 8px; border-radius: 999px;"></span>
+          </label>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span class="help-text" style="margin-bottom: 0;">Select router IPs to ping from</span>
+            <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-secondary); cursor: pointer; margin: 0;">
+              <input type="checkbox" id="showPublicOnly" style="width: auto; cursor: pointer;"> Public Only
+            </label>
+          </div>
+          
+          <input type="text" id="interfaceSearch" placeholder="Search IP or interface..." style="width: 100%; padding: 6px 12px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; background: rgba(255,255,255,0.02); font-size: 12px; color: var(--text-primary); outline: none;">
+
+          <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <button id="btnSelectAll" type="button" style="background: none; border: none; color: #10b981; font-size: 11px; cursor: pointer; padding: 0;">Select All</button>
+            <span style="color: rgba(255,255,255,0.15); font-size: 11px;">|</span>
+            <button id="btnUnselectAll" type="button" style="background: none; border: none; color: #f43f5e; font-size: 11px; cursor: pointer; padding: 0;">Clear All</button>
+          </div>
+          <div class="checkbox-grid" id="interfacesCheckboxes">
+            <!-- Dynamically populated -->
+            <div style="text-align: center; color: #9ca3af; font-size: 12px; padding: 10px 0;">No interfaces loaded.</div>
+          </div>
+        </div>
+
+        <div class="form-row" style="display: flex; gap: 12px; width: 100%;">
+          <div class="form-group" style="flex: 1; margin-bottom: 12px;">
+            <label for="pingModeSelect">Ping Mode</label>
+            <div class="custom-select-wrapper">
+              <select id="pingModeSelect">
+                <option value="icmp">ICMP (Standard)</option>
+                <option value="tcp">TCP Port Ping</option>
+                <option value="udp">UDP Port Ping</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group" id="tcpPortGroup" style="flex: 1; display: none; margin-bottom: 12px;">
+            <label for="tcpPortInput" id="portLabel">TCP Port</label>
+            <input type="number" id="tcpPortInput" value="80" min="1" max="65535">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="intervalInput">Ping Interval (seconds)</label>
+          <input type="number" id="intervalInput" value="2" min="1" step="0.5">
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 24px;">
+          <button id="toggleBtn" class="btn btn-primary">
+            <span class="btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+            </span>
+            <span class="btn-text">Start Monitor</span>
+          </button>
+          
+          <button id="checkOnceBtn" class="btn btn-secondary" style="background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08);">
+            <span class="btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </span>
+            <span class="btn-text">Check Once (5 Pings)</span>
+          </button>
+          <button id="clearGridBtn" class="btn" style="width: 100%; background: rgba(244, 63, 94, 0.05); border: 1px solid rgba(244, 63, 94, 0.15); color: #f43f5e; display: none; justify-content: center; align-items: center; gap: 8px; margin-top: 0;">
+            <span class="btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </span>
+            <span class="btn-text">Clear Grid</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Dashboard Grid -->
+      <section class="dashboard-area">
+        <!-- Global Stats -->
+        <div class="stats-row">
+          <div class="stat-card glass-card">
+            <div class="stat-icon" style="color: #60a5fa; background: rgba(96, 165, 250, 0.1);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="2" y1="12" x2="22" y2="12"/>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+              </svg>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Total Sources</span>
+              <h3 id="totalTargetsVal">0</h3>
+            </div>
+          </div>
+
+          <div class="stat-card glass-card" style="display: none;">
+            <div class="stat-icon" style="color: #34d399; background: rgba(52, 211, 153, 0.1);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Online Sources</span>
+              <h3 id="onlineTargetsVal" style="color: #34d399;">0</h3>
+            </div>
+          </div>
+
+          <div class="stat-card glass-card" style="display: none;">
+            <div class="stat-icon" style="color: #f87171; background: rgba(248, 113, 113, 0.1);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <octagon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Offline Sources</span>
+              <h3 id="offlineTargetsVal" style="color: #f87171;">0</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Targets Grid -->
+        <div class="targets-grid" id="targetsGrid">
+          <!-- Dynamically populated target cards -->
+        </div>
+
+        <!-- Terminal Console -->
+        <div class="console-area glass-card">
+          <div class="console-header">
+            <h4 id="terminalTitle">Live Ping Terminal (Click a card to view logs)</h4>
+            <div style="display: flex; gap: 8px;">
+              <button id="clearConsoleBtn" class="btn" style="padding: 4px 10px; font-size: 11px;">Clear Console</button>
+              <button id="exportBtn" class="btn" style="padding: 4px 10px; font-size: 11px; background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); color: #10b981;">Export CSV</button>
+            </div>
+          </div>
+          <div class="console-body" id="consoleBody">
+            [System] Terminal initialized. Waiting for monitor to start...
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    // LOGIN SCREEN ELEMENTS
+    const loginScreen = document.getElementById('loginScreen');
+    const routerType = document.getElementById('routerType');
+    const routerHost = document.getElementById('routerHost');
+    const routerPort = document.getElementById('routerPort');
+    const routerUser = document.getElementById('routerUser');
+    const routerPass = document.getElementById('routerPass');
+    const btnLogin = document.getElementById('btnLogin');
+
+    // Toggle options based on router type
+    setTimeout(() => {
+      const showPublicOnly = document.getElementById('showPublicOnly');
+      if (showPublicOnly) {
+        showPublicOnly.addEventListener('change', renderInterfaces);
+      }
+
+      const interfaceSearch = document.getElementById('interfaceSearch');
+      if (interfaceSearch) {
+        interfaceSearch.addEventListener('input', renderInterfaces);
+      }
+
+      const btnSelectAll = document.getElementById('btnSelectAll');
+      if (btnSelectAll) {
+        btnSelectAll.addEventListener('click', () => {
+          const boxes = document.querySelectorAll('input[name="sourceIps"]');
+          boxes.forEach(cb => cb.checked = true);
+        });
+      }
+
+      const btnUnselectAll = document.getElementById('btnUnselectAll');
+      if (btnUnselectAll) {
+        btnUnselectAll.addEventListener('click', () => {
+          const boxes = document.querySelectorAll('input[name="sourceIps"]');
+          boxes.forEach(cb => cb.checked = false);
+        });
+      }
+
+      // Auto-set port based on brand selection
+      routerType.addEventListener('change', () => {
+        const type = routerType.value;
+        if (type === 'huawei' || type === 'cisco') {
+          routerPort.value = '22';
+        } else if (type === 'mikrotik') {
+          routerPort.value = '2200';
+        }
+      });
+      // Align port on initial load
+      if (routerType.value === 'huawei' || routerType.value === 'cisco') {
+        routerPort.value = '22';
+      } else if (routerType.value === 'mikrotik') {
+        routerPort.value = '2200';
+      }
+    }, 0);
+
+    // DASHBOARD ELEMENTS
+    const dashboardScreen = document.getElementById('dashboardScreen');
+    const activeRouterText = document.getElementById('activeRouterText');
+    const btnDisconnect = document.getElementById('btnDisconnect');
+    const interfacesCheckboxes = document.getElementById('interfacesCheckboxes');
+    
+    const targetHostInput = document.getElementById('targetHostInput');
+    const intervalInput = document.getElementById('intervalInput');
+    const toggleBtn = document.getElementById('toggleBtn');
+    const checkOnceBtn = document.getElementById('checkOnceBtn');
+    const pingModeSelect = document.getElementById('pingModeSelect');
+    const tcpPortGroup = document.getElementById('tcpPortGroup');
+    const tcpPortInput = document.getElementById('tcpPortInput');
+    const targetsGrid = document.getElementById('targetsGrid');
+    const consoleBody = document.getElementById('consoleBody');
+    const clearConsoleBtn = document.getElementById('clearConsoleBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    const clearGridBtn = document.getElementById('clearGridBtn');
+
+    // STATE VARIABLES
+    let isMonitoring = false;
+    let targetStates = {};
+    let selectedTarget = null;
+    let routerConfig = null;
+    let discoveredIps = [];
+    let rawDiscoveredIps = [];
+
+    function renderInterfaces() {
+      const showPublicOnly = document.getElementById('showPublicOnly').checked;
+      const searchQuery = (document.getElementById('interfaceSearch')?.value || '').toLowerCase().trim();
+
+      let filtered = showPublicOnly 
+        ? rawDiscoveredIps.filter(item => !item.isPrivate)
+        : rawDiscoveredIps;
+
+      if (searchQuery) {
+        filtered = filtered.filter(item => 
+          item.interface.toLowerCase().includes(searchQuery) || 
+          item.ip.toLowerCase().includes(searchQuery)
+        );
+      }
+
+      discoveredIps = filtered;
+
+      // Populate Discovered Count badge
+      const discoveredCount = document.getElementById('discoveredCount');
+      if (discoveredCount) {
+        discoveredCount.textContent = `Discovered: ${filtered.length} IP${filtered.length === 1 ? '' : 's'}`;
+        discoveredCount.style.display = 'inline-block';
+      }
+
+      // Populate Checkboxes
+      interfacesCheckboxes.innerHTML = '';
+
+      if (filtered.length > 0) {
+        filtered.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'checkbox-item';
+          const badgeClass = item.isPrivate ? 'badge-private' : 'badge-public';
+          const typeLabel = item.isPrivate ? 'Private' : 'Public';
+          
+          div.innerHTML = `
+            <label style="display: flex; align-items: center; gap: 8px; width: 100%; cursor: pointer;">
+              <input type="checkbox" name="sourceIps" value="${item.ip}" checked>
+              <span><strong>${item.interface}</strong> - <code>${item.ip}</code></span>
+              <span class="badge-pub ${badgeClass}">${typeLabel}</span>
+            </label>
+          `;
+          interfacesCheckboxes.appendChild(div);
+        });
+      } else {
+        interfacesCheckboxes.innerHTML = `<div style="text-align: center; color: #9ca3af; font-size: 12px; padding: 10px 0;">No interfaces to display.</div>`;
+      }
+    }
+
+    // Create custom tooltip element dynamically
+    const tooltipEl = document.createElement('div');
+    tooltipEl.className = 'custom-tooltip';
+    document.body.appendChild(tooltipEl);
+
+    // Track visible cards in viewport
+    const visibleCards = new Set();
+    const cardObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        const target = entry.target.getAttribute('data-target-name');
+        if (entry.isIntersecting) {
+          visibleCards.add(target);
+          const state = targetStates[target];
+          if (state) {
+            if (!state.chart) {
+              initializeChartForTarget(target, state);
+            } else {
+              state.chart.update('none');
+            }
+          }
+        } else {
+          visibleCards.delete(target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    // Handle Ping Mode dropdown change
+    pingModeSelect.addEventListener('change', () => {
+      const val = pingModeSelect.value;
+      if (val === 'tcp' || val === 'udp') {
+        tcpPortGroup.style.display = 'flex';
+        if (val === 'tcp') {
+          tcpPortInput.value = '80';
+          document.getElementById('portLabel').textContent = 'TCP Port';
+        } else {
+          tcpPortInput.value = '53';
+          document.getElementById('portLabel').textContent = 'UDP Port';
+        }
+      } else {
+        tcpPortGroup.style.display = 'none';
+      }
+    });
+
+    // Toggle Monitoring
+    toggleBtn.addEventListener('click', () => {
+      if (isMonitoring) {
+        stopMonitoring();
+      } else {
+        startMonitoring();
+      }
+    });
+
+    // Check Once (Single Ping Check)
+    checkOnceBtn.addEventListener('click', () => {
+      if (!isMonitoring) {
+        checkOnce();
+      }
+    });
+
+    // Clear Console
+    clearConsoleBtn.addEventListener('click', () => {
+      consoleBody.innerHTML = '';
+      if (selectedTarget && targetStates[selectedTarget]) {
+        targetStates[selectedTarget].logs = [];
+      }
+    });
+
+    // Export Report to Excel (CSV)
+    exportBtn.addEventListener('click', downloadCSV);
+
+    // Clear Grid
+    clearGridBtn.addEventListener('click', () => {
+      targetStates = {};
+      selectedTarget = null;
+      targetsGrid.innerHTML = '';
+      consoleBody.innerHTML = '[System] Terminal initialized. Waiting for monitor to start...';
+      document.getElementById('terminalTitle').textContent = 'Live Ping Terminal (Click a card to view logs)';
+      updateGlobalStats();
+      clearGridBtn.style.display = 'none';
+    });
+
+    // ==================== SSH LOGIN HANDLER ====================
+    btnLogin.addEventListener('click', () => {
+      const host = routerHost.value.trim();
+      const port = parseInt(routerPort.value, 10) || 22;
+      const username = routerUser.value.trim();
+      const password = routerPass.value;
+      const type = routerType.value;
+
+      if (!host || !username) {
+        alert('Please fill in Host, Username, and Password.');
+        return;
+      }
+
+      btnLogin.disabled = true;
+      const usePlink = (type === 'huawei' || type === 'cisco');
+      btnLogin.textContent = usePlink ? 'Connecting via Plink...' : 'Connecting via SSH...';
+
+      // Store config locally
+      routerConfig = {
+        type,
+        host,
+        port,
+        username,
+        password,
+        usePlink,
+        plinkPath: 'plink.exe'
+      };
+
+      socket.emit('router-connect', routerConfig);
+    });
+
+    // Disconnect Router
+    btnDisconnect.addEventListener('click', () => {
+      socket.emit('router-disconnect');
+      if (isMonitoring) {
+        stopMonitoring();
+      }
+      
+      // Transition back to login
+      dashboardScreen.style.display = 'none';
+      loginScreen.style.display = 'flex';
+      btnLogin.disabled = false;
+      btnLogin.textContent = 'Login & Enter Dashboard';
+      routerConfig = null;
+      discoveredIps = [];
+
+      const interfaceSearch = document.getElementById('interfaceSearch');
+      if (interfaceSearch) {
+        interfaceSearch.value = '';
+      }
+
+      const discoveredCount = document.getElementById('discoveredCount');
+      if (discoveredCount) {
+        discoveredCount.style.display = 'none';
+      }
+    });
+
+    // Router Connect
+    socket.on('router-connected', (data) => {
+      // Transition UI
+      loginScreen.style.display = 'none';
+      dashboardScreen.style.display = 'block';
+
+      // Update routerConfig with needsPty and needsPasswordOption
+      if (routerConfig) {
+        routerConfig.needsPty = data.needsPty;
+        routerConfig.needsPasswordOption = data.needsPasswordOption;
+      }
+
+      const displayName = data.hostname || (routerConfig ? routerConfig.type.toUpperCase() : 'Router');
+      const routerDisplayName = `${displayName} (${routerConfig.host}:${routerConfig.port})`;
+      activeRouterText.textContent = `Connected to ${routerDisplayName}`;
+
+      rawDiscoveredIps = data.ips || [];
+      renderInterfaces();
+    });
+
+    socket.on('router-connect-error', (data) => {
+      alert(data.message);
+      btnLogin.disabled = false;
+      btnLogin.textContent = 'Login & Enter Dashboard';
+      routerConfig = null;
+    });
+
+    // Helper to split target name
+    function getCardDisplayNames(target) {
+      if (target.includes('@')) {
+        const parts = target.split('@');
+        return { host: parts[0], via: parts[1] };
+      }
+      return { host: target, via: '' };
+    }
+
+    // ==================== MONITORING ACTIONS ====================
+    function startMonitoring() {
+      const targetHost = targetHostInput.value.trim();
+      if (!targetHost) {
+        alert('Please enter a target host.');
+        return;
+      }
+
+      // Find all checked source IPs
+      const checkedBoxes = document.querySelectorAll('input[name="sourceIps"]:checked');
+      const checkedIps = Array.from(checkedBoxes).map(cb => cb.value);
+
+      if (checkedIps.length === 0) {
+        alert('Please select at least one source interface IP address.');
+        return;
+      }
+
+      const intervalSec = parseFloat(intervalInput.value) || 2;
+      const intervalMs = Math.max(intervalSec * 1000, 1000);
+
+      // Reset states
+      targetStates = {};
+      selectedTarget = null;
+      targetsGrid.innerHTML = '';
+      clearGridBtn.style.display = 'none';
+      document.getElementById('terminalTitle').textContent = 'Live Ping Terminal (Click a card to view logs)';
+      consoleBody.innerHTML = '';
+      
+      // Construct virtual targets: targetHost@sourceIP
+      const targets = checkedIps.map(sip => `${targetHost}@${sip}`);
+
+      targets.forEach(target => {
+        targetStates[target] = {
+          sent: 0,
+          received: 0,
+          lost: 0,
+          latencyHistory: [],
+          chart: null,
+          logs: [],
+          lastOnlineTime: null,
+          lastOfflineTime: null,
+          resolvedHostname: null,
+          resolvedIp: null,
+          fallbackIp: null
+        };
+        createTargetCard(target);
+      });
+
+      const pingMode = pingModeSelect.value;
+      const tcpPort = parseInt(tcpPortInput.value, 10) || 80;
+
+      // Disable Inputs
+      targetHostInput.disabled = true;
+      document.querySelectorAll('input[name="sourceIps"]').forEach(cb => cb.disabled = true);
+      intervalInput.disabled = true;
+      pingModeSelect.disabled = true;
+      tcpPortInput.disabled = true;
+
+      // Change Button Style
+      toggleBtn.classList.remove('btn-primary');
+      toggleBtn.classList.add('btn-danger');
+      toggleBtn.querySelector('.btn-text').textContent = 'Stop Monitor';
+      toggleBtn.querySelector('.btn-icon').innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="4" y="4" width="16" height="16" rx="2" ry="2"/>
+        </svg>
+      `;
+
+      isMonitoring = true;
+      updateGlobalStats();
+
+      logToConsole(`Starting simultaneous remote pings to ${targetHost} from ${checkedIps.length} sources...`, 'system');
+
+      // Send start command to server
+      socket.emit('start-monitoring', {
+        targets,
+        sourceIP: '', // passed inside targets array as @sourceIP
+        intervalMs,
+        pingMode,
+        tcpPort,
+        executionSource: 'router',
+        routerConfig
+      });
+    }
+
+    function stopMonitoring() {
+      socket.emit('stop-monitoring');
+    }
+
+    function handleStoppedState() {
+      isMonitoring = false;
+      
+      targetHostInput.disabled = false;
+      document.querySelectorAll('input[name="sourceIps"]').forEach(cb => cb.disabled = false);
+      intervalInput.disabled = false;
+      pingModeSelect.disabled = false;
+      if (pingModeSelect.value === 'tcp' || pingModeSelect.value === 'udp') {
+        tcpPortInput.disabled = false;
+      }
+
+      if (Object.keys(targetStates).length > 0) {
+        clearGridBtn.style.display = 'flex';
+      } else {
+        clearGridBtn.style.display = 'none';
+      }
+
+      // Restore Button Style
+      toggleBtn.classList.remove('btn-danger');
+      toggleBtn.classList.add('btn-primary');
+      toggleBtn.querySelector('.btn-text').textContent = 'Start Monitor';
+      toggleBtn.querySelector('.btn-icon').innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+      `;
+    }
+
+    function checkOnce() {
+      const targetHost = targetHostInput.value.trim();
+      if (!targetHost) {
+        alert('Please enter a target host.');
+        return;
+      }
+
+      const checkedBoxes = document.querySelectorAll('input[name="sourceIps"]:checked');
+      const checkedIps = Array.from(checkedBoxes).map(cb => cb.value);
+
+      if (checkedIps.length === 0) {
+        alert('Please select at least one source interface IP address.');
+        return;
+      }
+
+      // Reset states
+      targetStates = {};
+      selectedTarget = null;
+      targetsGrid.innerHTML = '';
+      clearGridBtn.style.display = 'none';
+      document.getElementById('terminalTitle').textContent = 'Live Ping Terminal (Click a card to view logs)';
+      consoleBody.innerHTML = '';
+
+      const targets = checkedIps.map(sip => `${targetHost}@${sip}`);
+
+      targets.forEach(target => {
+        targetStates[target] = {
+          sent: 0,
+          received: 0,
+          lost: 0,
+          latencyHistory: [],
+          chart: null,
+          logs: [],
+          lastOnlineTime: null,
+          lastOfflineTime: null
+        };
+        createTargetCard(target);
+      });
+
+      const pingMode = pingModeSelect.value;
+      const tcpPort = parseInt(tcpPortInput.value, 10) || 80;
+
+      // Disable Inputs & Both Buttons
+      targetHostInput.disabled = true;
+      document.querySelectorAll('input[name="sourceIps"]').forEach(cb => cb.disabled = true);
+      intervalInput.disabled = true;
+      pingModeSelect.disabled = true;
+      tcpPortInput.disabled = true;
+      toggleBtn.disabled = true;
+      checkOnceBtn.disabled = true;
+      
+      const originalCheckBtnText = checkOnceBtn.querySelector('.btn-text').textContent;
+      checkOnceBtn.querySelector('.btn-text').textContent = 'Checking...';
+
+      logToConsole(`Starting 5-ping check to ${targetHost} from ${checkedIps.length} sources...`, 'system');
+
+      socket.emit('check-once', {
+        targets,
+        sourceIP: '',
+        pingMode,
+        tcpPort,
+        executionSource: 'router',
+        routerConfig
+      });
+
+      socket.once('check-once-complete', () => {
+        targetHostInput.disabled = false;
+        document.querySelectorAll('input[name="sourceIps"]').forEach(cb => cb.disabled = false);
+        intervalInput.disabled = false;
+        pingModeSelect.disabled = false;
+        if (pingModeSelect.value === 'tcp' || pingModeSelect.value === 'udp') {
+          tcpPortInput.disabled = false;
+        }
+        toggleBtn.disabled = false;
+        checkOnceBtn.disabled = false;
+        checkOnceBtn.querySelector('.btn-text').textContent = originalCheckBtnText;
+        if (Object.keys(targetStates).length > 0) {
+          clearGridBtn.style.display = 'flex';
+        }
+        logToConsole('Single-ping check complete.', 'system');
+      });
+    }
+
+    // ==================== DASHBOARD CORE LOGIC ====================
+    // Socket event: receive system console log from server
+    socket.on('console-log', (data) => {
+      logToConsole(data.text, data.type);
+    });
+
+    // Socket event: handle router tracing status broadcast
+    socket.on('router-tracing-status', (data) => {
+      if (routerConfig && data.host === routerConfig.host) {
+        const targetName = data.target;
+        const cards = document.querySelectorAll('.ping-card');
+        cards.forEach(card => {
+          const name = card.getAttribute('data-target-name');
+          if (data.all || name === targetName || name.startsWith(targetName + '@')) {
+            const badge = document.getElementById(`${card.id}-badge`);
+            const statusText = card.querySelector('.card-status-text');
+            if (data.active) {
+              if (badge) {
+                badge.className = 'badge badge-warning';
+                badge.textContent = 'Tracing';
+              }
+              if (statusText) statusText.textContent = 'Ping paused (Traceroute active)';
+            } else {
+              // Restore to idle or let the next ping result update it
+              if (badge && (badge.className.includes('badge-warning') || data.all)) {
+                badge.className = 'badge badge-idle';
+                badge.textContent = 'Idle';
+              }
+              if (statusText && (statusText.textContent.includes('paused') || data.all)) {
+                statusText.textContent = 'Monitoring...';
+              }
+            }
+          }
+        });
+      }
+    });
+
+    // Socket event: receive resolved hostname for an IP target
+    socket.on('resolved-hostname', (data) => {
+      const { target, hostname } = data;
+      if (!hostname) return;
+      if (targetStates[target]) {
+        targetStates[target].resolvedHostname = hostname;
+        updateCardTitle(target, targetStates[target]);
+      }
+    });
+
+    // Socket event: receive resolved IP for a domain target
+    socket.on('resolved-ip', (data) => {
+      const { target, ip } = data;
+      if (!ip) return;
+      if (targetStates[target]) {
+        targetStates[target].resolvedIp = ip;
+        updateCardTitle(target, targetStates[target]);
+      }
+    });
+
+    // Socket event: receive IP info (AS & ISP)
+    socket.on('ip-info', (data) => {
+      const { target, as, isp } = data;
+      if (targetStates[target]) {
+        targetStates[target].as = as;
+        targetStates[target].isp = isp;
+      }
+      const cardId = `card-${target.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      const ispEl = document.getElementById(`${cardId}-isp`);
+      if (ispEl) {
+        ispEl.textContent = `ISP: ${isp} | AS: ${as}`;
+      }
+    });
+
+    // Socket event: receive fallback IP when a nearby IP is found
+    socket.on('fallback-ip-found', (data) => {
+      const { target, fallbackIp } = data;
+      logToConsole(`[System] Found nearby pingable IP for ${target}: ${fallbackIp}. Adding to monitoring.`, 'system');
+    });
+
+    // Socket event: receive fallback IP not found notification
+    socket.on('fallback-ip-not-found', (data) => {
+      const { target } = data;
+      const cardId = `card-${target.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      const noticeEl = document.getElementById(`${cardId}-notice`);
+      if (noticeEl) {
+        noticeEl.textContent = '⚠ No pingable IP at this subnet';
+        noticeEl.style.display = 'block';
+      }
+      logToConsole(`[System] No pingable IP found in the /24 subnet for ${target}.`, 'warning');
+    });
+
+    // Socket event: receive ping result
+    socket.on('ping-result', (data) => {
+      console.log("[Diagnostic] Received ping-result on client:", data);
+      try {
+        const { target, status, latency, error, isFallbackFor, timestamp, via } = data;
+        
+        let state = targetStates[target];
+        if (!state && isFallbackFor && targetStates[isFallbackFor]) {
+          targetStates[target] = {
+            sent: 0,
+            received: 0,
+            lost: 0,
+            latencyHistory: [],
+            chart: null,
+            logs: [],
+            lastOnlineTime: null,
+            lastOfflineTime: null,
+            resolvedHostname: null,
+            resolvedIp: null,
+            fallbackIp: null,
+            isFallbackFor: isFallbackFor
+          };
+          state = targetStates[target];
+          createTargetCard(target, isFallbackFor);
+          
+          targetStates[isFallbackFor].fallbackIp = target;
+        }
+
+        if (!state) {
+          console.warn(`[Diagnostic] No state found for target "${target}". Available states:`, Object.keys(targetStates));
+          return;
+        }
+
+        state.sent++;
+        if (status === 'online') {
+          state.received++;
+          state.latencyHistory.push(latency);
+          state.lastOnlineTime = timestamp;
+        } else {
+          state.lost++;
+          state.latencyHistory.push(null);
+          state.lastOfflineTime = timestamp;
+        }
+        updateCardTitle(target, state);
+
+        if (state.latencyHistory.length > 20) {
+          state.latencyHistory.shift();
+        }
+
+        const successRate = ((state.received / state.sent) * 100).toFixed(1);
+        
+        try {
+          updateCardUI(target, status, latency, error, successRate, state);
+        } catch (uiErr) {
+          console.error("[Diagnostic] Error inside updateCardUI:", uiErr);
+        }
+
+        // Format log line
+        const names = getCardDisplayNames(target);
+        const timeStr = new Date(timestamp || Date.now()).toLocaleTimeString();
+        const viaStr = via ? ` (via ${via})` : '';
+        const logText = status === 'online' 
+          ? `[${timeStr}] ${names.host} (via ${names.via}): Reply in ${latency}ms${viaStr}` 
+          : `[${timeStr}] ${names.host} (via ${names.via}): Failed${viaStr} - ${error || 'Unknown error'}`;
+        const logType = status === 'online' ? 'success' : 'failure';
+
+        // Save to target logs
+        state.logs.push({ text: logText, type: logType });
+        if (state.logs.length > 1000) state.logs.shift();
+
+        // Log to Console only if this target is selected
+        if (selectedTarget === target) {
+          logToConsole(logText, logType);
+          while (consoleBody.children.length > 1000) {
+            consoleBody.removeChild(consoleBody.firstChild);
+          }
+          updateTerminalHeader(target, state);
+        }
+
+        updateGlobalStats();
+      } catch (err) {
+        console.error("[Diagnostic] Error in ping-result socket handler:", err);
+      }
+    });
+
+    // Socket event: monitoring stopped
+    socket.on('monitoring-stopped', () => {
+      handleStoppedState();
+      logToConsole('Monitoring session stopped.', 'system');
+    });
+
+    socket.on('monitoring-started', () => {
+      logToConsole('Monitoring session started successfully.', 'system');
+    });
+
+    // ==================== UI HELPERS ====================
+    function logToConsole(text, type) {
+      const cleanText = text.replace(/\r/g, '');
+      const line = document.createElement('div');
+      line.classList.add('console-line');
+      if (type) line.classList.add(type);
+      line.textContent = cleanText;
+      consoleBody.appendChild(line);
+      consoleBody.scrollTop = consoleBody.scrollHeight;
+    }
+
+    function createTargetCard(target, isFallbackFor = null) {
+      const cardId = `card-${target.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      if (document.getElementById(cardId)) return;
+
+      const fallbackClass = isFallbackFor ? 'fallback-card' : '';
+      const fallbackLabel = isFallbackFor 
+        ? `<span class="fallback-label">➔ Nearby IP for ${isFallbackFor}</span>`
+        : '';
+
+      const names = getCardDisplayNames(target);
+      // Find the interface name if we can match it
+      let ifaceName = '';
+      const match = discoveredIps.find(i => i.ip === names.via);
+      if (match) {
+        ifaceName = ` [${match.interface}]`;
+      }
+
+      const cardHtml = `
+        <div class="ping-card glass-card ${fallbackClass}" id="${cardId}" data-target-name="${target}" ${isFallbackFor ? `data-parent-target="${isFallbackFor}"` : ''}>
+          <div class="card-info">
+            <span class="badge badge-idle" id="${cardId}-badge">Idle</span>
+            <div class="card-title">
+              ${fallbackLabel}
+              <h3>${names.host}</h3>
+              <span class="card-via-text" id="${cardId}-via">Source: ${names.via}${ifaceName}</span>
+              <span class="card-status-text" style="display: block; font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Connecting...</span>
+              <span class="card-isp-text" id="${cardId}-isp" style="font-size: 9px; color: var(--text-muted); display: block; margin-top: 2px; line-height: 1;"></span>
+              <span class="card-notice-text" id="${cardId}-notice" style="font-size: 9px; color: #fb7185; display: none; margin-top: 2px; font-weight: 500; line-height: 1.1;"></span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+              <button class="btn-mtr" data-target="${names.host}" data-source="${names.via}" title="My Traceroute (MTR)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 3v18h18M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
+                </svg>
+                <span>MTR</span>
+              </button>
+              <button class="btn-ports" data-target="${names.host}" title="Port Scanner" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-secondary); width: 28px; height: 28px; padding: 0; display: flex; justify-content: center; align-items: center; border-radius: 6px; cursor: pointer; transition: var(--transition-smooth);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 13px; height: 13px;">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+              </button>
+              <button class="btn-reset" data-target="${target}" title="Reset Statistics" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-secondary); width: 28px; height: 28px; padding: 0; display: flex; justify-content: center; align-items: center; border-radius: 6px; cursor: pointer; transition: var(--transition-smooth);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width: 13px; height: 13px;">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="card-stats">
+            <div class="stat-item latency-val">
+              <span class="val" id="${cardId}-latency">--</span>
+              <span class="lbl">Current</span>
+            </div>
+            <div class="stat-item avg-latency-val">
+              <span class="val" id="${cardId}-avg-latency">--</span>
+              <span class="lbl">Avg Latency</span>
+            </div>
+            <div class="stat-item max-latency-val">
+              <span class="val" id="${cardId}-max-latency">--</span>
+              <span class="lbl">Max Latency</span>
+            </div>
+            <div class="stat-item bd-best-val" style="cursor: pointer;" title="Click to check BD Best Latency">
+              <span class="val" style="display: flex; flex-direction: column; align-items: center; line-height: 1.1;">
+                <span id="${cardId}-bd-best" style="color: var(--accent-cyan); font-weight: 600; font-size: 11px;">Click</span>
+                <span id="${cardId}-bd-provider" style="color: var(--text-muted); font-size: 8px; margin-top: 1px; font-weight: 500; max-width: 75px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">to check</span>
+              </span>
+              <span class="lbl">BD Best</span>
+            </div>
+            <div class="stat-item success-val">
+              <span class="val" style="display: flex; flex-direction: column; align-items: center; line-height: 1.1;">
+                <span id="${cardId}-success" style="color: var(--accent-green);">100%</span>
+                <span id="${cardId}-fail" style="color: var(--accent-red); font-size: 10px; margin-top: 1px;">0%</span>
+              </span>
+              <span class="lbl">Succ / Fail</span>
+            </div>
+            <div class="stat-item count-val">
+              <span class="val"><span id="${cardId}-received">0</span>/<span id="${cardId}-sent">0</span></span>
+              <span class="lbl">Recv/Sent</span>
+            </div>
+          </div>
+
+          <div class="chart-container">
+            <canvas id="${cardId}-chart"></canvas>
+          </div>
+        </div>
+      `;
+
+      // Append card
+      if (isFallbackFor) {
+        const parentCardId = `card-${isFallbackFor.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        const parentCard = document.getElementById(parentCardId);
+        if (parentCard) {
+          parentCard.insertAdjacentHTML('afterend', cardHtml);
+        } else {
+          targetsGrid.insertAdjacentHTML('beforeend', cardHtml);
+        }
+      } else {
+        targetsGrid.insertAdjacentHTML('beforeend', cardHtml);
+      }
+
+      // Observe card
+      const card = document.getElementById(cardId);
+      if (card && cardObserver) {
+        cardObserver.observe(card);
+      }
+
+      // Add click event listener to select/filter logs
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.ping-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedTarget = target;
+        
+        consoleBody.innerHTML = '';
+        const targetState = targetStates[target];
+        if (targetState) {
+          const fragment = document.createDocumentFragment();
+          targetState.logs.forEach(log => {
+            const line = document.createElement('div');
+            line.classList.add('console-line');
+            if (log.type) line.classList.add(log.type);
+            line.textContent = log.text;
+            fragment.appendChild(line);
+          });
+          consoleBody.appendChild(fragment);
+          consoleBody.scrollTop = consoleBody.scrollHeight;
+          updateTerminalHeader(target, targetState);
+        }
+      });
+
+      // Add click listener for MTR button
+      const mtrBtn = card.querySelector('.btn-mtr');
+      mtrBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const targetVal = mtrBtn.getAttribute('data-target');
+        const sourceVal = mtrBtn.getAttribute('data-source');
+        const mode = pingModeSelect.value;
+        const port = tcpPortInput.value;
+        
+        let url = `/mtr.html?target=${targetVal}&mode=${mode}&port=${port}`;
+        url += `&routerType=${routerConfig.type}&routerHost=${routerConfig.host}&routerPort=${routerConfig.port}&routerUser=${routerConfig.username}&routerPass=${encodeURIComponent(routerConfig.password)}&routerNeedsPty=${routerConfig.needsPty || false}&routerNeedsPasswordOption=${routerConfig.needsPasswordOption || false}`;
+        if (sourceVal) {
+          url += `&routerSource=${sourceVal}`;
+        }
+        
+        window.open(url, `MTR_${targetVal.replace(/[^a-zA-Z0-9]/g, '_')}_via_${(sourceVal || 'default').replace(/[^a-zA-Z0-9]/g, '_')}`, 'width=750,height=550,resizable=yes,scrollbars=yes');
+      });
+
+      // Add click listener for Trace button
+      const traceBtn = card.querySelector('.btn-trace');
+      if (traceBtn) {
+        traceBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const targetVal = traceBtn.getAttribute('data-target');
+          const sourceVal = traceBtn.getAttribute('data-source');
+          const mode = pingModeSelect.value;
+          const port = tcpPortInput.value;
+          
+          let url = `/trace.html?v=${Date.now()}&target=${targetVal}&mode=${mode}&port=${port}`;
+          url += `&routerType=${routerConfig.type}&routerHost=${routerConfig.host}&routerPort=${routerConfig.port}&routerUser=${routerConfig.username}&routerPass=${encodeURIComponent(routerConfig.password)}&routerNeedsPty=${routerConfig.needsPty || false}&routerNeedsPasswordOption=${routerConfig.needsPasswordOption || false}`;
+          if (sourceVal) {
+            url += `&routerSource=${sourceVal}`;
+          }
+          
+          window.open(url, `Trace_${targetVal.replace(/[^a-zA-Z0-9]/g, '_')}_via_${(sourceVal || 'default').replace(/[^a-zA-Z0-9]/g, '_')}`, 'width=750,height=550,resizable=yes,scrollbars=yes');
+        });
+      }
+
+      // Add click listener for Port Scanner button
+      const portsBtn = card.querySelector('.btn-ports');
+      if (portsBtn) {
+        portsBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const targetVal = portsBtn.getAttribute('data-target');
+          window.open(`/ports.html?target=${targetVal}`, `Ports_${targetVal.replace(/[^a-zA-Z0-9]/g, '_')}`, 'width=800,height=600,resizable=yes,scrollbars=yes');
+        });
+      }
+
+      // Add click listener for Reset button
+      const resetBtn = card.querySelector('.btn-reset');
+      if (resetBtn) {
+        resetBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          resetTargetStats(target);
+        });
+      }
+
+      // Add click listener for BD Best (Globalping) check
+      const bdBestValBtn = card.querySelector('.bd-best-val');
+      bdBestValBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const bdBestEl = document.getElementById(`${cardId}-bd-best`);
+        const bdProviderEl = document.getElementById(`${cardId}-bd-provider`);
+        
+        bdBestEl.textContent = '...';
+        bdBestEl.style.fontSize = '14px';
+        bdProviderEl.textContent = 'Checking...';
+        
+        socket.emit('query-globalping', { target });
+      });
+
+      // Add custom tooltip event listeners
+      const bindTooltip = (element) => {
+        element.addEventListener('mouseenter', (e) => {
+          const state = targetStates[target];
+          if (!state) return;
+          
+          const onlineTimeVal = state.lastOnlineTime ? new Date(state.lastOnlineTime).toLocaleTimeString() : 'Never';
+          const offlineTimeVal = state.lastOfflineTime ? new Date(state.lastOfflineTime).toLocaleTimeString() : 'Never';
+          
+          const onlineValColor = state.lastOnlineTime ? '#f3f4f6' : '#f43f5e';
+          const offlineValColor = state.lastOfflineTime ? '#f3f4f6' : '#34d399';
+          
+          tooltipEl.innerHTML = `
+            <div style="margin-bottom: 4px; color: #34d399; font-weight: 500;">Last Online: <span style="color: ${onlineValColor}; font-weight: 600;">${onlineTimeVal}</span></div>
+            <div style="color: #f43f5e; font-weight: 500;">Last Offline: <span style="color: ${offlineValColor}; font-weight: 600;">${offlineTimeVal}</span></div>
+          `;
+          tooltipEl.style.display = 'block';
+        });
+        
+        element.addEventListener('mousemove', (e) => {
+          tooltipEl.style.left = (e.clientX + 15) + 'px';
+          tooltipEl.style.top = (e.clientY + 15) + 'px';
+        });
+        
+        element.addEventListener('mouseleave', () => {
+          tooltipEl.style.display = 'none';
+        });
+      };
+      
+      const badge = document.getElementById(`${cardId}-badge`);
+      if (badge) bindTooltip(badge);
+      const successStatItem = card.querySelector('.success-val');
+      if (successStatItem) bindTooltip(successStatItem);
+    }
+
+    function updateCardTitle(target, state) {
+      const cardId = `card-${target.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      const h3 = document.querySelector(`#${cardId} .card-title h3`);
+      if (!h3) return;
+
+      const names = getCardDisplayNames(target);
+      let suffix = '';
+      if (state.resolvedHostname) {
+        suffix = ` (${state.resolvedHostname})`;
+      } else if (state.resolvedIp) {
+        suffix = ` (${state.resolvedIp})`;
+      }
+
+      h3.textContent = `${names.host}${suffix}`;
+    }
+
+    function updateCardUI(target, status, latency, error, successRate, state) {
+      const cardId = `card-${target.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      const card = document.getElementById(cardId);
+      if (!card) return;
+
+      const badge = document.getElementById(`${cardId}-badge`);
+      const latencyEl = document.getElementById(`${cardId}-latency`);
+      const avgLatencyEl = document.getElementById(`${cardId}-avg-latency`);
+      const maxLatencyEl = document.getElementById(`${cardId}-max-latency`);
+      const successEl = document.getElementById(`${cardId}-success`);
+      const sentEl = document.getElementById(`${cardId}-sent`);
+      const receivedEl = document.getElementById(`${cardId}-received`);
+      const statusTextEl = card.querySelector('.card-status-text');
+
+      // Calculate Avg and Max latency
+      const validLatencies = state.latencyHistory.filter(l => l !== null && l !== undefined);
+      const avgLatency = validLatencies.length > 0 ? Math.round(validLatencies.reduce((a, b) => a + b, 0) / validLatencies.length) : 0;
+      const maxLatency = validLatencies.length > 0 ? Math.max(...validLatencies) : 0;
+
+      // Update Status Class & Badge
+      card.classList.remove('online', 'offline');
+      badge.classList.remove('badge-online', 'badge-offline', 'badge-idle');
+
+      if (status === 'online') {
+        card.classList.add('online');
+        badge.classList.add('badge-online');
+        badge.textContent = 'Online';
+        latencyEl.textContent = `${latency} ms`;
+        statusTextEl.textContent = 'Responding normally';
+      } else {
+        card.classList.add('offline');
+        badge.classList.add('badge-offline');
+        badge.textContent = 'Offline';
+        latencyEl.textContent = '--';
+        statusTextEl.textContent = error || 'No response';
+      }
+
+      // Update Avg / Max UI
+      avgLatencyEl.textContent = avgLatency ? `${avgLatency} ms` : '--';
+      maxLatencyEl.textContent = maxLatency ? `${maxLatency} ms` : '--';
+
+      // Stats
+      successEl.textContent = `${successRate}%`;
+      const failRate = (100 - parseFloat(successRate)).toFixed(1);
+      const failEl = document.getElementById(`${cardId}-fail`);
+      if (failEl) {
+        failEl.textContent = `${failRate}%`;
+      }
+      sentEl.textContent = state.sent;
+      receivedEl.textContent = state.received;
+
+      // Update Sparkline Chart
+      if (state.chart) {
+        state.chart.data.datasets[0].data = [...state.latencyHistory];
+        if (status === 'online') {
+          state.chart.data.datasets[0].borderColor = '#10b981';
+        } else {
+          state.chart.data.datasets[0].borderColor = '#f43f5e';
+        }
+        if (visibleCards.has(target)) {
+          state.chart.update('none');
+        }
+      }
+    }
+
+    function updateTerminalHeader(target, state) {
+      const headerEl = document.getElementById('terminalTitle');
+      if (!headerEl) return;
+
+      const names = getCardDisplayNames(target);
+      const lastLatency = state.latencyHistory[state.latencyHistory.length - 1];
+      const isOnline = lastLatency !== null && lastLatency !== undefined;
+      const statusText = isOnline 
+        ? `<span style="color: var(--accent-green); font-weight: 600;">ONLINE (${lastLatency} ms)</span>`
+        : `<span style="color: var(--accent-red); font-weight: 600;">OFFLINE</span>`;
+
+      headerEl.innerHTML = `Console Logs for ${names.host} (via ${names.via}) &mdash; ${statusText}`;
+    }
+
+    function initializeChartForTarget(target, state) {
+      const cardId = `card-${target.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      const ctx = document.getElementById(`${cardId}-chart`).getContext('2d');
+      
+      state.chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: Array(20).fill(''),
+          datasets: [{
+            data: state.latencyHistory,
+            borderColor: '#10b981',
+            borderWidth: 1.5,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            fill: true,
+            backgroundColor: (context) => {
+              const chart = context.chart;
+              const {ctx, chartArea} = chart;
+              if (!chartArea) return null;
+              const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+              gradient.addColorStop(0, 'rgba(16, 185, 129, 0.15)');
+              gradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
+              return gradient;
+            },
+            spanGaps: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              enabled: false,
+              external: function(context) {
+                const {chart, tooltip} = context;
+                if (tooltip.opacity === 0) {
+                  tooltipEl.style.opacity = 0;
+                  return;
+                }
+
+                const position = chart.canvas.getBoundingClientRect();
+                tooltipEl.style.opacity = 1;
+                tooltipEl.style.left = position.left + window.pageXOffset + tooltip.caretX + 'px';
+                tooltipEl.style.top = position.top + window.pageYOffset + tooltip.caretY - 35 + 'px';
+                
+                const value = tooltip.dataPoints[0].raw;
+                tooltipEl.textContent = value !== null && value !== undefined ? `${value}ms` : 'Timeout';
+              }
+            }
+          },
+          scales: {
+            x: { display: false },
+            y: {
+              display: true,
+              grid: { color: 'rgba(255, 255, 255, 0.03)' },
+              ticks: {
+                color: '#6b7280',
+                font: { size: 9 },
+                maxTicksLimit: 3
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function resetTargetStats(target) {
+      const state = targetStates[target];
+      if (!state) return;
+
+      state.sent = 0;
+      state.received = 0;
+      state.lost = 0;
+      state.latencyHistory.length = 0;
+      state.logs = [];
+
+      // Reset UI
+      const cardId = `card-${target.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      const badge = document.getElementById(`${cardId}-badge`);
+      
+      badge.className = 'badge badge-idle';
+      badge.textContent = 'Idle';
+      document.getElementById(`${cardId}-latency`).textContent = '--';
+      document.getElementById(`${cardId}-avg-latency`).textContent = '--';
+      document.getElementById(`${cardId}-max-latency`).textContent = '--';
+      document.getElementById(`${cardId}-success`).textContent = '100%';
+      document.getElementById(`${cardId}-fail`).textContent = '0%';
+      document.getElementById(`${cardId}-received`).textContent = '0';
+      document.getElementById(`${cardId}-sent`).textContent = '0';
+      
+      const noticeEl = document.getElementById(`${cardId}-notice`);
+      if (noticeEl) {
+        noticeEl.style.display = 'none';
+        noticeEl.textContent = '';
+      }
+
+      if (state.chart) {
+        state.chart.data.datasets[0].data = state.latencyHistory;
+        state.chart.update();
+      }
+
+      if (selectedTarget === target) {
+        consoleBody.innerHTML = '';
+        logToConsole(`[System] Stats and logs reset for ${target}.`, 'system');
+      }
+
+      updateGlobalStats();
+    }
+
+    function updateGlobalStats() {
+      const targets = Object.keys(targetStates);
+      const total = targets.length;
+      
+      let online = 0;
+      let offline = 0;
+
+      targets.forEach(t => {
+        const state = targetStates[t];
+        const validLatencies = state.latencyHistory.filter(l => l !== null);
+        if (validLatencies.length > 0 && state.latencyHistory[state.latencyHistory.length - 1] !== null) {
+          online++;
+        } else if (state.sent > 0) {
+          offline++;
+        }
+      });
+
+      document.getElementById('totalTargetsVal').textContent = total;
+      document.getElementById('onlineTargetsVal').textContent = online;
+      document.getElementById('offlineTargetsVal').textContent = offline;
+    }
+
+    function downloadCSV() {
+      const targets = Object.keys(targetStates);
+      if (targets.length === 0) {
+        alert("No data available to export.");
+        return;
+      }
+
+      const rows = [
+        ["Target Host", "Source IP", "Sent Packets", "Received Packets", "Lost Packets", "Packet Loss %", "Last Status", "Last Online Time", "Last Offline Time", "ISP", "AS"]
+      ];
+
+      targets.forEach(t => {
+        const s = targetStates[t];
+        const names = getCardDisplayNames(t);
+        const lossPercent = s.sent > 0 ? ((s.lost / s.sent) * 100) : 0;
+        const validLatencies = s.latencyHistory.filter(l => l !== null);
+        const lastStatus = (validLatencies.length > 0 && s.latencyHistory[s.latencyHistory.length - 1] !== null) ? "Online" : "Offline";
+
+        rows.push([
+          names.host,
+          names.via,
+          s.sent,
+          s.received,
+          s.lost,
+          lossPercent.toFixed(1) + "%",
+          lastStatus,
+          s.lastOnlineTime || "N/A",
+          s.lastOfflineTime || "N/A",
+          s.isp || "N/A",
+          s.as || "N/A"
+        ]);
+      });
+
+      let csvContent = "data:text/csv;charset=utf-8,";
+      rows.forEach(row => {
+        const cleanRow = row.map(val => `"${String(val).replace(/"/g, '""')}"`);
+        csvContent += cleanRow.join(",") + "\r\n";
+      });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", "\uFEFF" + encodedUri);
+      link.setAttribute("download", `PingReport_Router_${routerConfig.host}_${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>

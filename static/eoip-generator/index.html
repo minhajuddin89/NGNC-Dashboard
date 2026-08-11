@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>EOIP & BTS Config Generator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{
+  --fg:#000; --accent:#054ca3; --bg:#f7f8fb; --card:#fff;
+  --border:#e5e7eb; --muted:#6b7280; --ok:#16a34a; --warn:#ef4444
+}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--fg)}
+.container{max-width:1100px;margin:24px auto;padding:0 16px}
+.header{background:#fffbe9;border:1px solid var(--accent);border-radius:14px;padding:20px;margin-bottom:18px;text-align:center}
+h1{margin:6px 0 0;font-size:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+.form-grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:900px){.form-grid2{grid-template-columns:1fr}}
+.label{font-weight:600;margin-bottom:6px;color:#111}
+.field{margin-bottom:12px}
+.input,select,textarea{
+  width:100%;padding:10px 12px;border:2px solid var(--border);border-radius:10px;background:#fff;outline:0;
+  font:inherit;transition:border .15s, box-shadow .15s
+}
+.input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(5,76,163,.12)}
+.input:disabled{background:#f3f4f6;color:#9ca3af;cursor:not-allowed;opacity:.85}
+/* invalid state for required fields */
+.input.invalid, select.invalid, textarea.invalid{
+  border-color: var(--warn) !important;
+  box-shadow: 0 0 0 3px rgba(239,68,68,.15) !important;
+}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{
+  background:var(--accent);color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer
+}
+.btn.secondary{background:#0f172a}
+.btn.clear{background:#9ca3af}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.help{color:var(--muted);font-size:13px}
+pre,textarea#output{width:100%;min-height:280px;background:#0b1020;color:#d1e7ff;border-radius:10px;padding:14px;overflow:auto;border:1px solid #0f1a35}
+.badge{display:inline-block;background:#eef2ff;color:#111;border:1px solid var(--border);padding:2px 8px;border-radius:999px;font-size:12px;margin-left:6px}
+.error{color:var(--warn);font-weight:600}
+.ok{color:var(--ok);font-weight:600}
+.small{font-size:12px}
+/* float buttons to bottom of left column */
+.form-grid2{ align-items: stretch; }
+.form-grid2 > div{ display: flex; flex-direction: column; }
+.field.actions{ margin-top: auto; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div><strong>EOIP & BTS Config Generator</strong></div>
+    <p class="help">Generates MikroTik EOIP + Huawei BTS config (VRF / Non-VRF).</p>
+  </div>
+
+  <div class="card">
+    <div class="form-grid2">
+      <div>
+        <div class="field">
+          <label class="label">EOIP LOCAL ADDRESS</label>
+          <select id="local_ip" class="input">
+            <option value="203.76.101.202" data-iface="sfp-sfpplus1-with-Huawei-gi0/1/20">
+              203.76.101.202 (L3-BANANI-27-EOIP-RTR-01)
+            </option>
+            <option value="203.76.124.50" data-iface="sfp-sfpplus1-with-Banani-Huawei-RTR-G0/1/25" selected>
+              203.76.124.50 (L3-BANANI-27-EOIP-RTR-02)
+            </option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="label">CLIENT NAME</label>
+          <input id="client" class="input" placeholder="Customer XYZ"/>
+        </div>
+
+        <div class="field">
+          <label class="label">VLAN/TUNNEL ID</label>
+          <input id="vlan_id" class="input" placeholder="e.g. 123"/>
+        </div>
+
+        <div class="field">
+          <label class="label">BTS END NETWORK</label>
+          <input id="near_net" class="input" placeholder="x.x.x.x mask-or-prefix"/>
+        </div>
+
+        <div class="field">
+          <label class="label">SUBNET (PREFIX/MASK)</label>
+          <input id="subnet" class="input" value="30" placeholder="30 or 255.255.255.252"/>
+        </div>
+
+        <div class="field actions">
+          <div class="row">
+            <button class="btn" id="generate">Generate</button>
+            <button class="btn secondary" id="copy" disabled>Copy</button>
+            <button class="btn clear" id="clear">Clear</button>
+            <span id="status" class="help"></span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="field">
+          <label class="label">MODE</label>
+          <select id="mode" class="input">
+            <option>Non-VRF</option>
+            <option>VRF</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="label">EOIP REMOTE ADDRESS</label>
+          <input id="peer_ip" class="input" placeholder="x.x.x.x"/>
+        </div>
+
+        <div class="field">
+          <label class="label">BTS END ADDRESS</label>
+          <input id="near_addr" class="input" placeholder="x.x.x.x"/>
+        </div>
+
+        <div class="field">
+          <label class="label">VRF NAME</label>
+          <input id="vrf_name" class="input" placeholder="VRF-Customer"/>
+        </div>
+
+        <div class="field">
+          <label class="label">BTS INTERFACE BASE</label>
+          <input id="bts_iface_base" class="input" value="GigabitEthernet0/1/25"/>
+        </div>
+
+        <div class="field">
+          <label class="label">EOIP VLAN INTERFACE (MIKROTIK)</label>
+          <input id="eoip_vlan_iface" class="input" value="sfp-sfpplus1-with-Banani-Huawei-RTR-G0/1/25"/>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <label class="label">Output</label>
+    <textarea id="output" readonly></textarea>
+  </div>
+</div>
+
+<script>
+const DEFAULT_BTS_IFACE_BASE  = "GigabitEthernet0/1/25";
+
+const EOIP_LINKS = {
+  "203.76.101.202": {
+    iface: "sfp-sfpplus1-with-Banani-Huawei-RTR-G0/1/20",
+    bts:   "GigabitEthernet0/1/20"
+  },
+  "203.76.124.50": {
+    iface: "sfp-sfpplus1-with-Banani-Huawei-RTR-G0/1/25",
+    bts:   "GigabitEthernet0/1/25"
+  }
+};
+
+function val(id){ return document.getElementById(id).value.trim(); }
+function setVal(id, v){ document.getElementById(id).value = v; }
+
+const FIELD_LABEL = {
+  vlan_id: 'VLAN/Tunnel ID',
+  client: 'Client name',
+  peer_ip: 'EOIP Remote address',
+  near_net: 'BTS end network',
+  near_addr: 'BTS end address',
+  subnet: 'Subnet',
+  local_ip: 'EOIP Local address',
+  eoip_vlan_iface: 'EOIP VLAN interface (MikroTik)',
+  vrf_name: 'VRF name',
+};
+
+function setInvalid(id, on){
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('invalid', !!on);
+}
+
+function validateRequired(){
+  const required = ['vlan_id','client','peer_ip','near_net','near_addr','subnet','local_ip','eoip_vlan_iface'];
+  if (document.getElementById('mode').value === 'VRF') required.push('vrf_name');
+
+  Object.keys(FIELD_LABEL).forEach(id => setInvalid(id, false));
+
+  const missing = [];
+  required.forEach(id => {
+    if (!val(id)) {
+      setInvalid(id, true);
+      missing.push(FIELD_LABEL[id]);
+    }
+  });
+  return missing;
+}
+
+function generateConfigs(p){
+  const vlan_id   = (p.vlan_id||"").trim();
+  const client    = (p.client||"").trim();
+  const peer_ip   = (p.peer_ip||"").trim();
+  const near_net  = (p.near_net||"").trim();
+  const near_addr = (p.near_addr||"").trim();
+  const subnet    = (p.subnet||"").trim();
+  const mode      = p.mode || "Non-VRF";
+  const vrf_name  = (p.vrf_name||"").trim();
+  const local_ip  = (p.local_ip||"").trim();
+  const eoip_vlan_iface = (p.eoip_vlan_iface||"").trim();
+  const bts_iface_base  = (p.bts_iface_base||"").trim() || DEFAULT_BTS_IFACE_BASE;
+
+  const missing = [];
+  if(!vlan_id)   missing.push("VLAN/Tunnel ID");
+  if(!client)    missing.push("Client name");
+  if(!peer_ip)   missing.push("EOIP Remote address");
+  if(!near_net)  missing.push("BTS end network");
+  if(!near_addr) missing.push("BTS end address");
+  if(!subnet)    missing.push("Subnet");
+  if(!local_ip)  missing.push("EOIP Local address");
+  if(!eoip_vlan_iface) missing.push("EOIP VLAN interface (MikroTik)");
+  if(mode==="VRF" && !vrf_name) missing.push("VRF name");
+  if(missing.length) throw new Error("Missing required fields: " + missing.join(", "));
+
+  const name_vlan   = `${vlan_id}-VLAN-${client}`;
+  const name_eoip   = `${vlan_id}-EOIP-${client}`;
+  const name_bridge = `${vlan_id}-BRIDGE-${client}`;
+
+  const eoip_lines = [
+    `/interface vlan add interface=${eoip_vlan_iface} name=${name_vlan} vlan-id=${vlan_id}`,
+    `/interface eoip add local-address=${local_ip} name=${name_eoip} remote-address=${peer_ip} tunnel-id=${vlan_id}`,
+    `/interface bridge add name=${name_bridge}`,
+    `/interface bridge port add bridge=${name_bridge} interface=${name_eoip}`,
+    `/interface bridge port add bridge=${name_bridge} interface=${name_vlan}`,
+  ];
+
+  let bts_lines;
+  if(mode==="VRF"){
+    bts_lines = [
+      `interface ${bts_iface_base}.${vlan_id}`,
+      `vlan-type dot1q ${vlan_id}`,
+      `description ${client}`,
+      `ip binding vpn-instance ${vrf_name}`,
+      `ip address ${near_addr} ${subnet}`,
+      `statistic enable`,
+      ``,
+      `bgp 23688`,
+      `ipv4-family vpn-instance ${vrf_name}`,
+      `network ${near_net} ${subnet}`,
+    ];
+  }else{
+    bts_lines = [
+      `interface ${bts_iface_base}.${vlan_id}`,
+      `vlan-type dot1q ${vlan_id}`,
+      `description ${client}`,
+      `ip address ${near_addr} ${subnet}`,
+      `statistic enable`,
+      ``,
+      `bgp 23688`,
+      `ipv4-family unicast`,
+      `network ${near_net} ${subnet}`,
+    ];
+  }
+
+  const final = [
+    "### EOIP configuration Script",
+    eoip_lines.join("\n"),
+    "",
+    `### BTS Side Configuration (${mode})`,
+    bts_lines.join("\n"),
+    ""
+  ];
+  return final.join("\n");
+}
+
+function collect(){
+  return {
+    mode: val('mode'),
+    vlan_id: val('vlan_id'),
+    client: val('client'),
+    peer_ip: val('peer_ip'),
+    near_net: val('near_net'),
+    near_addr: val('near_addr'),
+    subnet: val('subnet'),
+    vrf_name: val('vrf_name'),
+    local_ip: val('local_ip'),
+    eoip_vlan_iface: val('eoip_vlan_iface'),
+    bts_iface_base:  val('bts_iface_base') || DEFAULT_BTS_IFACE_BASE,
+  };
+}
+
+function setStatus(msg, ok=false){
+  const s = document.getElementById('status');
+  s.textContent = msg || '';
+  s.className = 'help ' + (ok ? 'ok' : (msg ? 'error' : ''));
+}
+
+function syncVRFAccess(){
+  const isVRF = document.getElementById('mode').value === 'VRF';
+  const vrf = document.getElementById('vrf_name');
+  vrf.disabled = !isVRF;
+  if(!isVRF){
+    vrf.value = "";
+    setInvalid('vrf_name', false);
+  }
+}
+
+function syncFromLocalIP(){
+  const ip = val('local_ip');
+  const link = EOIP_LINKS[ip] || { iface:'', bts:'' };
+  setVal('eoip_vlan_iface', link.iface);
+  setVal('bts_iface_base',  link.bts);
+  setInvalid('eoip_vlan_iface', !link.iface);
+  setInvalid('bts_iface_base',  !link.bts);
+}
+
+document.getElementById('mode').addEventListener('change', () => { syncVRFAccess(); });
+// document.getElementById('local_ip').addEventListener('change', syncIfaceToLocalIP);
+document.getElementById('local_ip').addEventListener('change', syncFromLocalIP);
+
+syncVRFAccess();
+// syncIfaceToLocalIP();
+syncFromLocalIP();
+
+document.getElementById('generate').addEventListener('click', () => {
+  const missing = validateRequired();
+  if (missing.length) {
+    setStatus('');
+    return;
+  }
+  try{
+    const txt = generateConfigs(collect());
+    document.getElementById('output').value = txt;
+    document.getElementById('copy').disabled = false;
+    setStatus("Generated ✓", true);
+  }catch(e){
+    setStatus(e.message || String(e), false);
+  }
+});
+
+document.getElementById('copy').addEventListener('click', async () => {
+  const out = document.getElementById('output').value;
+  if(!out) return;
+  try{ await navigator.clipboard.writeText(out); setStatus("Copied ✓", true); }
+  catch{ setStatus("Copy failed", false); }
+});
+
+document.getElementById('clear').addEventListener('click', () => {
+  setVal('client',''); setVal('vlan_id',''); setVal('peer_ip','');
+  setVal('near_net',''); setVal('near_addr',''); setVal('subnet','30');
+  setVal('vrf_name','');
+  setVal('mode','Non-VRF'); syncVRFAccess();
+  // setVal('local_ip','203.76.124.50'); syncIfaceToLocalIP();
+  setVal('local_ip','203.76.124.50'); syncFromLocalIP();
+  setVal('bts_iface_base',  DEFAULT_BTS_IFACE_BASE);
+
+  ['vlan_id','client','peer_ip','near_net','near_addr','subnet','local_ip','eoip_vlan_iface','vrf_name']
+    .forEach(id => setInvalid(id, false));
+
+  document.getElementById('output').value = '';
+  document.getElementById('copy').disabled = true;
+  setStatus('');
+});
+
+['vlan_id','client','peer_ip','near_net','near_addr','subnet','local_ip','eoip_vlan_iface','vrf_name']
+  .forEach(id=>{
+    const el = document.getElementById(id);
+    if (!el) return;
+    const clearIfFilled = () => {
+      if (id === 'vrf_name' && document.getElementById('mode').value !== 'VRF') {
+        setInvalid(id, false);
+        return;
+      }
+      setInvalid(id, !val(id));
+    };
+    el.addEventListener('input', clearIfFilled);
+    el.addEventListener('change', clearIfFilled);
+  });
+</script>
+</body>
+</html>

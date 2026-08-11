@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dual-Peering BGP Config Generator</title>
+    <meta name="description" content="Generate ready-to-use BGP peering configurations for Mikrotik OS6, Mikrotik OS7, and Huawei routers on both ISP and Client ends.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glass-bg"></div>
+    <div class="app-container">
+        
+        <!-- ================= VIEW 1: DATA ENTRY VIEW ================= -->
+        <div id="input-view" class="view-pane active">
+            <!-- Header -->
+            <header class="app-header">
+                <div class="logo-area">
+                    <span class="logo-icon">🔗</span>
+                    <div>
+                        <h1>BGP Peering Config Generator</h1>
+                        <p class="tagline">Enter parameters and select devices to generate Link3 standard configurations</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" id="btn-load-demo">Load Excel Sample</button>
+                </div>
+            </header>
+
+            <!-- Grid Layout for Inputs -->
+            <main class="inputs-grid">
+                
+                <!-- Column 1: R1 Link & General Settings (Swapped) -->
+                <div class="input-col">
+                    <!-- ISP Router 1 (R1) Peering Configuration (Now Card 1) -->
+                    <div class="input-card">
+                        <div class="card-title">
+                            <span class="num-badge">1</span>
+                            <h2>ISP Router 1 (R1 - Primary Link)</h2>
+                        </div>
+                        <div class="form-row" style="grid-template-columns: 1fr 1fr; display: grid; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div class="form-group">
+                                <label for="r1-device-select">R1 Device Vendor</label>
+                                <select id="r1-device-select">
+                                    <option value="ros6" selected>MikroTik OS6</option>
+                                    <option value="ros7">MikroTik OS7</option>
+                                    <option value="huawei">Huawei VRP</option>
+                                    <option value="cisco">Cisco IOS</option>
+                                    <option value="juniper">Juniper Junos</option>
+                                    <option value="none">Do Not Generate</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="r1-vlan">Primary VLAN ID</label>
+                                <input type="number" id="r1-vlan" value="2512">
+                            </div>
+                        </div>
+                        <div class="form-row grid-2">
+                            <div class="form-group">
+                                <label for="r1-isp-if">R1 ISP-End Interface</label>
+                                <input type="text" id="r1-isp-if" value="ether1_Link3_Data">
+                            </div>
+                            <div class="form-group">
+                                <label for="r1-client-port">R1 Client-End Port</label>
+                                <input type="text" id="r1-client-port" value="ether1">
+                            </div>
+                        </div>
+                        <div class="form-row grid-2">
+                            <div class="form-group">
+                                <label for="r1-isp-ip">R1 ISP Peer IP (Local)</label>
+                                <input type="text" id="r1-isp-ip" value="10.248.69.145">
+                            </div>
+                            <div class="form-group">
+                                <label for="r1-client-ip">R1 Client Peer IP (Remote)</label>
+                                <input type="text" id="r1-client-ip" value="10.248.69.146">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="r1-net-ip">R1 Network IP</label>
+                            <input type="text" id="r1-net-ip" value="10.248.69.144">
+                        </div>
+                    </div>
+
+                    <!-- General Settings (Now Card 2) -->
+                    <div class="input-card">
+                        <div class="card-title">
+                            <span class="num-badge">2</span>
+                            <h2>General BGP Settings</h2>
+                        </div>
+                        <div class="form-group">
+                            <label for="client-name">Client Name</label>
+                            <input type="text" id="client-name" placeholder="e.g. Brandix Bangladesh Limited." value="Brandix Bangladesh Limited. (U3)">
+                        </div>
+                        <div class="form-row grid-2">
+                            <div class="form-group">
+                                <label for="client-asn">Client ASN</label>
+                                <input type="number" id="client-asn" value="65448">
+                            </div>
+                            <div class="form-group">
+                                <label for="isp-asn">ISP ASN</label>
+                                <input type="number" id="isp-asn" value="23688">
+                            </div>
+                        </div>
+                        <div class="form-row" style="grid-template-columns: 2fr 1fr; display: grid; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div class="form-group">
+                                <label for="client-prefix">Client IP Block</label>
+                                <input type="text" id="client-prefix" value="123.200.18.192">
+                            </div>
+                            <div class="form-group">
+                                <label for="client-cidr">CIDR</label>
+                                <select id="client-cidr">
+                                    <option value="24">/24</option>
+                                    <option value="25">/25</option>
+                                    <option value="26">/26</option>
+                                    <option value="27">/27</option>
+                                    <option value="28">/28</option>
+                                    <option value="29">/29</option>
+                                    <option value="30" selected>/30</option>
+                                    <option value="32">/32</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="client-gateway">Client LAN Gateway IP (Loopback)</label>
+                            <input type="text" id="client-gateway" value="123.200.18.193">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column 2: R2 Link & Strategy Settings -->
+                <div class="input-col">
+                    <!-- ISP Router 2 (R2) Peering Configuration (Card 3) -->
+                    <div class="input-card">
+                        <div class="card-title">
+                            <span class="num-badge">3</span>
+                            <h2>ISP Router 2 (R2 - Secondary Link)</h2>
+                        </div>
+                        <div class="form-row" style="grid-template-columns: 1fr 1fr; display: grid; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div class="form-group">
+                                <label for="r2-device-select">R2 Device Vendor</label>
+                                <select id="r2-device-select">
+                                    <option value="ros6" selected>MikroTik OS6</option>
+                                    <option value="ros7">MikroTik OS7</option>
+                                    <option value="huawei">Huawei VRP</option>
+                                    <option value="cisco">Cisco IOS</option>
+                                    <option value="juniper">Juniper Junos</option>
+                                    <option value="none">Do Not Generate</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="r2-vlan">Secondary VLAN ID</label>
+                                <input type="number" id="r2-vlan" value="503">
+                            </div>
+                        </div>
+                        <div class="form-row grid-2">
+                            <div class="form-group">
+                                <label for="r2-isp-if">R2 ISP-End Interface</label>
+                                <input type="text" id="r2-isp-if" value="ether3">
+                            </div>
+                            <div class="form-group">
+                                <label for="r2-client-port">R2 Client-End Port</label>
+                                <input type="text" id="r2-client-port" value="ether5">
+                            </div>
+                        </div>
+                        <div class="form-row grid-2">
+                            <div class="form-group">
+                                <label for="r2-isp-ip">R2 ISP Peer IP (Local)</label>
+                                <input type="text" id="r2-isp-ip" value="10.248.69.149">
+                            </div>
+                            <div class="form-group">
+                                <label for="r2-client-ip">R2 Client Peer IP (Remote)</label>
+                                <input type="text" id="r2-client-ip" value="10.248.69.150">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="r2-net-ip">R2 Network IP</label>
+                            <input type="text" id="r2-net-ip" value="10.248.69.148">
+                        </div>
+                    </div>
+
+                    <!-- Client Router & Strategy Card (Card 4) -->
+                    <div class="input-card">
+                        <div class="card-title">
+                            <span class="num-badge">4</span>
+                            <h2>Client End (CE) & Strategy</h2>
+                        </div>
+                        <div class="form-row grid-2">
+                            <div class="form-group">
+                                <label for="client-device-select">Client Router Vendor</label>
+                                <select id="client-device-select">
+                                    <option value="ros6" selected>MikroTik OS6</option>
+                                    <option value="ros7">MikroTik OS7</option>
+                                    <option value="huawei">Huawei VRP</option>
+                                    <option value="cisco">Cisco IOS</option>
+                                    <option value="juniper">Juniper Junos</option>
+                                    <option value="none">Do Not Generate</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="client-lan-port">Client LAN Interface</label>
+                                <input type="text" id="client-lan-port" value="ether4-LAN">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="peering-strategy">Link Setup Strategy</label>
+                            <select id="peering-strategy">
+                                <option value="active-backup-r1" selected>Active/Backup (R1 Primary, R2 Backup)</option>
+                                <option value="active-active">Active / Active (Equal paths)</option>
+                                <option value="active-backup-r2">Active/Backup (R2 Primary, R1 Backup)</option>
+                            </select>
+                        </div>
+                        <div class="form-row grid-2 dependency-fields active" id="backup-details">
+                            <div class="form-group">
+                                <label for="r1-pref-val">Primary LP</label>
+                                <input type="number" id="r1-pref-val" value="120">
+                            </div>
+                            <div class="form-group">
+                                <label for="r2-pref-val">Backup LP</label>
+                                <input type="number" id="r2-pref-val" value="100">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Bottom Center Generate Button Panel -->
+            <div class="action-btn-container mt-4">
+                <button class="btn btn-primary btn-generate-all" id="btn-generate">
+                    <span>⚡</span> Generate Configurations
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 2: SCRIPTS/RESULTS VIEW ================= -->
+        <div id="result-view" class="view-pane">
+            <header class="app-header">
+                <div class="logo-area">
+                    <button class="btn btn-secondary" id="btn-back">← Back to Inputs</button>
+                    <div>
+                        <h1 id="result-client-title">BGP Configurations</h1>
+                        <p class="tagline">Link3 Peering Deployment Script Output</p>
+                    </div>
+                </div>
+            </header>
+
+            <main class="outputs-panel" id="outputs-container">
+                <!-- R1 Config Card -->
+                <div class="output-card" id="card-r1">
+                    <div class="card-header">
+                        <div class="card-badge primary">ISP Router 1 (R1 - Primary Link)</div>
+                        <div class="device-label" id="r1-device-label">MikroTik OS6</div>
+                    </div>
+                    <div class="code-container">
+                        <div class="code-bar">
+                            <span class="file-name" id="r1-filename">r1-bgp-peering.rsc</span>
+                            <div class="code-actions">
+                                <button class="btn btn-icon btn-copy" data-target="r1-code" title="Copy code">
+                                    <span class="icon">📋</span> Copy
+                                </button>
+                                <button class="btn btn-icon btn-download" data-target="r1-code" data-filename-id="r1-filename" title="Download config">
+                                    <span class="icon">💾</span> Download
+                                </button>
+                            </div>
+                        </div>
+                        <pre><code class="code-block" id="r1-code"># Config...</code></pre>
+                    </div>
+                </div>
+
+                <!-- R2 Config Card -->
+                <div class="output-card" id="card-r2">
+                    <div class="card-header">
+                        <div class="card-badge secondary">ISP Router 2 (R2 - Secondary Link)</div>
+                        <div class="device-label" id="r2-device-label">MikroTik OS6</div>
+                    </div>
+                    <div class="code-container">
+                        <div class="code-bar">
+                            <span class="file-name" id="r2-filename">r2-bgp-peering.rsc</span>
+                            <div class="code-actions">
+                                <button class="btn btn-icon btn-copy" data-target="r2-code" title="Copy code">
+                                    <span class="icon">📋</span> Copy
+                                </button>
+                                <button class="btn btn-icon btn-download" data-target="r2-code" data-filename-id="r2-filename" title="Download config">
+                                    <span class="icon">💾</span> Download
+                                </button>
+                            </div>
+                        </div>
+                        <pre><code class="code-block" id="r2-code"># Config...</code></pre>
+                    </div>
+                </div>
+
+                <!-- Client Config Card -->
+                <div class="output-card" id="card-client">
+                    <div class="card-header">
+                        <div class="card-badge success">Client Router (CE End - Peering with R1 & R2)</div>
+                        <div class="device-label" id="client-device-label">MikroTik OS6</div>
+                    </div>
+                    <div class="code-container">
+                        <div class="code-bar">
+                            <span class="file-name" id="client-filename">client-bgp-peering.rsc</span>
+                            <div class="code-actions">
+                                <button class="btn btn-icon btn-copy" data-target="client-code" title="Copy code">
+                                    <span class="icon">📋</span> Copy
+                                </button>
+                                <button class="btn btn-icon btn-download" data-target="client-code" data-filename-id="client-filename" title="Download config">
+                                    <span class="icon">💾</span> Download
+                                </button>
+                            </div>
+                        </div>
+                        <pre><code class="code-block" id="client-code"># Config...</code></pre>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+    </div>
+
+    <!-- Script File -->
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPsec VPN Configuration Generator</title>
+    <meta name="description" content="Generate secure, production-ready IPsec VPN configurations in real-time with dynamic variables, interactive validation, and syntax explanations.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-logo">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="accent-icon">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+                <h1><span>IPsec VPN</span> Generator</h1>
+            </div>
+            <p class="subtitle">Generate production-ready Site-to-Site IPsec VPN configurations in real-time.</p>
+        </header>
+
+        <!-- Main Content Grid -->
+        <main class="app-main">
+            <!-- Left Panel: Configurations/Inputs -->
+            <section class="config-panel" aria-label="VPN Parameter Configuration">
+                <div class="panel-header">
+                    <h2><span class="step-num">1</span> Configure Parameters</h2>
+                    <button id="btn-reset" class="btn btn-secondary btn-sm" type="button">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                        Reset to Defaults
+                    </button>
+                </div>
+
+                <!-- Input Accordions / Groups -->
+                <form id="vpn-form" autocomplete="off">
+                    
+                    <!-- Section: VPN Type -->
+                    <div class="config-card">
+                        <div class="card-header">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="card-icon"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+                            <h3>VPN Connection Type</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label for="vpn-type">IPsec VPN Mode</label>
+                                <select id="vpn-type" name="vpnType">
+                                    <option value="policy" selected>Policy-based (ACL / Crypto Map)</option>
+                                    <option value="route">Route-based (VTI / Tunnel Interface)</option>
+                                </select>
+                                <span class="help-text">Policy-based uses traffic profiles; Route-based uses virtual interfaces and routing tables.</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Section: ISAKMP (Phase 1) -->
+                    <div class="config-card">
+                        <div class="card-header">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="card-icon"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            <h3>ISAKMP Policy (Phase 1)</h3>
+                        </div>
+                        <div class="card-body grid-2">
+                            <div class="form-group">
+                                <label for="isakmp-policy">Policy Name</label>
+                                <input type="text" id="isakmp-policy" name="isakmpPolicy" value="1" required>
+                                <span class="validation-message" id="val-isakmp-policy"></span>
+                                <span class="help-text">Custom policy identifier</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="isakmp-encr">Encryption</label>
+                                <select id="isakmp-encr" name="isakmpEncr">
+                                    <option value="aes 256" selected>AES-256</option>
+                                    <option value="aes 192">AES-192</option>
+                                    <option value="aes 128">AES-128</option>
+                                    <option value="3des">3DES (Legacy)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="isakmp-hash">Hash Algorithm</label>
+                                <select id="isakmp-hash" name="isakmpHash">
+                                    <option value="sha256">SHA-256</option>
+                                    <option value="sha384">SHA-384</option>
+                                    <option value="sha512">SHA-512</option>
+                                    <option value="sha1" selected>SHA-1 (Legacy)</option>
+                                    <option value="md5">MD5 (Insecure)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="isakmp-auth">Authentication</label>
+                                <select id="isakmp-auth" name="isakmpAuth">
+                                    <option value="pre-share" selected>Pre-Share Key</option>
+                                    <option value="rsa-sig">RSA Signatures</option>
+                                </select>
+                            </div>
+                            <div class="form-group span-2">
+                                <label for="isakmp-key">Pre-Shared Key (PSK)</label>
+                                <div class="input-with-action">
+                                    <input type="text" id="isakmp-key" name="isakmpKey" value="Pr!m@Ry&Sec0Nd@rY" required>
+                                    <button type="button" id="btn-generate-psk" class="btn btn-icon" title="Generate Secure PSK">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                    </button>
+                                </div>
+                                <span class="help-text">Secret key shared with the remote peer</span>
+                            </div>
+                            <div class="form-group span-2">
+                                <label for="peer-ip">Remote Peer WAN IP</label>
+                                <input type="text" id="peer-ip" name="peerIp" value="198.51.100.2" placeholder="y.y.y.y" required>
+                                <span class="validation-message" id="val-peer-ip"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section: IPsec (Phase 2) -->
+                    <div class="config-card">
+                        <div class="card-header">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="card-icon"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                            <h3>IPsec Settings (Phase 2)</h3>
+                        </div>
+                        <div class="card-body grid-2">
+                            <div class="form-group span-2">
+                                <label for="transform-set-name">Transform-Set Name</label>
+                                <input type="text" id="transform-set-name" name="transformSetName" value="TS_SITE_A" required>
+                                <span class="validation-message" id="val-transform-set-name"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="ipsec-encr">IPsec Encryption</label>
+                                <select id="ipsec-encr" name="ipsecEncr">
+                                    <option value="esp-aes 256" selected>ESP AES-256</option>
+                                    <option value="esp-aes 192">ESP AES-192</option>
+                                    <option value="esp-aes 128">ESP AES-128</option>
+                                    <option value="esp-3des">ESP 3DES</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="ipsec-hash">IPsec Authentication</label>
+                                <select id="ipsec-hash" name="ipsecHash">
+                                    <option value="esp-sha-hmac" selected>ESP SHA HMAC</option>
+                                    <option value="esp-sha256-hmac">ESP SHA256 HMAC</option>
+                                    <option value="esp-md5-hmac">ESP MD5 HMAC</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="crypto-map-name">Crypto Map Name</label>
+                                <input type="text" id="crypto-map-name" name="cryptoMapName" value="CRYPTO_MAP" required>
+                                <span class="validation-message" id="val-crypto-map-name"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="crypto-map-seq">Sequence Number</label>
+                                <input type="number" id="crypto-map-seq" name="cryptoMapSeq" value="1" min="1" max="1000" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section: Routing & ACL (Interesting Traffic) -->
+                    <div class="config-card">
+                        <div class="card-header">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="card-icon"><polyline points="16 16 20 20 24 16"></polyline><path d="M18 20V10a4 4 0 0 0-4-4H0"></path></svg>
+                            <h3>Interesting Traffic & ACL</h3>
+                        </div>
+                        <div class="card-body grid-2">
+                            <div class="form-group span-2" id="acl-name-container">
+                                <label for="acl-name">Access List (ACL) Name</label>
+                                <input type="text" id="acl-name" name="aclName" value="ACL_LAN_ALLOW" required>
+                                <span class="validation-message" id="val-acl-name"></span>
+                            </div>
+                            
+                            <!-- Local LAN Network -->
+                            <div class="form-divider span-2">Local LAN Network</div>
+                            <div class="form-group">
+                                <label for="local-lan-ip">Local LAN Subnet</label>
+                                <input type="text" id="local-lan-ip" name="localLanIp" value="192.168.1.0" placeholder="192.168.1.0" required>
+                                <span class="validation-message" id="val-local-lan-ip"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="local-lan-mask-select">CIDR Mask / Wildcard</label>
+                                <div class="dual-input">
+                                    <select id="local-lan-cidr" name="localLanCidr">
+                                        <option value="24" selected>/24 (255.255.255.0)</option>
+                                        <option value="25">/25 (255.255.255.128)</option>
+                                        <option value="26">/26 (255.255.255.192)</option>
+                                        <option value="27">/27 (255.255.255.224)</option>
+                                        <option value="28">/28 (255.255.255.240)</option>
+                                        <option value="29">/29 (255.255.255.248)</option>
+                                        <option value="30">/30 (255.255.255.252)</option>
+                                        <option value="16">/16 (255.255.0.0)</option>
+                                        <option value="8">/8 (255.0.0.0)</option>
+                                        <option value="custom">Custom Wildcard</option>
+                                    </select>
+                                    <input type="text" id="local-lan-wildcard" name="localLanWildcard" value="0.0.0.255" required readonly>
+                                </div>
+                                <span class="validation-message" id="val-local-lan-wildcard"></span>
+                            </div>
+
+                            <!-- Remote LAN Network -->
+                            <div class="form-divider span-2">Remote LAN Network</div>
+                            <div class="form-group">
+                                <label for="remote-lan-ip">Remote LAN Subnet</label>
+                                <input type="text" id="remote-lan-ip" name="remoteLanIp" value="172.16.1.0" placeholder="172.16.1.0" required>
+                                <span class="validation-message" id="val-remote-lan-ip"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="remote-lan-mask-select">CIDR Mask / Wildcard</label>
+                                <div class="dual-input">
+                                    <select id="remote-lan-cidr" name="remoteLanCidr">
+                                        <option value="24" selected>/24 (255.255.255.0)</option>
+                                        <option value="25">/25 (255.255.255.128)</option>
+                                        <option value="26">/26 (255.255.255.192)</option>
+                                        <option value="27">/27 (255.255.255.224)</option>
+                                        <option value="28">/28 (255.255.255.240)</option>
+                                        <option value="29">/29 (255.255.255.248)</option>
+                                        <option value="30">/30 (255.255.255.252)</option>
+                                        <option value="16">/16 (255.255.0.0)</option>
+                                        <option value="8">/8 (255.0.0.0)</option>
+                                        <option value="custom">Custom Wildcard</option>
+                                    </select>
+                                    <input type="text" id="remote-lan-wildcard" name="remoteLanWildcard" value="0.0.0.255" required readonly>
+                                </div>
+                                <span class="validation-message" id="val-remote-lan-wildcard"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section: WAN Interface -->
+                    <div class="config-card">
+                        <div class="card-header">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="card-icon"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+                            <h3>WAN Interface Settings</h3>
+                        </div>
+                        <div class="card-body grid-2">
+                            <div class="form-group span-2">
+                                <label for="wan-interface">Interface Name</label>
+                                <input type="text" id="wan-interface" name="wanInterface" value="GigabitEthernet2/0" placeholder="e.g. GigabitEthernet0/0" required>
+                                <span class="validation-message" id="val-wan-interface"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="wan-ip">WAN IP Address</label>
+                                <input type="text" id="wan-ip" name="wanIp" value="198.51.100.1" placeholder="x.x.x.x" required>
+                                <span class="validation-message" id="val-wan-ip"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="wan-mask-select">Subnet Mask</label>
+                                <div class="dual-input">
+                                    <select id="wan-cidr" name="wanCidr">
+                                        <option value="30" selected>/30 (255.255.255.252)</option>
+                                        <option value="29">/29 (255.255.255.248)</option>
+                                        <option value="28">/28 (255.255.255.240)</option>
+                                        <option value="24">/24 (255.255.255.0)</option>
+                                        <option value="custom">Custom Subnet Mask</option>
+                                    </select>
+                                    <input type="text" id="wan-mask" name="wanMask" value="255.255.255.252" required readonly>
+                                </div>
+                                <span class="validation-message" id="val-wan-mask"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section: Tunnel Settings (Conditional for Route-based) -->
+                    <div class="config-card hidden" id="tunnel-settings-card">
+                        <div class="card-header">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="card-icon"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path><path d="M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"></path></svg>
+                            <h3>Tunnel Interface Settings</h3>
+                        </div>
+                        <div class="card-body grid-2">
+                            <div class="form-group">
+                                <label for="tunnel-interface">Tunnel Interface Name</label>
+                                <input type="text" id="tunnel-interface" name="tunnelInterface" value="Tunnel1" placeholder="e.g. Tunnel1 or ipip-tunnel1">
+                                <span class="validation-message" id="val-tunnel-interface"></span>
+                                <span class="help-text">Cisco/Huawei: Tunnel1, MikroTik: ipip-tunnel1</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="tunnel-ip">Tunnel Local IP</label>
+                                <input type="text" id="tunnel-ip" name="tunnelIp" value="10.0.0.1" placeholder="e.g. 10.0.0.1">
+                                <span class="validation-message" id="val-tunnel-ip"></span>
+                                <span class="help-text">IP address assigned to this side of the tunnel</span>
+                            </div>
+                            <div class="form-group span-2">
+                                <label for="tunnel-mask-select">Tunnel Subnet Mask / CIDR</label>
+                                <div class="dual-input">
+                                    <select id="tunnel-cidr" name="tunnelCidr">
+                                        <option value="30" selected>/30 (255.255.255.252)</option>
+                                        <option value="29">/29 (255.255.255.248)</option>
+                                        <option value="24">/24 (255.255.255.0)</option>
+                                        <option value="custom">Custom Subnet Mask</option>
+                                    </select>
+                                    <input type="text" id="tunnel-mask" name="tunnelMask" value="255.255.255.252" readonly>
+                                </div>
+                                <span class="validation-message" id="val-tunnel-mask"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                </form>
+            </section>
+
+            <!-- Right Panel: Output & Live Preview -->
+            <section class="output-panel" aria-label="Generated Configuration Script">
+                <div class="panel-header">
+                    <h2><span class="step-num">2</span> Live Configuration Output</h2>
+                    <div class="action-buttons">
+                        <button id="btn-copy" class="btn btn-primary" type="button">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span class="btn-text">Copy Config</span>
+                        </button>
+                        <button id="btn-download" class="btn btn-secondary" type="button">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            Download (.cfg)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Vendor Selector Tabs -->
+                <div class="vendor-tabs">
+                    <button class="tab-btn active" data-vendor="cisco" type="button">Cisco IOS</button>
+                    <button class="tab-btn" data-vendor="huawei" type="button">Huawei VRP</button>
+                    <button class="tab-btn" data-vendor="mikrotik-v6" type="button">MikroTik v6</button>
+                    <button class="tab-btn" data-vendor="mikrotik-v7" type="button">MikroTik v7</button>
+                </div>
+
+                <!-- Live Terminal Card -->
+                <div class="terminal-card">
+                    <div class="terminal-header">
+                        <div class="terminal-dots">
+                            <span class="dot dot-red"></span>
+                            <span class="dot dot-yellow"></span>
+                            <span class="dot dot-green"></span>
+                        </div>
+                        <div class="terminal-title">Cisco IOS Configuration Terminal</div>
+                        <div class="terminal-badge">LIVE UPDATING</div>
+                    </div>
+                    <div class="terminal-body">
+                        <!-- Dynamic code output -->
+                        <pre id="output-code" class="code-editor"></pre>
+                    </div>
+                </div>
+
+                <!-- Explanation Panel (Interactive walkthrough of hovered commands) -->
+                <div class="explanation-card" id="explanation-card">
+                    <div class="explanation-header">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="explanation-icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        <h4>Interactive Command Assistant</h4>
+                    </div>
+                    <div class="explanation-body">
+                        <p class="explanation-default" id="explanation-text">Hover or click on any line of code in the editor above to see a detailed explanation of what that command does in the Cisco IOS environment.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>Multi-Vendor IPsec Site-to-Site VPN Config Generator &copy; 2026. Made with precision for network engineers.</p>
+        </footer>
+    </div>
+
+    <!-- Main JavaScript -->
+    <script src="app.js"></script>
+</body>
+</html>
