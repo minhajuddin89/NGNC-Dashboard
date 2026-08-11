@@ -609,168 +609,277 @@
 
     <!-- Admin User Management Modal (Admin Only) -->
     <div id="adminModal" class="modal-overlay-deck hidden">
-        <div class="modal-content-deck admin-modal-width">
-            <div class="modal-header-deck">
-                <h3><i data-lucide="shield-check"></i> Admin Console - User Management</h3>
+        <div class="modal-content-deck admin-modal-full" style="max-width: 1200px; width: 95vw; height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header-deck" style="padding-bottom: 0.85rem;">
+                <h3><i data-lucide="shield-check"></i> Admin Control Console</h3>
                 <button id="btnCloseAdminModal" class="modal-close-btn-deck">&times;</button>
             </div>
             
-            <div class="admin-grid-layout">
-                <!-- Left: Create User Form & Roster Import -->
-                <div class="admin-create-user-section">
-                    <div class="admin-form-box">
-                        <h4><i data-lucide="user-plus"></i> Create New User ID</h4>
-                        <form id="createUserForm">
-                            <div class="form-group-deck">
-                                <label for="newUsername" class="panel-label">User ID (Username)</label>
-                                <input type="text" id="newUsername" placeholder="e.g. operator1" required autocomplete="username">
+            <!-- Horizontal Navigation Tab Bar -->
+            <div class="admin-tab-nav" style="display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border-color); padding: 0.5rem 0 0.75rem 0; margin-bottom: 1.25rem; flex-wrap: wrap;">
+                <button type="button" class="admin-tab-btn active" data-tab="tabAdminUsers">
+                    <i data-lucide="users"></i> Users & Access
+                </button>
+                <button type="button" class="admin-tab-btn" data-tab="tabAdminRoster">
+                    <i data-lucide="calendar"></i> Roster & Shifts
+                </button>
+                <button type="button" class="admin-tab-btn" data-tab="tabAdminLinks">
+                    <i data-lucide="link"></i> Portal Quick Links
+                </button>
+                <button type="button" class="admin-tab-btn" data-tab="tabAdminDatabase">
+                    <i data-lucide="database"></i> Database & Reports
+                </button>
+                <button type="button" class="admin-tab-btn" data-tab="tabAdminSystem">
+                    <i data-lucide="activity"></i> System Diagnostics
+                </button>
+            </div>
+
+            <!-- Tab Panes Container -->
+            <div class="admin-tab-panes-container" style="flex: 1; overflow-y: auto; padding-right: 0.25rem;">
+                
+                <!-- TAB 1: USERS & ACCESS -->
+                <div id="tabAdminUsers" class="admin-tab-pane active">
+                    <div class="admin-grid-layout" style="display: grid; grid-template-columns: 340px 1fr; gap: 1.5rem;">
+                        <!-- Left: Create User -->
+                        <div class="admin-form-box">
+                            <h4><i data-lucide="user-plus"></i> Create New User ID</h4>
+                            <form id="createUserForm">
+                                <div class="form-group-deck">
+                                    <label for="newUsername" class="panel-label">User ID (Username)</label>
+                                    <input type="text" id="newUsername" placeholder="e.g. operator1" required autocomplete="username">
+                                </div>
+                                <div class="form-group-deck">
+                                    <label for="newFullName" class="panel-label">Full Name</label>
+                                    <input type="text" id="newFullName" placeholder="e.g. Operator One" required>
+                                </div>
+                                <div class="form-group-deck">
+                                    <label for="newPassword" class="panel-label">Password</label>
+                                    <input type="password" id="newPassword" placeholder="e.g. secret123" required autocomplete="new-password">
+                                </div>
+                                <button type="submit" class="btn-admin-submit">
+                                    <i data-lucide="plus-circle"></i> Create User
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- Right: Users Table with Search -->
+                        <div class="admin-users-list-section">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                                <h4 style="margin: 0;"><i data-lucide="users"></i> Registered Users Directory</h4>
+                                <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(0, 0, 0, 0.03); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.25rem 0.5rem; width: 220px;">
+                                    <i data-lucide="search" style="width: 14px; height: 14px; color: var(--text-muted);"></i>
+                                    <input type="text" id="adminUserSearch" placeholder="Filter user..." style="background: transparent; border: none; outline: none; font-size: 0.8rem; width: 100%;">
+                                </div>
                             </div>
-                            <div class="form-group-deck">
-                                <label for="newFullName" class="panel-label">Full Name</label>
-                                <input type="text" id="newFullName" placeholder="e.g. Operator One" required>
+                            <div class="admin-table-wrapper" style="max-height: 480px; overflow-y: auto;">
+                                <table class="admin-users-table">
+                                    <thead>
+                                        <tr>
+                                            <th>User ID</th>
+                                            <th>Full Name</th>
+                                            <th>Role</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminUsersTableBody">
+                                        <!-- Dynamic rows populated via JS -->
+                                    </tbody>
+                                </table>
                             </div>
-                            <div class="form-group-deck">
-                                <label for="newPassword" class="panel-label">Password</label>
-                                <input type="password" id="newPassword" placeholder="e.g. secret123" required autocomplete="new-password">
-                            </div>
-                            <button type="submit" class="btn-admin-submit">
-                                <i data-lucide="plus-circle"></i> Create User
-                            </button>
-                        </form>
+                        </div>
                     </div>
-                    
-                    <div class="admin-form-box" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
-                        <h4><i data-lucide="file-spreadsheet"></i> Import Roster (Excel)</h4>
-                        <form id="importRosterForm">
-                            <div class="form-group-deck">
-                                <label for="rosterFile" class="panel-label">Roster Spreadsheet</label>
-                                <input type="file" id="rosterFile" accept=".xlsx, .xls" required style="padding: 0.5rem 0.25rem;">
-                                <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: block; line-height: 1.4;">
-                                    Scans columns like "Name" and auto-registers users. Default pass: <strong>123456</strong>
+                </div>
+
+                <!-- TAB 2: ROSTER & SHIFTS -->
+                <div id="tabAdminRoster" class="admin-tab-pane hidden">
+                    <div style="display: grid; grid-template-columns: 360px 1fr; gap: 1.5rem;">
+                        <!-- Left: Import Roster File -->
+                        <div class="admin-form-box">
+                            <h4><i data-lucide="file-spreadsheet"></i> Import Roster (Excel)</h4>
+                            <form id="importRosterForm">
+                                <div class="form-group-deck">
+                                    <label for="rosterFile" class="panel-label">Roster Spreadsheet</label>
+                                    <input type="file" id="rosterFile" accept=".xlsx, .xls" required style="padding: 0.5rem 0.25rem;">
+                                    <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: block; line-height: 1.4;">
+                                        Scans monthly schedule sheet with columns like "Name" and auto-registers users. Default pass: <strong>123456</strong>
+                                    </span>
+                                </div>
+                                <button type="submit" class="btn-admin-submit" style="background: linear-gradient(135deg, var(--excel-green), var(--primary)); box-shadow: 0 4px 10px rgba(16, 124, 65, 0.2);">
+                                    <i data-lucide="upload-cloud"></i> Sync Roster File
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Right: Shift Timing & Code Configuration -->
+                        <div class="admin-form-box">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                                <h4 style="margin: 0;"><i data-lucide="clock"></i> Shift Schedule Configuration</h4>
+                                <button type="button" id="btnAddShiftRow" class="btn-admin-submit" style="background: rgba(56, 189, 248, 0.1); color: #0284c7; border: 1px solid rgba(56, 189, 248, 0.3); box-shadow: none; padding: 0.35rem 0.75rem; font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem; width: auto;">
+                                    <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Add Shift
+                                </button>
+                            </div>
+                            <span style="font-size: 0.75rem; color: var(--text-muted); display: block; line-height: 1.4; margin-bottom: 0.75rem;">
+                                Customize shift timing bounds and display labels:
+                            </span>
+                            
+                            <div style="display: grid; grid-template-columns: 60px 1.2fr 1fr 1fr 24px; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem;">
+                                <span class="panel-label" style="text-align: center; margin: 0; font-size: 0.7rem;">Code</span>
+                                <span class="panel-label" style="margin: 0; font-size: 0.7rem;">Shift Name</span>
+                                <span class="panel-label" style="margin: 0; font-size: 0.7rem;">Start Time</span>
+                                <span class="panel-label" style="margin: 0; font-size: 0.7rem;">End Time</span>
+                                <span></span>
+                            </div>
+
+                            <div id="shiftsConfigContainer" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 320px; overflow-y: auto; padding-right: 0.25rem;">
+                                <!-- Dynamic shift list -->
+                            </div>
+                            
+                            <div style="margin-top: 1rem; text-align: right;">
+                                <button type="button" id="btnSaveShiftsConfig" class="btn-admin-submit" style="background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); padding: 0.5rem 1.25rem; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 0.35rem; width: auto;">
+                                    <i data-lucide="save" style="width: 14px; height: 14px;"></i> Save Shift Timings
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: PORTAL QUICK LINKS -->
+                <div id="tabAdminLinks" class="admin-tab-pane hidden">
+                    <div class="admin-form-box">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                            <div>
+                                <h4 style="margin: 0;"><i data-lucide="external-link"></i> Portal Quick Links Manager</h4>
+                                <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 0.25rem;">
+                                    Configure individual portal redirects or multi-link dropdown folders:
                                 </span>
                             </div>
-                            <button type="submit" class="btn-admin-submit" style="background: linear-gradient(135deg, var(--excel-green), var(--primary)); box-shadow: 0 4px 10px rgba(16, 124, 65, 0.2);">
-                                <i data-lucide="upload-cloud"></i> Sync Roster File
-                            </button>
-                        </form>
-                    </div>
-                    
-                    <div class="admin-form-box" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
-                        <h4><i data-lucide="database"></i> Database Operations</h4>
-                        <span style="font-size: 0.75rem; color: var(--text-muted); display: block; line-height: 1.4; margin-bottom: 0.75rem;">
-                            Deletes all tasks recorded in the Excel database sheet. User accounts are preserved.
-                        </span>
-                        <button type="button" id="btnClearAllTasks" class="btn-admin-submit" style="background: linear-gradient(135deg, #ef4444, #b91c1c); box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);">
-                            <i data-lucide="trash-2"></i> Delete All Tasks
-                        </button>
-                    </div>
-
-                    <div class="admin-form-box" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
-                        <h4><i data-lucide="download"></i> Export Database (Excel)</h4>
-                        
-                        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.75rem;">
-                            <!-- Full Export Button -->
-                            <button type="button" id="btnExportFull" class="btn-admin-submit" style="background: linear-gradient(135deg, var(--excel-green), var(--primary)); box-shadow: 0 4px 10px rgba(16, 124, 65, 0.2); width: 100%;">
-                                <i data-lucide="file-spreadsheet"></i> Download Full Database
-                            </button>
-                            
-                            <div style="border-bottom: 1px dashed var(--border-color); margin: 0.5rem 0;"></div>
-                            
-                            <!-- Date-wise Filter Form -->
-                            <span style="font-size: 0.75rem; color: var(--text-muted); display: block; line-height: 1.4;">
-                                Download date-wise task reports:
-                            </span>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-                                <div class="form-group-deck" style="margin: 0; gap: 0.25rem;">
-                                    <label for="exportStartDate" class="panel-label" style="font-size: 0.65rem;">Start Date</label>
-                                    <input type="date" id="exportStartDate" style="padding: 0.4rem 0.5rem; font-size: 0.8rem; background: rgba(15, 23, 42, 0.5); border: 1px solid var(--border-color); color: #f1f5f9; border-radius: var(--radius-sm); outline: none;">
-                                </div>
-                                <div class="form-group-deck" style="margin: 0; gap: 0.25rem;">
-                                    <label for="exportEndDate" class="panel-label" style="font-size: 0.65rem;">End Date</label>
-                                    <input type="date" id="exportEndDate" style="padding: 0.4rem 0.5rem; font-size: 0.8rem; background: rgba(15, 23, 42, 0.5); border: 1px solid var(--border-color); color: #f1f5f9; border-radius: var(--radius-sm); outline: none;">
-                                </div>
-                            </div>
-                            <button type="button" id="btnExportDateWise" class="btn-admin-submit" style="background: linear-gradient(135deg, #eab308, #ca8a04); box-shadow: 0 4px 10px rgba(234, 179, 8, 0.2); width: 100%;">
-                                <i data-lucide="filter"></i> Download Date-Wise Report
+                            <button type="button" id="btnAddLinkRow" class="btn-admin-submit" style="background: rgba(56, 189, 248, 0.1); color: #0284c7; border: 1px solid rgba(56, 189, 248, 0.3); box-shadow: none; padding: 0.35rem 0.75rem; font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem; width: auto;">
+                                <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Add Link
                             </button>
                         </div>
-                    </div>
-
-                    <div class="admin-form-box" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
-                        <h4><i data-lucide="clock"></i> Shift Schedule Config</h4>
-                        <span style="font-size: 0.75rem; color: var(--text-muted); display: block; line-height: 1.4; margin-bottom: 0.75rem;">
-                            Customize roster shift code mapping:
-                        </span>
                         
-                        <div style="display: grid; grid-template-columns: 50px 1.2fr 1fr 1fr 20px; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem;">
-                            <span class="panel-label" style="text-align: center; margin: 0; font-size: 0.7rem;">Code</span>
-                            <span class="panel-label" style="margin: 0; font-size: 0.7rem;">Name</span>
-                            <span class="panel-label" style="margin: 0; font-size: 0.7rem;">Start</span>
-                            <span class="panel-label" style="margin: 0; font-size: 0.7rem;">End</span>
+                        <div style="display: grid; grid-template-columns: 1.5fr 2.5fr 24px; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem;">
+                            <span class="panel-label" style="margin: 0; font-size: 0.7rem;">Portal Name / Folder Group</span>
+                            <span class="panel-label" style="margin: 0; font-size: 0.7rem;">URL Destination</span>
                             <span></span>
                         </div>
 
-                        <div id="shiftsConfigContainer" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 250px; overflow-y: auto; padding-right: 0.25rem;">
-                            <!-- Dynamic shift list -->
-                        </div>
-                        
-                        <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-                            <button type="button" id="btnAddShiftRow" class="btn-admin-submit" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.2); box-shadow: none; padding: 0.5rem; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem; width: auto;">
-                                <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Add Shift
-                            </button>
-                            <button type="button" id="btnSaveShiftsConfig" class="btn-admin-submit" style="background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); flex: 1; padding: 0.5rem; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
-                                <i data-lucide="save" style="width: 14px; height: 14px;"></i> Save Shift Timings
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="admin-form-box" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
-                        <h4><i data-lucide="external-link"></i> Portal Quick Links Config</h4>
-                        <span style="font-size: 0.75rem; color: var(--text-muted); display: block; line-height: 1.4; margin-bottom: 0.75rem;">
-                            Manage dashboard portal redirect links:
-                        </span>
-                        
-                        <div style="display: grid; grid-template-columns: 1fr 2.5fr 20px; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem;">
-                            <span class="panel-label" style="margin: 0; font-size: 0.7rem;">Portal Name</span>
-                            <span class="panel-label" style="margin: 0; font-size: 0.7rem;">URL Link</span>
-                            <span></span>
-                        </div>
-
-                        <div id="quickLinksConfigContainer" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 200px; overflow-y: auto; padding-right: 0.25rem;">
+                        <div id="quickLinksConfigContainer" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 380px; overflow-y: auto; padding-right: 0.25rem;">
                             <!-- Dynamic quick links config list -->
                         </div>
                         
-                        <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-                            <button type="button" id="btnAddLinkRow" class="btn-admin-submit" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.2); box-shadow: none; padding: 0.5rem; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem; width: auto;">
-                                <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Add Link
-                            </button>
-                            <button type="button" id="btnSaveLinksConfig" class="btn-admin-submit" style="background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); flex: 1; padding: 0.5rem; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
-                                <i data-lucide="save" style="width: 14px; height: 14px;"></i> Save Links
+                        <div style="margin-top: 1rem; text-align: right;">
+                            <button type="button" id="btnSaveLinksConfig" class="btn-admin-submit" style="background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); padding: 0.5rem 1.25rem; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 0.35rem; width: auto;">
+                                <i data-lucide="save" style="width: 14px; height: 14px;"></i> Save Portal Links
                             </button>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Right: Users List -->
-                <div class="admin-users-list-section">
-                    <h4><i data-lucide="users"></i> Registered Users (Excel sheet)</h4>
-                    <div class="admin-table-wrapper">
-                        <table class="admin-users-table">
-                            <thead>
-                                <tr>
-                                    <th>User ID</th>
-                                    <th>Full Name</th>
-                                    <th>Role</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="adminUsersTableBody">
-                                <!-- Dynamic rows populated via JS -->
-                            </tbody>
-                        </table>
+
+                <!-- TAB 4: DATABASE & REPORTS -->
+                <div id="tabAdminDatabase" class="admin-tab-pane hidden">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <!-- Export & Reports Card -->
+                        <div class="admin-form-box">
+                            <h4><i data-lucide="download"></i> Excel Reports & Exports</h4>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 0.75rem;">
+                                <!-- Full Export Button -->
+                                <div>
+                                    <label class="panel-label" style="font-size: 0.72rem; margin-bottom: 0.35rem;">Full Database Master Export</label>
+                                    <button type="button" id="btnExportFull" class="btn-admin-submit" style="background: linear-gradient(135deg, var(--excel-green), var(--primary)); box-shadow: 0 4px 10px rgba(16, 124, 65, 0.2); width: 100%;">
+                                        <i data-lucide="file-spreadsheet"></i> Download Complete tasks.xlsx
+                                    </button>
+                                </div>
+                                
+                                <div style="border-bottom: 1px dashed var(--border-color); margin: 0.25rem 0;"></div>
+                                
+                                <!-- Date-wise Filter Form -->
+                                <div>
+                                    <label class="panel-label" style="font-size: 0.72rem; margin-bottom: 0.35rem;">Date-Wise Filtered Task Report</label>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                        <div class="form-group-deck" style="margin: 0; gap: 0.25rem;">
+                                            <label for="exportStartDate" class="panel-label" style="font-size: 0.65rem;">Start Date</label>
+                                            <input type="date" id="exportStartDate" style="padding: 0.4rem 0.5rem; font-size: 0.8rem; border-radius: var(--radius-sm); outline: none;">
+                                        </div>
+                                        <div class="form-group-deck" style="margin: 0; gap: 0.25rem;">
+                                            <label for="exportEndDate" class="panel-label" style="font-size: 0.65rem;">End Date</label>
+                                            <input type="date" id="exportEndDate" style="padding: 0.4rem 0.5rem; font-size: 0.8rem; border-radius: var(--radius-sm); outline: none;">
+                                        </div>
+                                    </div>
+                                    <button type="button" id="btnExportDateWise" class="btn-admin-submit" style="background: linear-gradient(135deg, #eab308, #ca8a04); box-shadow: 0 4px 10px rgba(234, 179, 8, 0.2); width: 100%;">
+                                        <i data-lucide="filter"></i> Download Filtered Report
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Maintenance & Safety Operations -->
+                        <div class="admin-form-box">
+                            <h4><i data-lucide="alert-triangle" style="color: #ef4444;"></i> Database Maintenance & Purge</h4>
+                            <span style="font-size: 0.75rem; color: var(--text-muted); display: block; line-height: 1.4; margin-bottom: 1rem;">
+                                Administrative database cleanup tools. User accounts, quick links, and roster schedules are permanently protected.
+                            </span>
+                            
+                            <div style="background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1rem;">
+                                <span style="font-size: 0.8rem; font-weight: 600; color: #b91c1c; display: block; margin-bottom: 0.35rem;">
+                                    Clear All Tasks from Database
+                                </span>
+                                <span style="font-size: 0.75rem; color: var(--text-muted); display: block; line-height: 1.4; margin-bottom: 0.75rem;">
+                                    Permanently wipes the tasks list sheet in Excel. A timestamped automatic snapshot will be generated before purging.
+                                </span>
+                                <button type="button" id="btnClearAllTasks" class="btn-admin-submit" style="background: linear-gradient(135deg, #ef4444, #b91c1c); box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2); width: 100%;">
+                                    <i data-lucide="trash-2"></i> Wipe All Task Records
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                <!-- TAB 5: SYSTEM DIAGNOSTICS -->
+                <div id="tabAdminSystem" class="admin-tab-pane hidden">
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                        <div class="metric-box total" style="padding: 1.25rem;">
+                            <div class="metric-title">Master Tasks Count</div>
+                            <div id="diagTasksCount" class="metric-number" style="font-size: 1.8rem;">0</div>
+                            <i data-lucide="layers" class="metric-icon"></i>
+                        </div>
+                        <div class="metric-box progress" style="padding: 1.25rem;">
+                            <div class="metric-title">Registered Users</div>
+                            <div id="diagUsersCount" class="metric-number" style="font-size: 1.8rem;">0</div>
+                            <i data-lucide="users" class="metric-icon"></i>
+                        </div>
+                        <div class="metric-box completed" style="padding: 1.25rem;">
+                            <div class="metric-title">Roster Shifts Loaded</div>
+                            <div id="diagRosterCount" class="metric-number" style="font-size: 1.8rem;">0</div>
+                            <i data-lucide="calendar" class="metric-icon"></i>
+                        </div>
+                    </div>
+
+                    <div class="admin-form-box">
+                        <h4><i data-lucide="server"></i> Environment & Daemon Status</h4>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; font-size: 0.82rem; line-height: 1.6;">
+                            <div>
+                                <span class="panel-label" style="display: block;">Application Daemon:</span>
+                                <span style="font-weight: 600; color: #10b981;"><i data-lucide="check-circle" style="width: 14px; height: 14px; display: inline-block;"></i> Gunicorn WSGI Active</span>
+                            </div>
+                            <div>
+                                <span class="panel-label" style="display: block;">PulseTrace Diagnostic Server:</span>
+                                <span style="font-weight: 600; color: #0284c7;"><i data-lucide="check-circle" style="width: 14px; height: 14px; display: inline-block;"></i> Node.js Port 3000 Active</span>
+                            </div>
+                            <div>
+                                <span class="panel-label" style="display: block;">Database Storage:</span>
+                                <span>Microsoft Excel .xlsx format (Encrypted Local / Shared)</span>
+                            </div>
+                            <div>
+                                <span class="panel-label" style="display: block;">Version Release:</span>
+                                <span style="font-weight: 700; color: #7c3aed;">v1.0.1 (Git Tagged)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>

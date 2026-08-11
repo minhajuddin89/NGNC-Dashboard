@@ -323,7 +323,61 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchUsers();
         fetchShifts();
         renderQuickLinksConfig();
+        updateAdminDiagnostics();
+        if (window.lucide) window.lucide.createIcons();
     });
+
+    // Admin Console Tab Switching Logic
+    const adminTabBtns = document.querySelectorAll('.admin-tab-btn');
+    const adminTabPanes = document.querySelectorAll('.admin-tab-pane');
+
+    adminTabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetTabId = btn.getAttribute('data-tab');
+            
+            adminTabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            adminTabPanes.forEach(pane => {
+                if (pane.id === targetTabId) {
+                    pane.classList.remove('hidden');
+                    pane.classList.add('active');
+                } else {
+                    pane.classList.add('hidden');
+                    pane.classList.remove('active');
+                }
+            });
+
+            if (targetTabId === 'tabAdminSystem') {
+                updateAdminDiagnostics();
+            }
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        });
+    });
+
+    function updateAdminDiagnostics() {
+        const diagTasks = document.getElementById('diagTasksCount');
+        const diagUsers = document.getElementById('diagUsersCount');
+        const diagRoster = document.getElementById('diagRosterCount');
+        if (diagTasks) diagTasks.textContent = allTasks.length;
+        if (diagUsers) diagUsers.textContent = allUsers.length;
+        if (diagRoster) diagRoster.textContent = allRoster.length;
+    }
+
+    // Admin User Search Filter
+    const adminUserSearch = document.getElementById('adminUserSearch');
+    if (adminUserSearch) {
+        adminUserSearch.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('#adminUsersTableBody tr');
+            rows.forEach(r => {
+                const text = r.textContent.toLowerCase();
+                r.style.display = text.includes(query) ? '' : 'none';
+            });
+        });
+    }
 
     // Close Admin Modal
     btnCloseAdminModal.addEventListener('click', () => {
