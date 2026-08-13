@@ -2216,6 +2216,96 @@ body.light-theme .task-card:hover {
     box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.08) !important;
 }
 
+/* Light Theme Action Buttons (Table & Cards) */
+body.light-theme .action-btn {
+    background-color: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #475569 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+body.light-theme .action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light-theme .action-btn.btn-detail {
+    background-color: #f0f9ff !important;
+    color: #0284c7 !important;
+    border-color: #bae6fd !important;
+}
+
+body.light-theme .action-btn.btn-detail:hover {
+    background-color: #e0f2fe !important;
+    color: #0369a1 !important;
+    border-color: #7dd3fc !important;
+}
+
+body.light-theme .action-btn.btn-start {
+    background-color: #eff6ff !important;
+    color: #2563eb !important;
+    border-color: #bfdbfe !important;
+}
+
+body.light-theme .action-btn.btn-start:hover {
+    background-color: #dbeafe !important;
+    color: #1d4ed8 !important;
+    border-color: #93c5fd !important;
+}
+
+body.light-theme .action-btn.btn-complete,
+body.light-theme.operator-theme .action-btn.btn-complete {
+    background: #f0fdf4 !important;
+    color: #16a34a !important;
+    border: 1px solid #bbf7d0 !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+body.light-theme .action-btn.btn-complete:hover,
+body.light-theme.operator-theme .action-btn.btn-complete:hover {
+    background: #dcfce7 !important;
+    color: #15803d !important;
+    border-color: #86efac !important;
+    box-shadow: 0 4px 8px rgba(22, 163, 74, 0.15) !important;
+}
+
+body.light-theme .action-btn.btn-edit {
+    background-color: #faf5ff !important;
+    color: #9333ea !important;
+    border-color: #e9d5ff !important;
+}
+
+body.light-theme .action-btn.btn-edit:hover {
+    background-color: #f3e8ff !important;
+    color: #7e22ce !important;
+    border-color: #d8b4fe !important;
+}
+
+body.light-theme .action-btn.btn-delete {
+    background-color: #fef2f2 !important;
+    color: #dc2626 !important;
+    border-color: #fecaca !important;
+}
+
+body.light-theme .action-btn.btn-delete:hover {
+    background-color: #fee2e2 !important;
+    color: #b91c1c !important;
+    border-color: #fca5a5 !important;
+}
+
+body.light-theme .action-btn.btn-verify-config {
+    background-color: #f5f3ff !important;
+    color: #7c3aed !important;
+    border-color: #ddd6fe !important;
+}
+
+body.light-theme .action-btn.btn-verify-config:hover {
+    background-color: #ede9fe !important;
+    color: #6d28d9 !important;
+    border-color: #c4b5fd !important;
+}
+
 body.light-theme .engineers-panel,
 body.light-theme .chart-panel {
     background-color: #ffffff !important;

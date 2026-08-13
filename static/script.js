@@ -2178,36 +2178,76 @@ document.addEventListener('DOMContentLoaded', () => {
         
         engineersList.innerHTML = '';
         
-        // Filter out 'admin' master username to show active engineers
-        const activeEngineers = allUsers.filter(u => u.username.toLowerCase() !== 'admin');
-        
-        if (activeEngineers.length === 0) {
-            engineersList.innerHTML = `
-                <div style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 1rem 0; grid-column: 1 / -1;">
-                    No engineers registered.
-                </div>
-            `;
-            return;
-        }
-        
         // Get today's date in YYYY-MM-DD format
         const now = new Date();
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const day = String(now.getDate()).padStart(2, '0');
         const todayStr = `${year}-${month}-${day}`;
+
+        // Helper to check if current time is within shift timings
+        function isCurrentTimeInShift(startTimeStr, endTimeStr) {
+            if (!startTimeStr || !endTimeStr) return false;
+            
+            const currentHour = now.getHours();
+            const currentMin = now.getMinutes();
+            const currentTimeVal = currentHour * 60 + currentMin; // minutes since midnight
+            
+            function parseTimeToMinutes(timeStr) {
+                const parts = timeStr.trim().split(':');
+                if (parts.length < 2) return 0;
+                const hr = parseInt(parts[0], 10);
+                const min = parseInt(parts[1], 10);
+                return hr * 60 + min;
+            }
+            
+            const startVal = parseTimeToMinutes(startTimeStr);
+            const endVal = parseTimeToMinutes(endTimeStr);
+            
+            if (startVal <= endVal) {
+                return currentTimeVal >= startVal && currentTimeVal <= endVal;
+            } else {
+                // Shift spans midnight (e.g. 16:00 to 00:00 or similar)
+                return currentTimeVal >= startVal || currentTimeVal <= endVal;
+            }
+        }
+
+        // 1. Unify engineer names case-insensitively
+        const nameMap = new Map(); // lowercase -> preferred name
         
+        if (allRoster) {
+            allRoster.forEach(r => {
+                if (!r || !r.owner || !r.date) return;
+                let rDate = String(r.date).trim();
+                if (rDate.includes('T')) rDate = rDate.split('T')[0];
+                if (rDate.includes(' ')) rDate = rDate.split(' ')[0];
+                if (rDate === todayStr) {
+                    const trimmed = r.owner.trim();
+                    nameMap.set(trimmed.toLowerCase(), trimmed);
+                }
+            });
+        }
+
+        const activeRegistered = allUsers.filter(u => u.username.toLowerCase() !== 'admin');
+        activeRegistered.forEach(u => {
+            if (u.name) {
+                const trimmed = u.name.trim();
+                nameMap.set(trimmed.toLowerCase(), trimmed);
+            }
+        });
+
         const listToRender = [];
-        
-        activeEngineers.forEach(eng => {
-            // Find their shift in the roster for today using flexible name and date match
+
+        nameMap.forEach((displayName, lowercaseName) => {
+            if (lowercaseName === 'system administrator') return;
+
+            // Find their shift in the roster for today using flexible name match
             const shift = (function() {
-                if (!allRoster || !eng.name) return null;
-                const cleanOwner = eng.name.trim().toLowerCase();
+                if (!allRoster) return null;
                 return allRoster.find(r => {
                     if (!r || !r.owner || !r.date) return false;
                     const rOwner = String(r.owner).trim().toLowerCase();
-                    const nameMatch = (rOwner === cleanOwner || cleanOwner.includes(rOwner) || rOwner.includes(cleanOwner));
+                    const nameMatch = (rOwner === lowercaseName || lowercaseName.includes(rOwner) || rOwner.includes(lowercaseName));
                     if (!nameMatch) return false;
                     let rDate = String(r.date).trim();
                     if (rDate.includes('T')) rDate = rDate.split('T')[0];
@@ -2215,7 +2255,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     return rDate === todayStr;
                 });
             })();
-            
+
             // Check if they are scheduled on roster shift today (not D/O or LEAVE)
             const isOff = shift && (
                 shift.code.toUpperCase() === 'D/O' || 
@@ -2225,65 +2265,84 @@ document.addEventListener('DOMContentLoaded', () => {
                 (shift.shift_name && shift.shift_name.toLowerCase().includes('day off'))
             );
             const isOnDutyRoster = !!shift && !isOff;
-            const isOnline = !!eng.is_online;
-            
+
+            // Get shift timings
+            let startTime = shift ? (shift.start_time || '') : '';
+            let endTime = shift ? (shift.end_time || '') : '';
+
+            // If timing is empty but code is present, fallback to activeShifts config
+            if (shift && (!startTime || !endTime) && shift.code) {
+                const codeUpper = shift.code.toUpperCase();
+                const matchedConfig = activeShifts[codeUpper];
+                if (matchedConfig) {
+                    startTime = matchedConfig.start;
+                    endTime = matchedConfig.end;
+                }
+            }
+
+            const isCurrentlyOnShift = isCurrentTimeInShift(startTime, endTime);
+            const isOnDutyNow = isOnDutyRoster && isCurrentlyOnShift;
+
+            // STRICTLY ignore they are not currently scheduled for duty now
+            if (!isOnDutyNow) return;
+
+            // Find their registered user record to get online status
+            const userRecord = activeRegistered.find(u => {
+                const uName = u.name.trim().toLowerCase();
+                return uName === lowercaseName || u.username.toLowerCase() === lowercaseName;
+            });
+
+            const isOnline = userRecord ? !!userRecord.is_online : false;
+
             // Check if they have an active task in progress
             const activeTask = allTasks.find(t => 
-                t.owner.toLowerCase() === eng.name.toLowerCase() && 
+                t.owner.toLowerCase() === lowercaseName && 
                 t.status === 'In Progress'
             );
             const isBusy = !!activeTask;
-            
+
             if (isBusy) {
                 listToRender.push({
-                    eng,
+                    name: displayName,
                     color: '#ef4444', // Red (Busy)
                     statusClass: 'busy',
-                    tooltip: `${eng.name} is Busy: ${activeTask.description}`
+                    tooltip: `${displayName} is Busy: ${activeTask.description}`
                 });
-            } else if (isOnDutyRoster) {
+            } else {
                 if (isOnline) {
                     listToRender.push({
-                        eng,
+                        name: displayName,
                         color: '#10b981', // Green (Available)
                         statusClass: 'online',
-                        tooltip: `${eng.name} is On Duty & Online`
+                        tooltip: `${displayName} is On Duty & Online`
                     });
                 } else {
                     listToRender.push({
-                        eng,
+                        name: displayName,
                         color: '#eab308', // Yellow (Offline)
                         statusClass: 'offline',
-                        tooltip: `${eng.name} is On Duty (Offline)`
+                        tooltip: `${displayName} is On Duty (Offline)`
                     });
                 }
-            } else if (isOnline) {
-                listToRender.push({
-                    eng,
-                    color: '#0ea5e9', // Sky Blue (Online off-shift)
-                    statusClass: 'offduty-online',
-                    tooltip: `${eng.name} is Off Duty but Online`
-                });
             }
         });
-        
+
         if (listToRender.length === 0) {
             engineersList.innerHTML = `
                 <div style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 1.5rem 0; grid-column: 1 / -1; line-height: 1.4;">
-                    No engineers scheduled or active online at this time.
+                    No scheduled duty engineers active at this time.
                 </div>
             `;
             return;
         }
-        
+
         listToRender.forEach(item => {
-            const eng = item.eng;
             const row = document.createElement('div');
             row.className = `engineer-row-compact status-${item.statusClass}`;
             row.setAttribute('title', item.tooltip);
             
             row.innerHTML = `
-                <span class="engineer-name-compact">${eng.name}</span>
+                <span class="engineer-name-compact">${item.name}</span>
                 <span class="status-indicator-dot pulse" style="color: ${item.color};"></span>
             `;
             
@@ -2543,7 +2602,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const canManage = currentUser.role === 'admin' || task.owner === currentUser.name;
 
             let actionButtons = `
-                <button class="action-btn btn-detail" title="View Console Details" data-id="${task.id}" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; border-color: rgba(56, 189, 248, 0.2);">
+                <button class="action-btn btn-detail" title="View Console Details" data-id="${task.id}">
                     <i data-lucide="terminal"></i>
                 </button>
             `;
@@ -2638,7 +2697,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const canManage = currentUser.role === 'admin' || task.owner === currentUser.name;
 
             let actionButtons = `
-                <button class="action-btn btn-detail" title="View Console Details" data-id="${task.id}" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; border-color: rgba(56, 189, 248, 0.2);">
+                <button class="action-btn btn-detail" title="View Console Details" data-id="${task.id}">
                     <i data-lucide="terminal" style="width: 14px; height: 14px;"></i>
                 </button>
             `;
