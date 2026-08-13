@@ -263,6 +263,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (taskControlCenter) taskControlCenter.classList.remove('hidden');
             }
             if (adminDashboardSection) adminDashboardSection.classList.remove('hidden');
+
+            // Toggle Reports Console visibility
+            const btnReportsConsole = document.getElementById('btnReportsConsole');
+            if (btnReportsConsole) {
+                const hasReportsAccess = currentUser.role === 'admin' || currentUser.reports_access === 'true';
+                if (hasReportsAccess) {
+                    btnReportsConsole.classList.remove('hidden');
+                } else {
+                    btnReportsConsole.classList.add('hidden');
+                }
+            }
             
             // Toggle view visibility
             loginOverlay.classList.add('hidden');
@@ -276,6 +287,10 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.classList.remove('operator-theme');
             if (taskControlCenter) taskControlCenter.classList.remove('hidden');
             if (adminDashboardSection) adminDashboardSection.classList.add('hidden');
+            
+            const btnReportsConsole = document.getElementById('btnReportsConsole');
+            if (btnReportsConsole) btnReportsConsole.classList.add('hidden');
+            
             loginOverlay.classList.remove('hidden');
             appWorkspace.classList.add('hidden');
         }
@@ -383,6 +398,92 @@ document.addEventListener('DOMContentLoaded', () => {
     btnCloseAdminModal.addEventListener('click', () => {
         adminModal.classList.add('hidden');
     });
+
+    // --- Reports Console Modal Operations ---
+    const btnReportsConsole = document.getElementById('btnReportsConsole');
+    const reportsConsoleModal = document.getElementById('reportsConsoleModal');
+    const btnCloseReportsConsoleModal = document.getElementById('btnCloseReportsConsoleModal');
+
+    if (btnReportsConsole && reportsConsoleModal && btnCloseReportsConsoleModal) {
+        btnReportsConsole.addEventListener('click', () => {
+            reportsConsoleModal.classList.remove('hidden');
+            if (window.lucide) window.lucide.createIcons();
+        });
+        
+        btnCloseReportsConsoleModal.addEventListener('click', () => {
+            reportsConsoleModal.classList.add('hidden');
+        });
+    }
+
+    // Reports Console: Export Full Database
+    const btnConsoleExportFull = document.getElementById('btnConsoleExportFull');
+    if (btnConsoleExportFull) {
+        btnConsoleExportFull.addEventListener('click', () => {
+            window.location.href = `${API_BASE}/tasks/export`;
+        });
+    }
+
+    // Reports Console: Export Date-Wise Filtered Task Report
+    const btnConsoleExportDateWise = document.getElementById('btnConsoleExportDateWise');
+    const consoleExportStartDate = document.getElementById('consoleExportStartDate');
+    const consoleExportEndDate = document.getElementById('consoleExportEndDate');
+    if (btnConsoleExportDateWise && consoleExportStartDate && consoleExportEndDate) {
+        btnConsoleExportDateWise.addEventListener('click', () => {
+            const start = consoleExportStartDate.value;
+            const end = consoleExportEndDate.value;
+            if (!start || !end) {
+                showToast("Please select both start and end dates.", "warning");
+                return;
+            }
+            window.location.href = `${API_BASE}/tasks/export?start_date=${start}&end_date=${end}`;
+        });
+    }
+
+    // Reports Console: Import Database File Form Submission
+    const importTasksForm = document.getElementById('importTasksForm');
+    const importTasksFile = document.getElementById('importTasksFile');
+    if (importTasksForm && importTasksFile) {
+        importTasksForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!importTasksFile.files || importTasksFile.files.length === 0) {
+                showToast("Please choose an Excel database file first.", "warning");
+                return;
+            }
+            if (!confirm("Are you sure you want to import this Excel file? It will replace all tasks currently in the database. A backup will be generated first.")) {
+                return;
+            }
+            
+            const file = importTasksFile.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                showToast("Uploading and importing tasks database...", "info");
+                const response = await fetch(`${API_BASE}/tasks/import`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (response.status === 423) {
+                    showToast(data.message, 'warning');
+                    return;
+                }
+                
+                if (response.ok) {
+                    showToast(data.message || "Database imported successfully!", "success");
+                    importTasksForm.reset();
+                    if (reportsConsoleModal) reportsConsoleModal.classList.add('hidden');
+                    fetchTasks();
+                } else {
+                    showToast(data.message || "Failed to import database.", "error");
+                }
+            } catch (error) {
+                console.error("Error importing tasks database:", error);
+                showToast("Server error importing database.", "error");
+            }
+        });
+    }
 
     // Open T-Shoot Tools Hub
     if (btnOpenTShoot) {
@@ -871,6 +972,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         <i data-lucide="trash-2" style="width: 15px; height: 15px;"></i>
                      </button>`;
 
+                // Check reports console access status
+                const isReportsAccess = user.reports_access === 'true';
+                const reportsToggle = isMasterAdmin ?
+                    `<span style="color: var(--text-muted); font-size: 0.8rem; font-style: italic;">Always</span>` :
+                    `<input type="checkbox" class="chk-reports-access" data-username="${user.username}" ${isReportsAccess ? 'checked' : ''} style="width: 16px; height: 16px; cursor: pointer;">`;
+
                 // Check online status
                 const statusBadge = user.is_online ?
                     `<span class="user-status-pill online"><span class="status-indicator-dot pulse"></span>Online</span>` :
@@ -880,6 +987,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td><strong>${user.username}</strong></td>
                     <td>${user.name}</td>
                     <td><span style="font-size: 0.75rem; text-transform: uppercase; color: ${user.role === 'admin' ? '#c084fc' : 'var(--text-muted)'}; font-weight: 600;">${user.role}</span></td>
+                    <td>${reportsToggle}</td>
                     <td>${statusBadge}</td>
                     <td>${actionBtn}</td>
                 `;
@@ -891,6 +999,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.addEventListener('click', (e) => {
                     const username = e.currentTarget.getAttribute('data-username');
                     deleteUser(username);
+                });
+            });
+
+            // Bind reports access toggle events
+            document.querySelectorAll('.chk-reports-access').forEach(chk => {
+                chk.addEventListener('change', async (e) => {
+                    const username = e.target.getAttribute('data-username');
+                    const isChecked = e.target.checked;
+                    try {
+                        const response = await fetch(`${API_BASE}/admin/toggle-reports-access`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                username: username,
+                                reports_access: isChecked ? 'true' : 'false'
+                            })
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                            showToast(`Reports access updated for "${username}".`, 'success');
+                            fetchUsers();
+                        } else {
+                            showToast(data.message || 'Failed to update access.', 'error');
+                            e.target.checked = !isChecked;
+                        }
+                    } catch (error) {
+                        console.error('Error toggling reports access:', error);
+                        showToast('Server error toggling reports access.', 'error');
+                        e.target.checked = !isChecked;
+                    }
                 });
             });
             

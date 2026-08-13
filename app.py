@@ -131,7 +131,7 @@ def calculate_duration(start_str, end_str):
 def init_excel():
     """Initializes Excel file with Tasks, Owners, Users, and Roster sheets if they do not exist"""
     headers_tasks = ["Task ID", "Description", "Owner", "Start Time", "End Time", "Duration", "Status", "Last Updated", "Pending Reason", "Escalation History", "Config Status", "MIS Status", "Assigned Time", "Assignment History"]
-    headers_users = ["User ID", "Full Name", "Password", "Created At"]
+    headers_users = ["User ID", "Full Name", "Password", "Created At", "Reports Access"]
     headers_roster = ["Operator Name", "Date", "Shift Code", "Start Time", "End Time", "Shift Name"]
     headers_shifts = ["Shift Code", "Shift Name", "Start Time", "End Time"]
     headers_links = ["Portal Name", "URL"]
@@ -178,7 +178,7 @@ def init_excel():
             
         # Add master admin default row
         now_str = get_local_now().strftime("%Y-%m-%d %H:%M")
-        ws_users.append([MASTER_ADMIN_USER, "System Administrator", MASTER_ADMIN_PASS, now_str])
+        ws_users.append([MASTER_ADMIN_USER, "System Administrator", MASTER_ADMIN_PASS, now_str, "true"])
         
         # Autofit column widths for Users
         for col in ws_users.columns:
@@ -315,6 +315,23 @@ def init_excel():
                 ws_links.append(["IPAM", "http://phpipam.link3.net/index.php?page=login"])
                 dirty = True
 
+            # Migration check for Reports Access column
+            if "Users" in wb.sheetnames:
+                ws_users = wb["Users"]
+                headers = [str(cell.value or '').strip() for cell in ws_users[1]]
+                if "Reports Access" not in headers:
+                    ws_users.cell(row=1, column=5).value = "Reports Access"
+                    ws_users.cell(row=1, column=5).fill = header_fill
+                    ws_users.cell(row=1, column=5).font = header_font
+                    ws_users.cell(row=1, column=5).alignment = center_align
+                    for r in range(2, ws_users.max_row + 1):
+                        username_val = str(ws_users.cell(row=r, column=1).value or '').strip().lower()
+                        if username_val == MASTER_ADMIN_USER:
+                            ws_users.cell(row=r, column=5).value = "true"
+                        else:
+                            ws_users.cell(row=r, column=5).value = "false"
+                    dirty = True
+
             if dirty:
                 wb.save(EXCEL_FILE)
             wb.close()
@@ -427,11 +444,21 @@ def load_all_data_cached():
                 created_val = row[3]
                 if isinstance(created_val, (datetime.datetime, datetime.date)):
                     created_val = created_val.strftime("%Y-%m-%d %H:%M")
+                
+                reports_access = "false"
+                if len(row) > 4 and row[4] is not None:
+                    reports_access = str(row[4]).strip().lower()
+                
+                # Master admin always has access
+                if str(row[0]).strip().lower() == MASTER_ADMIN_USER:
+                    reports_access = "true"
+
                 users.append({
                     "username": str(row[0]).strip(),
                     "name": str(row[1]).strip() if row[1] else "",
                     "password": str(row[2]) if row[2] else "",
-                    "created_at": str(created_val) if created_val else ""
+                    "created_at": str(created_val) if created_val else "",
+                    "reports_access": reports_access
                 })
         # Always guarantee master admin is returned
         if not any(u["username"] == MASTER_ADMIN_USER for u in users):
@@ -439,7 +466,8 @@ def load_all_data_cached():
                 "username": MASTER_ADMIN_USER,
                 "name": "System Administrator",
                 "password": MASTER_ADMIN_PASS,
-                "created_at": ""
+                "created_at": "",
+                "reports_access": "true"
             })
             
         # 3. Parse Roster
@@ -814,7 +842,8 @@ def login():
                 "user": {
                     "username": MASTER_ADMIN_USER,
                     "name": "System Administrator",
-                    "role": "admin"
+                    "role": "admin",
+                    "reports_access": "true"
                 }
             })
             
@@ -829,7 +858,8 @@ def login():
                     "user": {
                         "username": u["username"],
                         "name": u["name"],
-                        "role": role
+                        "role": role,
+                        "reports_access": u.get("reports_access", "false")
                     }
                 })
                 
@@ -859,6 +889,7 @@ def get_users():
                 "name": u["name"],
                 "created_at": u["created_at"],
                 "role": "admin" if u_name == MASTER_ADMIN_USER else "user",
+                "reports_access": u.get("reports_access", "false"),
                 "is_online": is_online
             })
         return jsonify(safe_users)
@@ -897,6 +928,143 @@ def delete_user(username):
     except PermissionError:
         return jsonify({"error": "excel_locked", "message": "Excel file is currently open. Please close 'tasks.xlsx' and try again."}), 423
     except Exception as e:
+        return jsonify({"error": "error", "message": str(e)}), 500
+
+@app.route("/api/admin/toggle-reports-access", methods=["POST"])
+def toggle_reports_access():
+    try:
+        data = request.json or {}
+        username_to_toggle = data.get("username", "").strip().lower()
+        new_status = data.get("reports_access", "false").strip().lower()
+        
+        if not username_to_toggle:
+            return jsonify({"error": "invalid_input", "message": "Username is required."}), 400
+            
+        if username_to_toggle == MASTER_ADMIN_USER:
+            return jsonify({"error": "forbidden", "message": "Cannot toggle reports access for System Administrator."}), 403
+            
+        wb = openpyxl.load_workbook(EXCEL_FILE)
+        if "Users" in wb.sheetnames:
+            ws = wb["Users"]
+            headers = [str(cell.value or '').strip() for cell in ws[1]]
+            
+            # Make sure Reports Access header is there
+            if "Reports Access" not in headers:
+                ws.cell(row=1, column=5).value = "Reports Access"
+                
+            row_updated = False
+            for r in range(2, ws.max_row + 1):
+                username_val = str(ws.cell(row=r, column=1).value or '').strip().lower()
+                if username_val == username_to_toggle:
+                    ws.cell(row=r, column=5).value = new_status
+                    row_updated = True
+                    break
+                    
+            if row_updated:
+                wb.save(EXCEL_FILE)
+                wb.close()
+                # Clear database cache to force reload
+                DB_CACHE["mtime"] = 0
+                DB_CACHE["tasks"] = []
+                return jsonify({"success": True, "message": f"Reports access updated to {new_status} for {username_to_toggle}."})
+            
+            wb.close()
+            return jsonify({"error": "not_found", "message": "User not found."}), 404
+            
+        wb.close()
+        return jsonify({"error": "not_found", "message": "Users sheet not found."}), 404
+        
+    except Exception as e:
+        return jsonify({"error": "error", "message": str(e)}), 500
+
+@app.route("/api/tasks/import", methods=["POST"])
+def import_tasks_db():
+    try:
+        if 'file' not in request.files:
+            return jsonify({"error": "invalid_input", "message": "No file part in the request."}), 400
+            
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "invalid_input", "message": "No selected file."}), 400
+            
+        # Parse spreadsheet using openpyxl in-memory
+        wb_upload = openpyxl.load_workbook(file, read_only=True)
+        if "Tasks" not in wb_upload.sheetnames:
+            wb_upload.close()
+            return jsonify({"error": "invalid_sheet", "message": "Excel file must contain a 'Tasks' sheet."}), 400
+            
+        # Verify columns inside the uploaded Tasks sheet
+        ws_upload = wb_upload["Tasks"]
+        first_row = next(ws_upload.iter_rows(values_only=True))
+        if "Task ID" not in [str(c or '').strip() for c in first_row]:
+            wb_upload.close()
+            return jsonify({"error": "invalid_columns", "message": "'Tasks' sheet must contain a 'Task ID' column."}), 400
+        wb_upload.close()
+        
+        # 1. Create a timestamped backup of the current database before replacing Tasks sheet
+        try:
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_dir = os.path.join(os.path.dirname(EXCEL_FILE), 'backups')
+            os.makedirs(backup_dir, exist_ok=True)
+            backup_path = os.path.join(backup_dir, f"tasks_before_import_{timestamp}.xlsx")
+            import shutil
+            shutil.copy2(EXCEL_FILE, backup_path)
+            print(f"Backup created before import: {backup_path}")
+        except Exception as e:
+            print(f"Warning: failed to backup database before import: {e}")
+            
+        # 2. Open both workbooks to copy Tasks sheet
+        wb_dest = openpyxl.load_workbook(EXCEL_FILE)
+        wb_src = openpyxl.load_workbook(file, data_only=True)
+        
+        # Delete old Tasks sheet
+        if "Tasks" in wb_dest.sheetnames:
+            del wb_dest["Tasks"]
+            
+        # Create a new Tasks sheet in destination
+        ws_dest = wb_dest.create_sheet(title="Tasks", index=0)
+        ws_src = wb_src["Tasks"]
+        
+        # Style headers
+        header_fill = PatternFill(start_color="107C41", end_color="107C41", fill_type="solid")
+        header_font = Font(name="Segoe UI", size=11, bold=True, color="FFFFFF")
+        center_align = Alignment(horizontal="center", vertical="center")
+        
+        # Copy rows
+        row_count = 0
+        for r_idx, row in enumerate(ws_src.iter_rows(values_only=True), start=1):
+            if r_idx == 1:
+                # header row
+                ws_dest.append(row)
+                for col_idx in range(1, len(row) + 1):
+                    cell = ws_dest.cell(row=1, column=col_idx)
+                    cell.fill = header_fill
+                    cell.font = header_font
+                    cell.alignment = center_align
+            else:
+                if not row[0]: # stop if Task ID is empty
+                    continue
+                ws_dest.append(row)
+            row_count += 1
+            
+        # Autofit column widths
+        for col in ws_dest.columns:
+            max_len = max(len(str(cell.value or '')) for cell in col)
+            col_letter = get_column_letter(col[0].column)
+            ws_dest.column_dimensions[col_letter].width = max(max_len + 3, 15)
+            
+        wb_dest.save(EXCEL_FILE)
+        wb_dest.close()
+        wb_src.close()
+        
+        # Clear database cache to force reload
+        DB_CACHE["mtime"] = 0
+        DB_CACHE["tasks"] = []
+        
+        return jsonify({"success": True, "message": f"Successfully imported {row_count - 1} tasks into the database."})
+        
+    except Exception as e:
+        print(f"Error importing tasks database: {e}")
         return jsonify({"error": "error", "message": str(e)}), 500
 
 # --- Roster Import Endpoint ---
@@ -1826,6 +1994,7 @@ def get_dashboard_state():
                 "name": u["name"],
                 "created_at": u["created_at"],
                 "role": "admin" if u_name == MASTER_ADMIN_USER else "user",
+                "reports_access": u.get("reports_access", "false"),
                 "is_online": is_online
             })
             
