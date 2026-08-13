@@ -1738,6 +1738,25 @@ document.addEventListener('DOMContentLoaded', () => {
             allRoster = data.roster || [];
             activeShifts = data.shifts || {};
 
+            // Dynamically update logged in user reports access status from polling data
+            if (currentUser && allUsers.length > 0) {
+                const freshUser = allUsers.find(u => u.username.toLowerCase() === currentUser.username.toLowerCase());
+                if (freshUser) {
+                    currentUser.reports_access = freshUser.reports_access;
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    
+                    const btnReportsConsole = document.getElementById('btnReportsConsole');
+                    if (btnReportsConsole) {
+                        const hasReportsAccess = currentUser.role === 'admin' || currentUser.reports_access === 'true';
+                        if (hasReportsAccess) {
+                            btnReportsConsole.classList.remove('hidden');
+                        } else {
+                            btnReportsConsole.classList.add('hidden');
+                        }
+                    }
+                }
+            }
+
             updateDashboard();
         } catch (error) {
             console.error('Error fetching tasks:', error);
