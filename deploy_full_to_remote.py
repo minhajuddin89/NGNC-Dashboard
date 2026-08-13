@@ -50,8 +50,26 @@ try:
                 except Exception as e:
                     print(f"  [ERROR] Failed to upload {file}: {e}")
 
-    # 1. Upload root python files and data
-    root_files = ['app.py', 'tasks.xlsx', 'release.py']
+    # 1. Backup remote tasks.xlsx before deployment
+    try:
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        sftp_mkdir_p(f"{REMOTE_DIR}/backups")
+        remote_db = f"{REMOTE_DIR}/tasks.xlsx"
+        backup_db = f"{REMOTE_DIR}/backups/tasks_backup_{timestamp}.xlsx"
+        
+        try:
+            sftp.stat(remote_db)
+            print(f"Creating remote database backup: {backup_db}")
+            # Run SSH command to copy the remote database file safely on the host
+            ssh.exec_command(f"cp {remote_db} {backup_db}")
+            time.sleep(1) # Let the copy finish
+        except FileNotFoundError:
+            print("No remote tasks.xlsx found. Skipping backup.")
+    except Exception as e:
+        print(f"Warning: Remote backup failed: {e}")
+
+    # 2. Upload root python files and data (tasks.xlsx is explicitly excluded to protect live data)
+    root_files = ['app.py', 'release.py']
     for rf in root_files:
         if os.path.exists(rf):
             remote_rf = f"{REMOTE_DIR}/{rf}"
