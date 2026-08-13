@@ -961,6 +961,65 @@
                         </form>
                     </div>
 
+                    <!-- FULL WIDTH ROW: Automated Cloud Backup & Sync -->
+                    <div class="admin-form-box" style="grid-column: span 2; margin-top: 0.5rem;">
+                        <h4 style="display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.75rem;">
+                            <i data-lucide="cloud" style="color: #0ea5e9;"></i> Outlook/OneDrive Cloud Backup Scheduler
+                        </h4>
+                        
+                        <form id="cloudBackupForm" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                            <!-- Settings Inputs -->
+                            <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                                    <input type="checkbox" id="backupEnabled" style="width: 16px; height: 16px; cursor: pointer;">
+                                    <label for="backupEnabled" class="panel-label" style="margin: 0; cursor: pointer; font-weight: 600;">Enable Automated Database Backup Sync</label>
+                                </div>
+                                
+                                <div class="form-group-deck" style="margin: 0;">
+                                    <label for="backupInterval" class="panel-label">Sync Interval (Hours)</label>
+                                    <input type="number" id="backupInterval" min="0.5" step="0.5" value="24" required style="padding: 0.4rem; font-size: 0.85rem; width: 100%;">
+                                </div>
+                                
+                                <div class="form-group-deck" style="margin: 0;">
+                                    <label for="backupUrl" class="panel-label">Power Automate Webhook URL</label>
+                                    <input type="url" id="backupUrl" placeholder="https://prod-xx.westus.logic.azure.com:443/workflows/..." style="padding: 0.4rem; font-size: 0.85rem; width: 100%;">
+                                </div>
+                                
+                                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                                    <button type="submit" class="btn-admin-submit" style="background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); flex: 1;">
+                                        <i data-lucide="save"></i> Save Settings
+                                    </button>
+                                    <button type="button" id="btnTestBackup" class="btn-admin-submit" style="background: linear-gradient(135deg, #3b82f6, #2563eb); box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2); flex: 1;">
+                                        <i data-lucide="refresh-cw"></i> Test Sync Now
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Status Panel -->
+                            <div style="background: rgba(15, 23, 42, 0.3); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                                <h5 style="margin: 0; font-size: 0.85rem; font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 0.35rem;">
+                                    <i data-lucide="activity" style="width: 14px; height: 14px; color: var(--primary);"></i> Sync Scheduler Diagnostics
+                                </h5>
+                                
+                                <div style="display: grid; grid-template-columns: 100px 1fr; gap: 0.5rem; font-size: 0.78rem; line-height: 1.4;">
+                                    <span style="color: var(--text-muted);">Last Run:</span>
+                                    <strong id="lblLastRun" style="color: var(--text-main);">Never</strong>
+                                    
+                                    <span style="color: var(--text-muted);">Sync Status:</span>
+                                    <span id="lblSyncStatus" style="font-weight: 700; color: var(--text-muted);">Idle</span>
+                                    
+                                    <span style="color: var(--text-muted);">Last Error:</span>
+                                    <span id="lblSyncError" style="color: #ef4444; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">None</span>
+                                </div>
+                                
+                                <div style="border-top: 1px dashed var(--border-color); margin-top: 0.25rem; padding-top: 0.5rem; font-size: 0.72rem; color: var(--text-muted); line-height: 1.4;">
+                                    <strong>How to configure OneDrive/Outlook Sync:</strong><br>
+                                    Create a simple Microsoft Power Automate flow starting with a "When an HTTP request is received" trigger, and add a "Create File" step referencing your shared OneDrive folder. Paste the generated HTTP POST URL here.
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
                 </div>
             </div>
         </div>

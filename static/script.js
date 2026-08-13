@@ -404,9 +404,51 @@ document.addEventListener('DOMContentLoaded', () => {
     const reportsConsoleModal = document.getElementById('reportsConsoleModal');
     const btnCloseReportsConsoleModal = document.getElementById('btnCloseReportsConsoleModal');
 
+    async function fetchCloudBackupSettings() {
+        const backupEnabled = document.getElementById('backupEnabled');
+        const backupInterval = document.getElementById('backupInterval');
+        const backupUrl = document.getElementById('backupUrl');
+        const lblLastRun = document.getElementById('lblLastRun');
+        const lblSyncStatus = document.getElementById('lblSyncStatus');
+        const lblSyncError = document.getElementById('lblSyncError');
+
+        if (!backupEnabled || !backupInterval || !backupUrl) return;
+
+        try {
+            const response = await fetch(`${API_BASE}/admin/backup-settings`);
+            if (response.ok) {
+                const settings = await response.json();
+                backupEnabled.checked = settings.enabled;
+                backupInterval.value = settings.interval_hours;
+                backupUrl.value = settings.target_url || '';
+                
+                lblLastRun.textContent = settings.last_run || 'Never';
+                
+                const status = settings.last_status || 'Idle';
+                lblSyncStatus.textContent = status;
+                
+                if (status === 'Success') {
+                    lblSyncStatus.style.color = '#10b981';
+                } else if (status === 'Failed') {
+                    lblSyncStatus.style.color = '#ef4444';
+                } else if (status === 'Running...') {
+                    lblSyncStatus.style.color = '#3b82f6';
+                } else {
+                    lblSyncStatus.style.color = 'var(--text-muted)';
+                }
+                
+                lblSyncError.textContent = settings.last_error || 'None';
+                lblSyncError.style.color = settings.last_error ? '#ef4444' : 'var(--text-muted)';
+            }
+        } catch (error) {
+            console.error('Error loading cloud backup settings:', error);
+        }
+    }
+
     if (btnReportsConsole && reportsConsoleModal && btnCloseReportsConsoleModal) {
         btnReportsConsole.addEventListener('click', () => {
             reportsConsoleModal.classList.remove('hidden');
+            fetchCloudBackupSettings();
             if (window.lucide) window.lucide.createIcons();
         });
         
@@ -481,6 +523,77 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 console.error("Error importing tasks database:", error);
                 showToast("Server error importing database.", "error");
+            }
+        });
+    }
+
+    // Reports Console: Save Cloud Backup Settings
+    const cloudBackupForm = document.getElementById('cloudBackupForm');
+    if (cloudBackupForm) {
+        cloudBackupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const enabled = document.getElementById('backupEnabled').checked;
+            const interval = parseFloat(document.getElementById('backupInterval').value);
+            const url = document.getElementById('backupUrl').value.trim();
+
+            try {
+                showToast("Saving cloud backup settings...", "info");
+                const response = await fetch(`${API_BASE}/admin/backup-settings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        enabled: enabled,
+                        interval_hours: interval,
+                        target_url: url
+                    })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    showToast("Cloud backup settings saved successfully!", "success");
+                    fetchCloudBackupSettings();
+                } else {
+                    showToast(data.message || "Failed to save settings.", "error");
+                }
+            } catch (error) {
+                console.error("Error saving backup settings:", error);
+                showToast("Server error saving settings.", "error");
+            }
+        });
+    }
+
+    // Reports Console: Test Sync Now
+    const btnTestBackup = document.getElementById('btnTestBackup');
+    if (btnTestBackup) {
+        btnTestBackup.addEventListener('click', async () => {
+            const url = document.getElementById('backupUrl').value.trim();
+            if (!url) {
+                showToast("Please enter a Power Automate Webhook URL first.", "warning");
+                return;
+            }
+            if (!confirm("Run an instant test backup upload to OneDrive? This will send the database Excel file to your configured webhook link immediately.")) {
+                return;
+            }
+
+            try {
+                showToast("Executing cloud sync trial...", "info");
+                btnTestBackup.disabled = true;
+                const response = await fetch(`${API_BASE}/admin/backup-settings/test`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast("Test backup uploaded successfully to OneDrive!", "success");
+                } else {
+                    showToast(`Backup sync failed: ${data.message}`, "error");
+                }
+                fetchCloudBackupSettings();
+            } catch (error) {
+                console.error("Error testing backup sync:", error);
+                showToast("Server error running sync trial.", "error");
+                fetchCloudBackupSettings();
+            } finally {
+                btnTestBackup.disabled = false;
             }
         });
     }

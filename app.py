@@ -30,6 +30,14 @@ except ImportError:
     from openpyxl.utils import get_column_letter
 
 # Apply process-safe retry wrappers to openpyxl to support concurrent Gunicorn workers
+try:
+    import requests
+except ImportError:
+    print("Installing requests dependency...")
+    import subprocess
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
+    import requests
+import threading
 import time
 import zipfile
 original_load_workbook = openpyxl.load_workbook
@@ -339,6 +347,143 @@ def init_excel():
             raise pe
         except Exception as e:
             print(f"Error checking/adding subsheets: {e}")
+
+# --- Automated Outlook/OneDrive Cloud Backup Scheduler Helpers ---
+BACKUP_SETTINGS_FILE = "backup_settings.json"
+
+def init_backup_settings():
+    import json
+    if not os.path.exists(BACKUP_SETTINGS_FILE):
+        default = {
+            "enabled": False,
+            "interval_hours": 24,
+            "type": "webhook",
+            "target_url": "",
+            "last_run": "",
+            "last_status": "Never Run",
+            "last_error": ""
+        }
+        try:
+            with open(BACKUP_SETTINGS_FILE, 'w') as f:
+                json.dump(default, f, indent=4)
+        except Exception as e:
+            print("Error initializing backup settings file:", e)
+
+def load_backup_settings():
+    import json
+    init_backup_settings()
+    try:
+        if os.path.exists(BACKUP_SETTINGS_FILE):
+            with open(BACKUP_SETTINGS_FILE, 'r') as f:
+                return json.load(f)
+    except Exception as e:
+        print("Error loading backup settings:", e)
+    return {
+        "enabled": False,
+        "interval_hours": 24,
+        "type": "webhook",
+        "target_url": "",
+        "last_run": "",
+        "last_status": "Never Run",
+        "last_error": "Read Error"
+    }
+
+def save_backup_settings(settings):
+    import json
+    try:
+        with open(BACKUP_SETTINGS_FILE, 'w') as f:
+            json.dump(settings, f, indent=4)
+        return True
+    except Exception as e:
+        print("Error saving backup settings:", e)
+        return False
+
+def trigger_backup_execution(settings=None):
+    if not settings:
+        settings = load_backup_settings()
+        
+    if not settings.get("enabled"):
+        return False, "Backup is disabled."
+        
+    target_url = settings.get("target_url", "").strip()
+    if not target_url:
+        return False, "Cloud Sync destination URL is not configured."
+        
+    try:
+        if not os.path.exists(EXCEL_FILE):
+            return False, "Database tasks.xlsx file not found."
+            
+        with open(EXCEL_FILE, 'rb') as f:
+            file_data = f.read()
+            
+        timestamp_str = get_local_now().strftime('%Y%m%d_%H%M%S')
+        headers = {
+            "Content-Type": "application/octet-stream",
+            "Content-Disposition": f"attachment; filename=\"tasks_backup_{timestamp_str}.xlsx\""
+        }
+        
+        res = requests.post(target_url, data=file_data, headers=headers, timeout=30)
+        
+        if res.status_code in [200, 201, 202]:
+            settings["last_run"] = get_local_now().strftime("%Y-%m-%d %H:%M:%S")
+            settings["last_status"] = "Success"
+            settings["last_error"] = ""
+            save_backup_settings(settings)
+            return True, "Database backup uploaded successfully."
+        else:
+            err_msg = f"HTTP Error {res.status_code}: {res.text[:100]}"
+            settings["last_status"] = "Failed"
+            settings["last_error"] = err_msg
+            save_backup_settings(settings)
+            return False, err_msg
+            
+    except Exception as e:
+        err_msg = str(e)
+        settings["last_status"] = "Failed"
+        settings["last_error"] = err_msg
+        save_backup_settings(settings)
+        return False, err_msg
+
+def backup_scheduler_loop():
+    time.sleep(10)
+    while True:
+        try:
+            settings = load_backup_settings()
+            if settings.get("enabled") and settings.get("target_url"):
+                interval_hours = float(settings.get("interval_hours", 24))
+                last_run_str = settings.get("last_run", "")
+                
+                should_run = False
+                if not last_run_str:
+                    should_run = True
+                else:
+                    try:
+                        last_run_dt = datetime.datetime.strptime(last_run_str, "%Y-%m-%d %H:%M:%S")
+                        elapsed_seconds = (get_local_now().replace(tzinfo=None) - last_run_dt).total_seconds()
+                        if elapsed_seconds >= (interval_hours * 3600) - 10:
+                            should_run = True
+                    except Exception:
+                        should_run = True
+                        
+                if should_run:
+                    settings["last_run"] = get_local_now().strftime("%Y-%m-%d %H:%M:%S")
+                    settings["last_status"] = "Running..."
+                    save_backup_settings(settings)
+                    trigger_backup_execution(settings)
+            
+            time.sleep(60)
+        except Exception as e:
+            print("Error in backup scheduler loop:", e)
+            time.sleep(60)
+
+# Start background scheduler thread
+try:
+    init_backup_settings()
+    scheduler_thread = threading.Thread(target=backup_scheduler_loop, daemon=True)
+    scheduler_thread.start()
+    print("OneDrive Cloud Backup scheduler background thread started.")
+except Exception as e:
+    print("Error starting backup scheduler thread:", e)
 
 # In-memory database cache to prevent Excel disk bottlenecks under high concurrency
 DB_CACHE = {
@@ -976,6 +1121,45 @@ def toggle_reports_access():
         
     except Exception as e:
         return jsonify({"error": "error", "message": str(e)}), 500
+
+@app.route("/api/admin/backup-settings", methods=["GET"])
+def get_backup_settings():
+    settings = load_backup_settings()
+    return jsonify(settings)
+
+@app.route("/api/admin/backup-settings", methods=["POST"])
+def update_backup_settings():
+    try:
+        data = request.json or {}
+        settings = load_backup_settings()
+        
+        settings["enabled"] = bool(data.get("enabled", False))
+        settings["interval_hours"] = float(data.get("interval_hours", 24))
+        settings["target_url"] = str(data.get("target_url", "")).strip()
+        
+        save_backup_settings(settings)
+        return jsonify({"success": True, "message": "Backup settings saved successfully."})
+    except Exception as e:
+        return jsonify({"error": "error", "message": str(e)}), 500
+
+@app.route("/api/admin/backup-settings/test", methods=["POST"])
+def test_backup_sync():
+    settings = load_backup_settings()
+    original_enabled = settings.get("enabled", False)
+    
+    # Temporarily set enabled to true just to run the test
+    settings["enabled"] = True
+    success, msg = trigger_backup_execution(settings)
+    
+    # Restore original enabled state
+    settings = load_backup_settings()
+    settings["enabled"] = original_enabled
+    save_backup_settings(settings)
+    
+    if success:
+        return jsonify({"success": True, "message": msg})
+    else:
+        return jsonify({"error": "failed", "message": msg}), 400
 
 @app.route("/api/tasks/import", methods=["POST"])
 def import_tasks_db():
