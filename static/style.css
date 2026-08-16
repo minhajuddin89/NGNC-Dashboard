@@ -2504,21 +2504,6 @@ body.light-theme #btnOpenImplTracker:hover {
     border-color: #be185d !important;
 }
 
-body.light-theme #implTrackerSearchWrapper {
-    background: #ffffff !important;
-    border-color: rgba(0, 0, 0, 0.15) !important;
-}
-body.light-theme #implTrackerSearch {
-    color: #0f172a !important;
-}
-body.light-theme #implTrackerSearch::placeholder {
-    color: #64748b !important;
-}
-body.light-theme #implTrackerModal select {
-    background-color: #ffffff !important;
-    color: #0f172a !important;
-    border-color: rgba(0, 0, 0, 0.15) !important;
-}
 body.light-theme #detailCategory {
     color: #7c3aed !important;
 }
@@ -2716,6 +2701,8 @@ body.light-theme .engineer-row-compact.status-busy:hover {
     white-space: normal !important;
     word-break: break-word !important;
     overflow-wrap: break-word !important;
+    color: #0f172a !important;
+    font-weight: 500 !important;
 }
 
 .impl-tracker-table-wrapper {
@@ -2724,55 +2711,57 @@ body.light-theme .engineer-row-compact.status-busy:hover {
 }
 
 /* ==========================================================================
-   Implementation Tracker - Clean White & Simple High-Contrast Theme
+   Implementation Tracker - Dark Theme (Default) & Light Theme Overrides
    ========================================================================== */
 #implTrackerModal .modal-content-deck {
-    background-color: #ffffff !important;
-    color: #0f172a !important;
-    border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+    background-color: #0f172a !important;
+    background: #0f172a !important;
+    color: #f8fafc !important;
+    border: 1px solid #1e293b !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
 }
 
 #implTrackerModal .modal-header-deck {
-    background: #ffffff !important;
-    border-bottom: 1px solid #e2e8f0 !important;
+    background: #0f172a !important;
+    border-bottom: 1px solid #1e293b !important;
     padding-bottom: 0.85rem !important;
 }
 
 #implTrackerModal .modal-header-deck h3 {
-    color: #0f172a !important;
+    color: #f8fafc !important;
     font-weight: 700 !important;
 }
 
 #implTrackerModal .modal-close-btn-deck {
-    color: #64748b !important;
+    color: #94a3b8 !important;
 }
 #implTrackerModal .modal-close-btn-deck:hover {
-    color: #0f172a !important;
+    color: #ffffff !important;
 }
 
 /* Stats Summary Deck */
 #implTrackerStatsBar {
-    background: #f8fafc !important;
-    border: 1px solid #e2e8f0 !important;
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
 }
 
 #implTrackerStatsBar .impl-stat-label {
-    color: #64748b !important;
+    color: #94a3b8 !important;
 }
 
 #implTrackerStatsBar .impl-stat-item {
-    border-color: #e2e8f0 !important;
+    border-color: #334155 !important;
 }
 
 /* Search & Filters */
 #implTrackerSearchWrapper {
-    background: #ffffff !important;
-    border: 1px solid #cbd5e1 !important;
+    background: #0f172a !important;
+    border: 1px solid #334155 !important;
 }
 
 #implTrackerSearch {
-    color: #0f172a !important;
+    color: #f8fafc !important;
+    background: transparent !important;
 }
 
 #implTrackerSearch::placeholder {
@@ -2780,64 +2769,140 @@ body.light-theme .engineer-row-compact.status-busy:hover {
 }
 
 #implTrackerModal select {
-    background-color: #ffffff !important;
-    color: #0f172a !important;
-    border: 1px solid #cbd5e1 !important;
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+    border: 1px solid #334155 !important;
 }
 
 /* Implementation Tracker Table */
 .impl-tracker-table-wrapper {
-    background: #ffffff !important;
-    border: 1px solid #e2e8f0 !important;
+    background: #0f172a !important;
+    border: 1px solid #1e293b !important;
     border-radius: 8px !important;
 }
 
 .impl-tracker-table {
-    background: #ffffff !important;
+    background: #0f172a !important;
 }
 
 .impl-tracker-table th {
-    background: #f1f5f9 !important;
-    color: #334155 !important;
+    background: #1e293b !important;
+    color: #94a3b8 !important;
     font-weight: 700 !important;
-    border-bottom: 2px solid #e2e8f0 !important;
-    border-right: 1px solid #e2e8f0 !important;
+    border-bottom: 2px solid #334155 !important;
+    border-right: 1px solid #1e293b !important;
     border-top: none !important;
 }
 
 .impl-tracker-table td {
-    background: #ffffff !important;
-    color: #0f172a !important;
-    border: 1px solid #f1f5f9 !important;
-    border-bottom: 1px solid #e2e8f0 !important;
+    background: #0f172a !important;
+    color: #f8fafc !important;
+    border: 1px solid #1e293b !important;
 }
 
 .impl-tracker-table tr:nth-child(even) td {
-    background: #fafafa !important;
+    background: #131d31 !important;
 }
 
 .impl-tracker-table tr:hover td {
-    background: #f1f5f9 !important;
+    background: #1e293b !important;
+}
+
+.impl-tracker-table td.col-description div {
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    color: #f8fafc !important;
+    font-weight: 500 !important;
 }
 
 /* Reference Tag */
 .impl-tracker-table .ticket-ref-tag {
-    background: #fffbeb !important;
-    color: #b45309 !important;
-    border: 1px solid #fde68a !important;
+    background: rgba(14, 165, 233, 0.12) !important;
+    color: #0284c7 !important;
+    border: 1px solid rgba(14, 165, 233, 0.25) !important;
     font-weight: 600 !important;
 }
 
 /* Verify Button */
 .impl-tracker-table .btn-verify-config {
-    background: #f5f3ff !important;
-    color: #7c3aed !important;
-    border: 1px solid #ddd6fe !important;
+    background: rgba(167, 139, 250, 0.1) !important;
+    color: #a78bfa !important;
+    border: 1px solid rgba(167, 139, 250, 0.2) !important;
 }
 
 .impl-tracker-table .btn-verify-config:hover {
     background: #7c3aed !important;
     color: #ffffff !important;
+}
+
+/* ==========================================================================
+   Light Theme Overrides for Implementation Tracker
+   ========================================================================== */
+body.light-theme #implTrackerModal .modal-content-deck {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+body.light-theme #implTrackerHeader {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+body.light-theme #implTrackerStatsBar {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+body.light-theme #implTrackerSearchWrapper {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+body.light-theme #implTrackerSearch {
+    color: #0f172a !important;
+}
+
+body.light-theme #implTrackerModal select {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+body.light-theme .impl-tracker-table-wrapper {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+body.light-theme .impl-tracker-table {
+    background: #ffffff !important;
+}
+
+body.light-theme .impl-tracker-table th {
+    background: #f1f5f9 !important;
+    color: #334155 !important;
+    border-bottom: 2px solid #e2e8f0 !important;
+    border-right: 1px solid #e2e8f0 !important;
+}
+
+body.light-theme .impl-tracker-table td {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #f1f5f9 !important;
+}
+
+body.light-theme .impl-tracker-table tr:nth-child(even) td {
+    background: #fafafa !important;
+}
+
+body.light-theme .impl-tracker-table tr:hover td {
+    background: #f1f5f9 !important;
+}
+
+body.light-theme .impl-tracker-table td.col-description div {
+    color: #0f172a !important;
 }
 
 /* ==========================================================================

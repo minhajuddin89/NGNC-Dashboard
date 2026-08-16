@@ -111,6 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const editStartTimeInput = document.getElementById('editStartTime');
     const editEndTimeInput = document.getElementById('editEndTime');
     const editStatusSelect = document.getElementById('editStatus');
+    const editMisStatusSelect = document.getElementById('editMisStatus');
     const editPendingReasonGroup = document.getElementById('editPendingReasonGroup');
     const editPendingReasonInput = document.getElementById('editPendingReason');
     const editEscalationHistoryGroup = document.getElementById('editEscalationHistoryGroup');
@@ -742,10 +743,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Close Dependency Wizard Modal
+    function closeDependencyModal() {
+        if (dependencyModal) dependencyModal.classList.add('hidden');
+        if (dependencyStepSelect) dependencyStepSelect.classList.add('hidden');
+        if (dependencyStepInput) dependencyStepInput.classList.add('hidden');
+        if (dependencyReasonInput) dependencyReasonInput.value = '';
+        selectedDependencyTaskId = null;
+        selectedDependencyTaskDesc = null;
+    }
+
     document.querySelectorAll('.btn-close-dep').forEach(el => {
-        el.addEventListener('click', () => {
-            if (dependencyModal) dependencyModal.classList.add('hidden');
-        });
+        el.addEventListener('click', closeDependencyModal);
     });
 
     // Handle "Pending for Dependency" Button Click
@@ -846,7 +854,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (response.ok) {
                     showToast(`Task ${selectedDependencyTaskId} is now set to Pending.`, "success");
-                    if (dependencyModal) dependencyModal.classList.add('hidden');
+                    closeDependencyModal();
                     fetchTasks();
                 } else {
                     showToast(data.message || 'Failed to update task status.', 'error');
@@ -963,16 +971,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Close buttons for Escalation Modal
+    function closeEscalationModal() {
+        if (escalationModal) escalationModal.classList.add('hidden');
+        if (escalationStepSelect) escalationStepSelect.classList.add('hidden');
+        if (escalationStepInput) escalationStepInput.classList.add('hidden');
+        if (escalationReasonInput) escalationReasonInput.value = '';
+        selectedEscalationTaskId = null;
+        selectedEscalationTaskDesc = null;
+    }
+
     document.querySelectorAll('.btn-close-esc').forEach(btn => {
-        btn.addEventListener('click', () => {
-            if (escalationModal) escalationModal.classList.add('hidden');
-        });
+        btn.addEventListener('click', closeEscalationModal);
     });
 
     if (escalationModal) {
         escalationModal.addEventListener('click', (e) => {
             if (e.target === escalationModal) {
-                escalationModal.classList.add('hidden');
+                closeEscalationModal();
             }
         });
     }
@@ -1031,7 +1046,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (response.ok) {
                     showToast(`Task ${selectedEscalationTaskId} successfully escalated to ${recipient}.`, "success");
-                    if (escalationModal) escalationModal.classList.add('hidden');
+                    closeEscalationModal();
                     fetchTasks();
                 } else {
                     showToast(data.message || 'Failed to escalate task.', 'error');
@@ -2141,7 +2156,8 @@ document.addEventListener('DOMContentLoaded', () => {
             end_time: editEndTimeInput.value,
             status: editStatusSelect.value,
             pending_reason: editStatusSelect.value === 'Pending' ? editPendingReasonInput.value.trim() : '',
-            escalation_history: editEscalationHistoryInput ? editEscalationHistoryInput.value.trim() : ''
+            escalation_history: editEscalationHistoryInput ? editEscalationHistoryInput.value.trim() : '',
+            mis_status: editMisStatusSelect ? editMisStatusSelect.value : 'Not Closed'
         };
 
         try {
@@ -2924,7 +2940,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const refHtml = refCode ? `
                 <div class="meta-item">
                     <span class="meta-label">Reference</span>
-                    <span class="meta-value" style="color: #f59e0b; font-weight: 600;"><i data-lucide="tag"></i>${refCode}</span>
+                    <span class="meta-value" style="color: #0284c7; font-weight: 600;"><i data-lucide="tag"></i>${refCode}</span>
                 </div>
             ` : '';
 
@@ -3100,7 +3116,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const refCode = extractReference(task.description);
-            const refDisplay = refCode ? `<span style="font-weight: 600; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem;"><i data-lucide="tag" style="width: 11px; height: 11px; display: inline-block; margin-right: 0.15rem; vertical-align: middle;"></i>${refCode}</span>` : '<span style="color: var(--text-muted); font-style: italic;">—</span>';
+            const refDisplay = refCode ? `<span style="font-weight: 600; color: #0284c7; background: rgba(14, 165, 233, 0.12); padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem;"><i data-lucide="tag" style="width: 11px; height: 11px; display: inline-block; margin-right: 0.15rem; vertical-align: middle;"></i>${refCode}</span>` : '<span style="color: var(--text-muted); font-style: italic;">—</span>';
 
             // Calculate Category dynamically
             let category = '—';
@@ -3406,6 +3422,9 @@ document.addEventListener('DOMContentLoaded', () => {
         editStartTimeInput.value = convertToInputFormat(task.start_time);
         editEndTimeInput.value = convertToInputFormat(task.end_time);
         editStatusSelect.value = task.status;
+        if (editMisStatusSelect) {
+            editMisStatusSelect.value = task.mis_status || 'Not Closed';
+        }
         editPendingReasonInput.value = task.pending_reason || '';
         editPendingReasonInput.style.height = 'auto';
         editPendingReasonInput.style.height = Math.max(editPendingReasonInput.scrollHeight + 4, 80) + 'px';
@@ -3608,7 +3627,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const endDisplay = formatTrackerDateTime(task.end_time);
             const durationDisplay = task.duration || '—';
 
-            const refDisplay = task.reference ? `<span style="font-weight: 600; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 0.2rem 0.4rem; border-radius: var(--radius-sm); font-size: 0.72rem; word-break: break-all;"><i data-lucide="tag" style="width: 10px; height: 10px; display: inline-block; margin-right: 0.15rem; vertical-align: middle;"></i>${task.reference}</span>` : '—';
+            const refDisplay = task.reference ? `<span style="font-weight: 600; color: #0284c7; background: rgba(14, 165, 233, 0.12); padding: 0.2rem 0.4rem; border-radius: var(--radius-sm); font-size: 0.72rem; word-break: break-all;"><i data-lucide="tag" style="width: 10px; height: 10px; display: inline-block; margin-right: 0.15rem; vertical-align: middle;"></i>${task.reference}</span>` : '—';
 
             let statusClass = 'pending';
             if (task.status === 'Completed') statusClass = 'completed';
@@ -3624,7 +3643,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // MIS Status Select Dropdown (or Badge for non-editable users)
             const misStatusVal = task.mis_status || 'Not Closed';
             const isClosed = misStatusVal === 'Closed';
-            const canEdit = currentUser.role === 'admin' || task.owner === currentUser.name;
+            const canEdit = !!currentUser;
             
             let misStatusHtml = '';
             if (canEdit) {
