@@ -412,21 +412,30 @@ document.addEventListener('DOMContentLoaded', () => {
         const lblSyncStatus = document.getElementById('lblSyncStatus');
         const lblSyncError = document.getElementById('lblSyncError');
 
+        // GitHub Fields
+        const gitSyncEnabled = document.getElementById('gitSyncEnabled');
+        const gitSyncInterval = document.getElementById('gitSyncInterval');
+        const gitToken = document.getElementById('gitToken');
+        const lblGitLastRun = document.getElementById('lblGitLastRun');
+        const lblGitLastTag = document.getElementById('lblGitLastTag');
+        const lblGitSyncStatus = document.getElementById('lblGitSyncStatus');
+        const lblGitSyncError = document.getElementById('lblGitSyncError');
+
         if (!backupEnabled || !backupInterval || !backupUrl) return;
 
         try {
             const response = await fetch(`${API_BASE}/admin/backup-settings`);
             if (response.ok) {
                 const settings = await response.json();
+                
+                // OneDrive values
                 backupEnabled.checked = settings.enabled;
                 backupInterval.value = settings.interval_hours;
                 backupUrl.value = settings.target_url || '';
-                
                 lblLastRun.textContent = settings.last_run || 'Never';
                 
                 const status = settings.last_status || 'Idle';
                 lblSyncStatus.textContent = status;
-                
                 if (status === 'Success') {
                     lblSyncStatus.style.color = '#10b981';
                 } else if (status === 'Failed') {
@@ -436,9 +445,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     lblSyncStatus.style.color = 'var(--text-muted)';
                 }
-                
                 lblSyncError.textContent = settings.last_error || 'None';
                 lblSyncError.style.color = settings.last_error ? '#ef4444' : 'var(--text-muted)';
+
+                // GitHub values
+                if (gitSyncEnabled && gitSyncInterval && gitToken) {
+                    gitSyncEnabled.checked = settings.github_enabled;
+                    gitSyncInterval.value = settings.github_interval_hours;
+                    gitToken.value = settings.github_token || '';
+                    lblGitLastRun.textContent = settings.github_last_run || 'Never';
+                    lblGitLastTag.textContent = settings.github_last_tag || 'None';
+                    
+                    const gitStatus = settings.github_last_status || 'Idle';
+                    lblGitSyncStatus.textContent = gitStatus;
+                    if (gitStatus === 'Success') {
+                        lblGitSyncStatus.style.color = '#10b981';
+                    } else if (gitStatus === 'Failed') {
+                        lblGitSyncStatus.style.color = '#ef4444';
+                    } else if (gitStatus === 'Running...') {
+                        lblGitSyncStatus.style.color = '#3b82f6';
+                    } else {
+                        lblGitSyncStatus.style.color = 'var(--text-muted)';
+                    }
+                    lblGitSyncError.textContent = settings.github_last_error || 'None';
+                    lblGitSyncError.style.color = settings.github_last_error ? '#ef4444' : 'var(--text-muted)';
+                }
             }
         } catch (error) {
             console.error('Error loading cloud backup settings:', error);
@@ -594,6 +625,77 @@ document.addEventListener('DOMContentLoaded', () => {
                 fetchCloudBackupSettings();
             } finally {
                 btnTestBackup.disabled = false;
+            }
+        });
+    }
+
+    // Reports Console: Save GitHub Auto-Sync Settings
+    const githubSyncForm = document.getElementById('githubSyncForm');
+    if (githubSyncForm) {
+        githubSyncForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const enabled = document.getElementById('gitSyncEnabled').checked;
+            const interval = parseFloat(document.getElementById('gitSyncInterval').value);
+            const token = document.getElementById('gitToken').value.trim();
+
+            try {
+                showToast("Saving GitHub sync settings...", "info");
+                const response = await fetch(`${API_BASE}/admin/backup-settings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        github_enabled: enabled,
+                        github_interval_hours: interval,
+                        github_token: token
+                    })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    showToast("GitHub sync settings saved successfully!", "success");
+                    fetchCloudBackupSettings();
+                } else {
+                    showToast(data.message || "Failed to save settings.", "error");
+                }
+            } catch (error) {
+                console.error("Error saving GitHub sync settings:", error);
+                showToast("Server error saving settings.", "error");
+            }
+        });
+    }
+
+    // Reports Console: Test Git Sync Now
+    const btnTestGitSync = document.getElementById('btnTestGitSync');
+    if (btnTestGitSync) {
+        btnTestGitSync.addEventListener('click', async () => {
+            const token = document.getElementById('gitToken').value.trim();
+            if (!token) {
+                showToast("Please enter a GitHub Personal Access Token first.", "warning");
+                return;
+            }
+            if (!confirm("Run an instant test database commit & push to GitHub backups branch? This will push database tasks.xlsx immediately.")) {
+                return;
+            }
+
+            try {
+                showToast("Executing GitHub sync trial...", "info");
+                btnTestGitSync.disabled = true;
+                const response = await fetch(`${API_BASE}/admin/backup-settings/test-github`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast("Test backup successfully pushed to GitHub database-backups branch!", "success");
+                } else {
+                    showToast(`GitHub sync failed: ${data.message}`, "error");
+                }
+                fetchCloudBackupSettings();
+            } catch (error) {
+                console.error("Error testing GitHub sync:", error);
+                showToast("Server error running GitHub sync trial.", "error");
+                fetchCloudBackupSettings();
+            } finally {
+                btnTestGitSync.disabled = false;
             }
         });
     }

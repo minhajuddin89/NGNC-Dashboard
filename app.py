@@ -361,7 +361,14 @@ def init_backup_settings():
             "target_url": "",
             "last_run": "",
             "last_status": "Never Run",
-            "last_error": ""
+            "last_error": "",
+            "github_enabled": False,
+            "github_interval_hours": 1.0,
+            "github_token": "",
+            "github_last_tag": "db-v1.0.0",
+            "github_last_run": "",
+            "github_last_status": "Never Run",
+            "github_last_error": ""
         }
         try:
             with open(BACKUP_SETTINGS_FILE, 'w') as f:
@@ -375,7 +382,26 @@ def load_backup_settings():
     try:
         if os.path.exists(BACKUP_SETTINGS_FILE):
             with open(BACKUP_SETTINGS_FILE, 'r') as f:
-                return json.load(f)
+                data = json.load(f)
+                
+                # Dynamic self-migration for new schema fields
+                updated = False
+                defaults = {
+                    "github_enabled": False,
+                    "github_interval_hours": 1.0,
+                    "github_token": "",
+                    "github_last_tag": "db-v1.0.0",
+                    "github_last_run": "",
+                    "github_last_status": "Never Run",
+                    "github_last_error": ""
+                }
+                for k, v in defaults.items():
+                    if k not in data:
+                        data[k] = v
+                        updated = True
+                if updated:
+                    save_backup_settings(data)
+                return data
     except Exception as e:
         print("Error loading backup settings:", e)
     return {
@@ -385,7 +411,14 @@ def load_backup_settings():
         "target_url": "",
         "last_run": "",
         "last_status": "Never Run",
-        "last_error": "Read Error"
+        "last_error": "Read Error",
+        "github_enabled": False,
+        "github_interval_hours": 1.0,
+        "github_token": "",
+        "github_last_tag": "db-v1.0.0",
+        "github_last_run": "",
+        "github_last_status": "Never Run",
+        "github_last_error": ""
     }
 
 def save_backup_settings(settings):
@@ -444,11 +477,136 @@ def trigger_backup_execution(settings=None):
         save_backup_settings(settings)
         return False, err_msg
 
+def run_github_sync(settings=None):
+    if not settings:
+        settings = load_backup_settings()
+        
+    token = settings.get("github_token", "").strip()
+    if not token:
+        return False, "GitHub Personal Access Token is not configured."
+        
+    try:
+        import subprocess
+        # Determine target directory
+        repo_dir = "/home/subrata/task-manager"
+        if not os.path.exists(repo_dir):
+            repo_dir = os.path.dirname(os.path.abspath(__file__))
+            
+        # Clean config lock file to prevent blockages
+        lock_file = os.path.join(repo_dir, ".git", "config.lock")
+        if os.path.exists(lock_file):
+            try:
+                os.remove(lock_file)
+            except Exception:
+                pass
+            
+        # 1. Initialize git if not present
+        if not os.path.exists(os.path.join(repo_dir, ".git")):
+            subprocess.run(["git", "init"], cwd=repo_dir, check=True, capture_output=True)
+            subprocess.run(["git", "config", "user.name", "Task Manager Auto-Sync"], cwd=repo_dir, check=True)
+            subprocess.run(["git", "config", "user.email", "backup@taskmanager.local"], cwd=repo_dir, check=True)
+            
+        # 2. Add database file
+        subprocess.run(["git", "add", "tasks.xlsx"], cwd=repo_dir, check=True, capture_output=True)
+        
+        # Check if there are changes before committing
+        status_res = subprocess.run(["git", "status", "--porcelain", "tasks.xlsx"], cwd=repo_dir, check=True, capture_output=True, text=True)
+        if not status_res.stdout.strip():
+            settings["github_last_run"] = get_local_now().strftime("%Y-%m-%d %H:%M:%S")
+            settings["github_last_status"] = "Success"
+            settings["github_last_error"] = ""
+            save_backup_settings(settings)
+            return True, "No database changes found. Git workspace is clean."
+            
+        # 3. Commit changes
+        timestamp = get_local_now().strftime("%Y-%m-%d %H:%M:%S")
+        subprocess.run(["git", "commit", "-m", f"Auto-backup database: {timestamp}"], cwd=repo_dir, check=True, capture_output=True)
+        
+        # 4. Parse existing version tags to determine next sequential database version tag
+        tag_res = subprocess.run(["git", "tag", "-l", "db-v*"], cwd=repo_dir, check=True, capture_output=True, text=True)
+        tags = [t.strip() for t in tag_res.stdout.split("\n") if t.strip()]
+        
+        next_tag = "db-v1.0.0"
+        if tags:
+            import re
+            highest_patch = -1
+            highest_minor = 0
+            highest_major = 1
+            for t in tags:
+                m = re.match(r"db-v(\d+)\.(\d+)\.(\d+)", t)
+                if m:
+                    major, minor, patch = int(m.group(1)), int(m.group(2)), int(m.group(3))
+                    if (major, minor, patch) > (highest_major, highest_minor, highest_patch):
+                        highest_major = major
+                        highest_minor = minor
+                        highest_patch = patch
+            if highest_patch != -1:
+                next_tag = f"db-v{highest_major}.{highest_minor}.{highest_patch + 1}"
+            else:
+                next_tag = "db-v1.0.1"
+        else:
+            # Try fetching remote tags to be sure
+            remote_url = f"https://{token}@github.com/minhajuddin89/NGNC-Dashboard.git"
+            subprocess.run(["git", "fetch", remote_url, "--tags"], cwd=repo_dir, capture_output=True)
+            tag_res = subprocess.run(["git", "tag", "-l", "db-v*"], cwd=repo_dir, check=True, capture_output=True, text=True)
+            tags = [t.strip() for t in tag_res.stdout.split("\n") if t.strip()]
+            if tags:
+                import re
+                highest_patch = -1
+                highest_minor = 0
+                highest_major = 1
+                for t in tags:
+                    m = re.match(r"db-v(\d+)\.(\d+)\.(\d+)", t)
+                    if m:
+                        major, minor, patch = int(m.group(1)), int(m.group(2)), int(m.group(3))
+                        if (major, minor, patch) > (highest_major, highest_minor, highest_patch):
+                            highest_major = major
+                            highest_minor = minor
+                            highest_patch = patch
+                if highest_patch != -1:
+                    next_tag = f"db-v{highest_major}.{highest_minor}.{highest_patch + 1}"
+            
+        # 5. Apply Git Tag
+        subprocess.run(["git", "tag", next_tag], cwd=repo_dir, check=True, capture_output=True)
+        
+        # 6. Push branch & tag using authenticated HTTPS URL directly (avoids modifying config file origin)
+        remote_url = f"https://{token}@github.com/minhajuddin89/NGNC-Dashboard.git"
+        subprocess.run(["git", "push", "-f", remote_url, "HEAD:database-backups"], cwd=repo_dir, check=True, capture_output=True)
+        subprocess.run(["git", "push", remote_url, next_tag], cwd=repo_dir, check=True, capture_output=True)
+        
+        # Reload fresh settings before saving status
+        settings = load_backup_settings()
+        settings["github_last_tag"] = next_tag
+        settings["github_last_run"] = get_local_now().strftime("%Y-%m-%d %H:%M:%S")
+        settings["github_last_status"] = "Success"
+        settings["github_last_error"] = ""
+        save_backup_settings(settings)
+        
+        return True, f"Successfully committed, tagged as {next_tag}, and pushed database to GitHub backups branch."
+        
+    except subprocess.CalledProcessError as cpe:
+        err_msg = f"Git operation failed: {cpe.stderr.decode().strip() if cpe.stderr else str(cpe)}"
+        settings = load_backup_settings()
+        settings["github_last_status"] = "Failed"
+        settings["github_last_error"] = err_msg
+        save_backup_settings(settings)
+        return False, err_msg
+    except Exception as e:
+        err_msg = str(e)
+        settings = load_backup_settings()
+        settings["github_last_status"] = "Failed"
+        settings["github_last_error"] = err_msg
+        save_backup_settings(settings)
+        return False, err_msg
+
+
 def backup_scheduler_loop():
     time.sleep(10)
     while True:
         try:
             settings = load_backup_settings()
+            
+            # 1. OneDrive/Outlook Webhook Sync Check
             if settings.get("enabled") and settings.get("target_url"):
                 interval_hours = float(settings.get("interval_hours", 24))
                 last_run_str = settings.get("last_run", "")
@@ -470,6 +628,30 @@ def backup_scheduler_loop():
                     settings["last_status"] = "Running..."
                     save_backup_settings(settings)
                     trigger_backup_execution(settings)
+            
+            # 2. GitHub Version Sync Check
+            settings = load_backup_settings()
+            if settings.get("github_enabled") and settings.get("github_token"):
+                git_interval_hours = float(settings.get("github_interval_hours", 1.0))
+                last_git_run_str = settings.get("github_last_run", "")
+                
+                should_run_git = False
+                if not last_git_run_str:
+                    should_run_git = True
+                else:
+                    try:
+                        last_git_dt = datetime.datetime.strptime(last_git_run_str, "%Y-%m-%d %H:%M:%S")
+                        elapsed_git_seconds = (get_local_now().replace(tzinfo=None) - last_git_dt).total_seconds()
+                        if elapsed_git_seconds >= (git_interval_hours * 3600) - 10:
+                            should_run_git = True
+                    except Exception:
+                        should_run_git = True
+                        
+                if should_run_git:
+                    settings["github_last_run"] = get_local_now().strftime("%Y-%m-%d %H:%M:%S")
+                    settings["github_last_status"] = "Running..."
+                    save_backup_settings(settings)
+                    run_github_sync(settings)
             
             time.sleep(60)
         except Exception as e:
@@ -1133,9 +1315,15 @@ def update_backup_settings():
         data = request.json or {}
         settings = load_backup_settings()
         
+        # OneDrive configurations
         settings["enabled"] = bool(data.get("enabled", False))
         settings["interval_hours"] = float(data.get("interval_hours", 24))
         settings["target_url"] = str(data.get("target_url", "")).strip()
+        
+        # GitHub configurations
+        settings["github_enabled"] = bool(data.get("github_enabled", False))
+        settings["github_interval_hours"] = float(data.get("github_interval_hours", 1.0))
+        settings["github_token"] = str(data.get("github_token", "")).strip()
         
         save_backup_settings(settings)
         return jsonify({"success": True, "message": "Backup settings saved successfully."})
@@ -1147,13 +1335,28 @@ def test_backup_sync():
     settings = load_backup_settings()
     original_enabled = settings.get("enabled", False)
     
-    # Temporarily set enabled to true just to run the test
     settings["enabled"] = True
     success, msg = trigger_backup_execution(settings)
     
-    # Restore original enabled state
     settings = load_backup_settings()
     settings["enabled"] = original_enabled
+    save_backup_settings(settings)
+    
+    if success:
+        return jsonify({"success": True, "message": msg})
+    else:
+        return jsonify({"error": "failed", "message": msg}), 400
+
+@app.route("/api/admin/backup-settings/test-github", methods=["POST"])
+def test_github_sync():
+    settings = load_backup_settings()
+    original_enabled = settings.get("github_enabled", False)
+    
+    settings["github_enabled"] = True
+    success, msg = run_github_sync(settings)
+    
+    settings = load_backup_settings()
+    settings["github_enabled"] = original_enabled
     save_backup_settings(settings)
     
     if success:
