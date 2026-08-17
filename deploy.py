@@ -164,13 +164,21 @@ def main():
                 print("Re-establishing SSH connection for verification...")
                 ssh.connect(host, port=port, username=username, password=password, timeout=30)
 
-            # Verify connectivity
+            # Verify connectivity with retries for Gunicorn startup
             print("Verifying response from port 9000...")
-            verify_code, _ = run_remote_command(ssh, "curl -I http://127.0.0.1:9000/")
-            if verify_code == 0:
+            verified = False
+            for attempt in range(1, 6):
+                time.sleep(3)
+                verify_code, _ = run_remote_command(ssh, "curl -I http://127.0.0.1:9000/")
+                if verify_code == 0:
+                    verified = True
+                    break
+                print(f"Attempt {attempt}/5 failed, retrying in 3s...")
+            
+            if verified:
                 print("\nNative service fallback deployment completed successfully!")
             else:
-                print("\nError verifying port 9000 interface.")
+                print("\nError verifying port 9000 interface after 5 attempts.")
                 sys.exit(1)
         
         print(f"\nDeployment completed successfully! Access the app at http://{host}:9000")

@@ -2009,7 +2009,9 @@ def export_tasks():
             # Calculate Category dynamically
             category = "—"
             desc_lower = t.get("description", "").lower()
-            if reference and (reference.startswith("TKI") or reference.startswith("CR")):
+            if "meeting" in desc_lower:
+                category = "MEETING"
+            elif reference and (reference.startswith("TKI") or reference.startswith("CR")):
                 category = "IMPLEMENTATION"
             elif "backbone" in desc_lower:
                 category = "BACKBONE"

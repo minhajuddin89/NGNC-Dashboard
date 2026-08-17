@@ -2958,7 +2958,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Calculate Category dynamically
             let category = '—';
             const descLower = task.description.toLowerCase();
-            if (refCode && (refCode.startsWith('TKI') || refCode.startsWith('CR'))) {
+            if (descLower.includes('meeting')) {
+                category = 'MEETING';
+            } else if (refCode && (refCode.startsWith('TKI') || refCode.startsWith('CR'))) {
                 category = 'IMPLEMENTATION';
             } else if (descLower.includes('backbone')) {
                 category = 'BACKBONE';
@@ -2966,10 +2968,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 category = 'PROJECT';
             }
 
+            const categoryColor = category === 'IMPLEMENTATION' ? '#38bdf8' : (category === 'BACKBONE' ? '#fb7185' : (category === 'PROJECT' ? '#a78bfa' : (category === 'MEETING' ? '#f59e0b' : '#94a3b8')));
             const categoryHtml = category !== '—' ? `
                 <div class="meta-item">
                     <span class="meta-label">Category</span>
-                    <span class="meta-value" style="color: ${category === 'IMPLEMENTATION' ? '#38bdf8' : (category === 'BACKBONE' ? '#fb7185' : '#a78bfa')}; font-weight: 600;"><i data-lucide="layers"></i>${category}</span>
+                    <span class="meta-value" style="color: ${categoryColor}; font-weight: 600;"><i data-lucide="layers"></i>${category}</span>
                 </div>
             ` : '';
             let pendingReasonHtml = '';
@@ -3132,7 +3135,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Calculate Category dynamically
             let category = '—';
             const descLower = task.description.toLowerCase();
-            if (refCode && (refCode.startsWith('TKI') || refCode.startsWith('CR'))) {
+            if (descLower.includes('meeting')) {
+                category = 'MEETING';
+            } else if (refCode && (refCode.startsWith('TKI') || refCode.startsWith('CR'))) {
                 category = 'IMPLEMENTATION';
             } else if (descLower.includes('backbone')) {
                 category = 'BACKBONE';
@@ -3159,6 +3164,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     badgeColor = isLight ? '#7c3aed' : '#a78bfa'; // Violet/Purple
                     bgOpacity = isLight ? 'rgba(124, 58, 237, 0.08)' : 'rgba(167, 139, 250, 0.1)';
                     borderOpacity = isLight ? 'rgba(124, 58, 237, 0.2)' : 'rgba(167, 139, 250, 0.25)';
+                } else if (category === 'MEETING') {
+                    badgeColor = isLight ? '#d97706' : '#f59e0b'; // Amber Gold
+                    bgOpacity = isLight ? 'rgba(217, 119, 6, 0.08)' : 'rgba(245, 158, 11, 0.1)';
+                    borderOpacity = isLight ? 'rgba(217, 119, 6, 0.2)' : 'rgba(245, 158, 11, 0.25)';
                 }
                 
                 categoryDisplay = `<span style="font-weight: 600; color: ${badgeColor}; background: ${bgOpacity}; border: 1px solid ${borderOpacity}; padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.72rem; display: inline-flex; align-items: center; gap: 0.25rem;"><i data-lucide="layers" style="width: 11px; height: 11px;"></i>${category}</span>`;
@@ -3364,7 +3373,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let cat = 'N/A';
         const descLower = task.description.toLowerCase();
-        if (ref && (ref.startsWith('TKI') || ref.startsWith('CR'))) {
+        if (descLower.includes('meeting')) {
+            cat = 'MEETING';
+        } else if (ref && (ref.startsWith('TKI') || ref.startsWith('CR'))) {
             cat = 'IMPLEMENTATION';
         } else if (descLower.includes('backbone')) {
             cat = 'BACKBONE';
