@@ -43,7 +43,7 @@ def sftp_upload_dir(sftp, local_dir, remote_dir, uploaded_files=None):
         uploaded_files = []
     sftp_mkdir_safe(sftp, remote_dir)
     for entry in os.listdir(local_dir):
-        if entry in ['.git', '__pycache__', 'node_modules', 'deploy.py', 'deploy.log', 'run.bat', 'test_app.py', '.agents', '.system_generated', 'task.md', 'walkthrough.md', 'implementation_plan.md', 'PulseTrace.exe', 'ping-monitor.exe', 'Ping-monitor.zip', 'server.log', 'app.log']:
+        if entry in ['.git', '__pycache__', 'node_modules', 'deploy.py', 'deploy.log', 'run.bat', 'test_app.py', '.agents', '.system_generated', 'task.md', 'walkthrough.md', 'implementation_plan.md', 'PulseTrace.exe', 'ping-monitor.exe', 'Ping-monitor.zip', 'server.log', 'app.log', 'backups', 'VLAN Search.exe_extracted', 'extracted_vlan_search'] or entry.endswith('.exe') or entry.startswith('VLAN Search'):
             continue
         local_path = os.path.join(local_dir, entry)
         remote_path = remote_dir + '/' + entry
@@ -63,7 +63,8 @@ def sftp_upload_dir(sftp, local_dir, remote_dir, uploaded_files=None):
             should_upload = True
             try:
                 remote_stat = sftp.stat(remote_path)
-                if remote_stat.st_size == local_stat.st_size and int(remote_stat.st_mtime) == int(local_stat.st_mtime):
+                is_web_file = 'static' in local_path or entry.endswith(('.html', '.js', '.css', '.py'))
+                if not is_web_file and remote_stat.st_size == local_stat.st_size and int(remote_stat.st_mtime) == int(local_stat.st_mtime):
                     should_upload = False
             except IOError:
                 pass
@@ -156,6 +157,13 @@ def main():
             print("Executing start.sh...")
             run_remote_command(ssh, f"{remote_dir}/start.sh")
             
+            # Reconnect SSH if closed during service restart
+            try:
+                ssh.exec_command("echo ping")
+            except Exception:
+                print("Re-establishing SSH connection for verification...")
+                ssh.connect(host, port=port, username=username, password=password, timeout=30)
+
             # Verify connectivity
             print("Verifying response from port 9000...")
             verify_code, _ = run_remote_command(ssh, "curl -I http://127.0.0.1:9000/")

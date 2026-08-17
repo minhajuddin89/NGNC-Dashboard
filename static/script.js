@@ -880,37 +880,48 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Populate the dropdown with other engineers
+            // Populate the dropdown based on 4-level escalation hierarchy:
+            // Col 1 (Moumita, Shuvo, Momin, Alamgir, Rana, Sajeeb, Ayan, Mobasshir, Ashik) -> Col 2 (Shakil, Raju, Sabuj, Minhaj)
+            // Col 2 (Shakil, Raju, Sabuj, Minhaj) -> Col 3 (Badal, Arif)
+            // Col 3 (Badal, Arif) -> Col 4 (Ujjal, Subrata)
             if (escalationRecipientSelect) {
                 escalationRecipientSelect.innerHTML = '';
                 
-                // Get all users from the user list, plus default owners
-                // We'll deduplicate by name, excluding current user
-                const uniqueEngineers = new Set();
-                
-                // Add registered users
-                allUsers.forEach(u => {
-                    if (u.name && u.name.toLowerCase() !== owner.toLowerCase() && u.name.toLowerCase() !== 'system administrator') {
-                        uniqueEngineers.add(u.name);
-                    }
-                });
+                const hierarchy = {
+                    col1: ['Moumita', 'Shuvo', 'Momin', 'Alamgir', 'Rana', 'Sajeeb', 'Ayan', 'Mobasshir', 'Ashik'],
+                    col2: ['Shakil', 'Raju', 'Sabuj', 'Minhaj'],
+                    col3: ['Badal', 'Arif'],
+                    col4: ['Ujjal', 'Subrata']
+                };
 
-                // Add roster members
-                allRoster.forEach(r => {
-                    if (r.owner && r.owner.toLowerCase() !== owner.toLowerCase() && r.owner.toLowerCase() !== 'system administrator') {
-                        uniqueEngineers.add(r.owner);
-                    }
-                });
+                const ownerLower = owner.trim().toLowerCase();
+                const isCol1 = hierarchy.col1.some(n => n.toLowerCase() === ownerLower);
+                const isCol2 = hierarchy.col2.some(n => n.toLowerCase() === ownerLower);
+                const isCol3 = hierarchy.col3.some(n => n.toLowerCase() === ownerLower);
+                const isCol4 = hierarchy.col4.some(n => n.toLowerCase() === ownerLower);
 
-                // Sort names
-                const sortedEngineers = Array.from(uniqueEngineers).sort();
-                
-                if (sortedEngineers.length === 0) {
-                    showToast("No other engineers available to escalate to.", "warning");
+                let targetList = [];
+                if (isCol1) {
+                    targetList = hierarchy.col2;
+                } else if (isCol2) {
+                    targetList = hierarchy.col3;
+                } else if (isCol3) {
+                    targetList = hierarchy.col4;
+                } else if (isCol4) {
+                    targetList = hierarchy.col4.filter(n => n.toLowerCase() !== ownerLower);
+                } else {
+                    // Fallback for Admin or unlisted user: Col 2, Col 3, Col 4
+                    targetList = [...hierarchy.col2, ...hierarchy.col3, ...hierarchy.col4].filter(n => n.toLowerCase() !== ownerLower);
+                }
+
+                const sortedTargets = Array.from(new Set(targetList)).sort();
+
+                if (sortedTargets.length === 0) {
+                    showToast("No higher level available to escalate to.", "warning");
                     return;
                 }
 
-                sortedEngineers.forEach(engName => {
+                sortedTargets.forEach(engName => {
                     const opt = document.createElement('option');
                     opt.value = engName;
                     opt.textContent = engName;
