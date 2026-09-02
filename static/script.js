@@ -2500,16 +2500,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
                     ctx.save();
                     
+                    const hasRosterToday = allRoster && allRoster.some(r => {
+                        let rDate = String(r.date || '').trim().split('T')[0].split(' ')[0];
+                        return rDate === todayStr;
+                    });
+                    
                     sortedOwners.forEach((owner, idx) => {
                         const shift = findRosterShift(allRoster, owner, todayStr);
-                        const isOff = shift && (
+                        const isOff = shift ? (
                             shift.code.toUpperCase() === 'D/O' || 
                             shift.code.toUpperCase() === 'DO' || 
                             shift.code.toUpperCase() === 'LEAVE' ||
                             shift.code.toUpperCase() === 'OFF' ||
                             (shift.shift_name && shift.shift_name.toLowerCase().includes('day off')) ||
                             (shift.shift_name && shift.shift_name.toLowerCase().includes('duty off'))
-                        );
+                        ) : (hasRosterToday && !shift);
                         if (isOff) {
                             let xPos = x.getPixelForTick ? x.getPixelForTick(idx) : x.getPixelForValue(idx);
                             if (isNaN(xPos) || xPos === undefined) xPos = x.getPixelForValue(owner);
@@ -2533,16 +2538,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
                     ctx.save();
                     
+                    const hasRosterToday = allRoster && allRoster.some(r => {
+                        let rDate = String(r.date || '').trim().split('T')[0].split(' ')[0];
+                        return rDate === todayStr;
+                    });
+                    
                     sortedOwners.forEach((owner, idx) => {
                         const shift = findRosterShift(allRoster, owner, todayStr);
-                        const isOff = shift && (
+                        const isOff = shift ? (
                             shift.code.toUpperCase() === 'D/O' || 
                             shift.code.toUpperCase() === 'DO' || 
                             shift.code.toUpperCase() === 'LEAVE' ||
                             shift.code.toUpperCase() === 'OFF' ||
                             (shift.shift_name && shift.shift_name.toLowerCase().includes('day off')) ||
                             (shift.shift_name && shift.shift_name.toLowerCase().includes('duty off'))
-                        );
+                        ) : (hasRosterToday && !shift);
                         if (isOff) {
                             let xPos = x.getPixelForTick ? x.getPixelForTick(idx) : x.getPixelForValue(idx);
                             if (isNaN(xPos) || xPos === undefined) xPos = x.getPixelForValue(owner);
@@ -2554,7 +2564,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             ctx.textAlign = "center";
                             ctx.textBaseline = "middle";
                             
-                            const label = (shift.code.toUpperCase() === 'LEAVE') ? 'LEAVE' : 'DAY OFF';
+                            const isLeave = shift && shift.code && shift.code.toUpperCase() === 'LEAVE';
+                            const label = isLeave ? 'LEAVE' : 'DAY OFF';
                             const chars = label.split('');
                             const charHeight = 12; // vertical gap
                             const totalHeight = chars.length * charHeight;
@@ -2656,13 +2667,18 @@ document.addEventListener('DOMContentLoaded', () => {
             })();
 
             // Check if they are scheduled on roster shift today (not D/O or LEAVE)
-            const isOff = shift && (
+            const hasRosterToday = allRoster && allRoster.some(r => {
+                let rDate = String(r.date || '').trim().split('T')[0].split(' ')[0];
+                return rDate === todayStr;
+            });
+            const isOff = shift ? (
                 shift.code.toUpperCase() === 'D/O' || 
                 shift.code.toUpperCase() === 'DO' || 
-                shift.code.toUpperCase() === 'LEAVE' ||
+                shift.code.toUpperCase() === 'LEAVE' || 
                 shift.code.toUpperCase() === 'OFF' ||
-                (shift.shift_name && shift.shift_name.toLowerCase().includes('day off'))
-            );
+                (shift.shift_name && shift.shift_name.toLowerCase().includes('day off')) ||
+                (shift.shift_name && shift.shift_name.toLowerCase().includes('duty off'))
+            ) : (hasRosterToday && !shift);
             const isOnDutyRoster = !!shift && !isOff;
 
             // Get shift timings
