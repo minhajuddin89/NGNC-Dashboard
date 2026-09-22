@@ -42,3 +42,12 @@ Thumbs.db
 
 # Local Configs
 backup_settings.json
+
+# Extracted archives & temporary binaries
+VLAN Search.exe_extracted/
+extracted_vlan_search/
+backups/
+*.exe
+*.zip
+*.cap
+*.pcap

@@ -44,6 +44,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentView = 'table';
     let selectedStatusFilter = 'ALL';
     let selectedScopeFilter = 'ALL';
+    let selectedUserFilter = 'ALL';
+    let selectedSort = 'DEFAULT';
     let searchQuery = '';
     let selectedDependencyTaskId = null;
     let selectedDependencyTaskDesc = null;
@@ -86,6 +88,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchQueryInput = document.getElementById('searchQuery');
     const filterStatusSelect = document.getElementById('filterStatus');
     const filterScopeSelect = document.getElementById('filterScope');
+    const filterUserSelect = document.getElementById('filterUser');
+    const sortTasksSelect = document.getElementById('sortTasks');
+    const thOwner = document.getElementById('thOwner');
+    const ownerSortIndicator = document.getElementById('ownerSortIndicator');
     const viewGridBtn = document.getElementById('viewGrid');
     const viewTableBtn = document.getElementById('viewTable');
 
@@ -179,6 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements - Roster Modal
     const btnOpenTShoot = document.getElementById('btnOpenTShoot');
     const btnOpenScriptGen = document.getElementById('btnOpenScriptGen');
+    const btnOpenCustomerTracker = document.getElementById('btnOpenCustomerTracker');
     const btnViewRoster = document.getElementById('btnViewRoster');
     const rosterModal = document.getElementById('rosterModal');
     const btnCloseRosterModal = document.getElementById('btnCloseRosterModal');
@@ -256,12 +263,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (rosterModalAdminSection) rosterModalAdminSection.classList.remove('hidden');
                 if (rosterModalFooter) rosterModalFooter.classList.remove('hidden');
                 if (taskControlCenter) taskControlCenter.classList.add('hidden');
+                if (filterUserSelect) filterUserSelect.classList.remove('hidden');
+                if (sortTasksSelect) sortTasksSelect.classList.remove('hidden');
+                if (thOwner) {
+                    thOwner.classList.add('sortable-header');
+                    thOwner.style.cursor = 'pointer';
+                }
             } else {
                 document.body.classList.add('operator-theme');
                 btnAdminConsole.classList.add('hidden');
                 if (rosterModalAdminSection) rosterModalAdminSection.classList.add('hidden');
                 if (rosterModalFooter) rosterModalFooter.classList.add('hidden');
                 if (taskControlCenter) taskControlCenter.classList.remove('hidden');
+                if (filterUserSelect) filterUserSelect.classList.add('hidden');
+                if (sortTasksSelect) sortTasksSelect.classList.add('hidden');
+                selectedUserFilter = 'ALL';
+                selectedSort = 'DEFAULT';
+                if (filterUserSelect) filterUserSelect.value = 'ALL';
+                if (sortTasksSelect) sortTasksSelect.value = 'DEFAULT';
+                if (thOwner) {
+                    thOwner.classList.remove('sortable-header');
+                    thOwner.style.cursor = 'default';
+                }
+                if (ownerSortIndicator) {
+                    ownerSortIndicator.textContent = '↕';
+                    ownerSortIndicator.style.opacity = '0.5';
+                    ownerSortIndicator.style.color = 'inherit';
+                }
             }
             if (adminDashboardSection) adminDashboardSection.classList.remove('hidden');
 
@@ -291,6 +319,22 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const btnReportsConsole = document.getElementById('btnReportsConsole');
             if (btnReportsConsole) btnReportsConsole.classList.add('hidden');
+
+            if (filterUserSelect) filterUserSelect.classList.add('hidden');
+            if (sortTasksSelect) sortTasksSelect.classList.add('hidden');
+            selectedUserFilter = 'ALL';
+            selectedSort = 'DEFAULT';
+            if (filterUserSelect) filterUserSelect.value = 'ALL';
+            if (sortTasksSelect) sortTasksSelect.value = 'DEFAULT';
+            if (thOwner) {
+                thOwner.classList.remove('sortable-header');
+                thOwner.style.cursor = 'default';
+            }
+            if (ownerSortIndicator) {
+                ownerSortIndicator.textContent = '↕';
+                ownerSortIndicator.style.opacity = '0.5';
+                ownerSortIndicator.style.color = 'inherit';
+            }
             
             loginOverlay.classList.remove('hidden');
             appWorkspace.classList.add('hidden');
@@ -712,6 +756,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnOpenScriptGen) {
         btnOpenScriptGen.addEventListener('click', () => {
             window.open('/script-gen', '_blank');
+        });
+    }
+
+    // Open Customer Issue Tracker Hub
+    if (btnOpenCustomerTracker) {
+        btnOpenCustomerTracker.addEventListener('click', () => {
+            window.open('/customer-tracker/', '_blank');
         });
     }
 
@@ -1998,6 +2049,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
+            if (currentUser && currentUser.role === 'admin') {
+                populateUserFilter();
+            }
+
             updateDashboard();
         } catch (error) {
             console.error('Error fetching tasks:', error);
@@ -2273,6 +2328,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- UI Layout & Rendering ---
 
+    function populateUserFilter() {
+        if (!filterUserSelect) return;
+        
+        const engineersSet = new Set();
+        allUsers.forEach(u => {
+            if (u.name && u.username.toLowerCase() !== 'admin') {
+                engineersSet.add(u.name.trim());
+            }
+        });
+
+        allTasks.forEach(t => {
+            if (t.owner && t.owner.trim() !== '' && t.owner.toLowerCase() !== 'unassigned') {
+                engineersSet.add(t.owner.trim());
+            }
+        });
+
+        const sortedEngineers = Array.from(engineersSet).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+
+        const existingOptions = Array.from(filterUserSelect.options).map(o => o.value);
+        const newOptions = ['ALL', ...sortedEngineers];
+        
+        const isSame = existingOptions.length === newOptions.length &&
+            existingOptions.every((val, idx) => val === newOptions[idx]);
+
+        if (!isSame) {
+            const savedVal = filterUserSelect.value || selectedUserFilter;
+            filterUserSelect.innerHTML = '<option value="ALL">All Engineers</option>';
+            sortedEngineers.forEach(eng => {
+                const opt = document.createElement('option');
+                opt.value = eng;
+                opt.textContent = eng;
+                filterUserSelect.appendChild(opt);
+            });
+            if (sortedEngineers.includes(savedVal)) {
+                filterUserSelect.value = savedVal;
+                selectedUserFilter = savedVal;
+            } else {
+                filterUserSelect.value = 'ALL';
+                selectedUserFilter = 'ALL';
+            }
+        }
+    }
+
     function updateDashboard() {
         const total = allTasks.length;
         const pending = allTasks.filter(t => t.status === 'Pending').length;
@@ -2297,6 +2395,12 @@ document.addEventListener('DOMContentLoaded', () => {
             filteredTasks = filteredTasks.filter(t => t.owner.toLowerCase() === owner);
         }
 
+        // Admin User-Wise Filter
+        if (currentUser && currentUser.role === 'admin' && selectedUserFilter !== 'ALL') {
+            const targetUser = selectedUserFilter.toLowerCase();
+            filteredTasks = filteredTasks.filter(t => (t.owner || '').trim().toLowerCase() === targetUser);
+        }
+
         if (searchQuery) {
             const query = searchQuery.toLowerCase();
             filteredTasks = filteredTasks.filter(t => 
@@ -2304,6 +2408,44 @@ document.addEventListener('DOMContentLoaded', () => {
                 t.owner.toLowerCase().includes(query) ||
                 t.id.toLowerCase().includes(query)
             );
+        }
+
+        // Admin Multi-Criteria Sorting
+        if (currentUser && currentUser.role === 'admin') {
+            filteredTasks = [...filteredTasks];
+            if (selectedSort === 'USER_ASC') {
+                filteredTasks.sort((a, b) => (a.owner || '').localeCompare(b.owner || '', undefined, { sensitivity: 'base' }));
+            } else if (selectedSort === 'USER_DESC') {
+                filteredTasks.sort((a, b) => (b.owner || '').localeCompare(a.owner || '', undefined, { sensitivity: 'base' }));
+            } else if (selectedSort === 'TIME_DESC') {
+                filteredTasks.sort((a, b) => (b.start_time || b.last_updated || '').localeCompare(a.start_time || a.last_updated || ''));
+            } else if (selectedSort === 'TIME_ASC') {
+                filteredTasks.sort((a, b) => (a.start_time || a.last_updated || '').localeCompare(b.start_time || b.last_updated || ''));
+            } else if (selectedSort === 'STATUS') {
+                const statusOrder = { 'in progress': 1, 'pending': 2, 'completed': 3 };
+                filteredTasks.sort((a, b) => {
+                    const oA = statusOrder[(a.status || '').toLowerCase()] || 4;
+                    const oB = statusOrder[(b.status || '').toLowerCase()] || 4;
+                    return oA - oB;
+                });
+            }
+        }
+
+        // Update Owner Column Sort Indicator in Table Header
+        if (ownerSortIndicator) {
+            if (selectedSort === 'USER_ASC') {
+                ownerSortIndicator.textContent = '▲';
+                ownerSortIndicator.style.opacity = '1';
+                ownerSortIndicator.style.color = '#38bdf8';
+            } else if (selectedSort === 'USER_DESC') {
+                ownerSortIndicator.textContent = '▼';
+                ownerSortIndicator.style.opacity = '1';
+                ownerSortIndicator.style.color = '#38bdf8';
+            } else {
+                ownerSortIndicator.textContent = '↕';
+                ownerSortIndicator.style.opacity = '0.5';
+                ownerSortIndicator.style.color = 'inherit';
+            }
         }
 
         if (filteredTasks.length === 0) {
@@ -2350,13 +2492,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Robust helper to match engineer and date in roster
         function findRosterShift(rosterList, ownerName, targetDateStr) {
             if (!rosterList || !ownerName || !targetDateStr) return null;
-            const cleanOwner = ownerName.trim().toLowerCase();
+            const cleanOwner = ownerName.trim().toLowerCase().replace(/sh/g, 's');
+            const origOwner = ownerName.trim().toLowerCase();
             const cleanDate = targetDateStr.trim();
             
             return rosterList.find(r => {
                 if (!r || !r.owner || !r.date) return false;
                 const rOwner = String(r.owner).trim().toLowerCase();
-                const nameMatch = (rOwner === cleanOwner || cleanOwner.includes(rOwner) || rOwner.includes(cleanOwner));
+                const rOwnerNorm = rOwner.replace(/sh/g, 's');
+                const nameMatch = (rOwner === origOwner || rOwnerNorm === cleanOwner || cleanOwner.includes(rOwnerNorm) || rOwnerNorm.includes(cleanOwner));
                 if (!nameMatch) return false;
                 
                 let rDate = String(r.date).trim();
@@ -2500,16 +2644,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
                     ctx.save();
                     
+                    const hasRosterToday = allRoster && allRoster.some(r => {
+                        let rDate = String(r.date || '').trim().split('T')[0].split(' ')[0];
+                        return rDate === todayStr;
+                    });
+                    
                     sortedOwners.forEach((owner, idx) => {
                         const shift = findRosterShift(allRoster, owner, todayStr);
-                        const isOff = shift && (
+                        const isOff = shift ? (
                             shift.code.toUpperCase() === 'D/O' || 
                             shift.code.toUpperCase() === 'DO' || 
                             shift.code.toUpperCase() === 'LEAVE' ||
                             shift.code.toUpperCase() === 'OFF' ||
                             (shift.shift_name && shift.shift_name.toLowerCase().includes('day off')) ||
                             (shift.shift_name && shift.shift_name.toLowerCase().includes('duty off'))
-                        );
+                        ) : (hasRosterToday && !shift);
                         if (isOff) {
                             let xPos = x.getPixelForTick ? x.getPixelForTick(idx) : x.getPixelForValue(idx);
                             if (isNaN(xPos) || xPos === undefined) xPos = x.getPixelForValue(owner);
@@ -2533,16 +2682,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
                     ctx.save();
                     
+                    const hasRosterToday = allRoster && allRoster.some(r => {
+                        let rDate = String(r.date || '').trim().split('T')[0].split(' ')[0];
+                        return rDate === todayStr;
+                    });
+                    
                     sortedOwners.forEach((owner, idx) => {
                         const shift = findRosterShift(allRoster, owner, todayStr);
-                        const isOff = shift && (
+                        const isOff = shift ? (
                             shift.code.toUpperCase() === 'D/O' || 
                             shift.code.toUpperCase() === 'DO' || 
                             shift.code.toUpperCase() === 'LEAVE' ||
                             shift.code.toUpperCase() === 'OFF' ||
                             (shift.shift_name && shift.shift_name.toLowerCase().includes('day off')) ||
                             (shift.shift_name && shift.shift_name.toLowerCase().includes('duty off'))
-                        );
+                        ) : (hasRosterToday && !shift);
                         if (isOff) {
                             let xPos = x.getPixelForTick ? x.getPixelForTick(idx) : x.getPixelForValue(idx);
                             if (isNaN(xPos) || xPos === undefined) xPos = x.getPixelForValue(owner);
@@ -2554,7 +2708,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             ctx.textAlign = "center";
                             ctx.textBaseline = "middle";
                             
-                            const label = (shift.code.toUpperCase() === 'LEAVE') ? 'LEAVE' : 'DAY OFF';
+                            const isLeave = shift && shift.code && shift.code.toUpperCase() === 'LEAVE';
+                            const label = isLeave ? 'LEAVE' : 'DAY OFF';
                             const chars = label.split('');
                             const charHeight = 12; // vertical gap
                             const totalHeight = chars.length * charHeight;
@@ -2643,10 +2798,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // Find their shift in the roster for today using flexible name match
             const shift = (function() {
                 if (!allRoster) return null;
+                const normName = lowercaseName.replace(/sh/g, 's');
                 return allRoster.find(r => {
                     if (!r || !r.owner || !r.date) return false;
                     const rOwner = String(r.owner).trim().toLowerCase();
-                    const nameMatch = (rOwner === lowercaseName || lowercaseName.includes(rOwner) || rOwner.includes(lowercaseName));
+                    const rOwnerNorm = rOwner.replace(/sh/g, 's');
+                    const nameMatch = (rOwner === lowercaseName || rOwnerNorm === normName || normName.includes(rOwnerNorm) || rOwnerNorm.includes(normName));
                     if (!nameMatch) return false;
                     let rDate = String(r.date).trim();
                     if (rDate.includes('T')) rDate = rDate.split('T')[0];
@@ -2656,13 +2813,18 @@ document.addEventListener('DOMContentLoaded', () => {
             })();
 
             // Check if they are scheduled on roster shift today (not D/O or LEAVE)
-            const isOff = shift && (
+            const hasRosterToday = allRoster && allRoster.some(r => {
+                let rDate = String(r.date || '').trim().split('T')[0].split(' ')[0];
+                return rDate === todayStr;
+            });
+            const isOff = shift ? (
                 shift.code.toUpperCase() === 'D/O' || 
                 shift.code.toUpperCase() === 'DO' || 
-                shift.code.toUpperCase() === 'LEAVE' ||
+                shift.code.toUpperCase() === 'LEAVE' || 
                 shift.code.toUpperCase() === 'OFF' ||
-                (shift.shift_name && shift.shift_name.toLowerCase().includes('day off'))
-            );
+                (shift.shift_name && shift.shift_name.toLowerCase().includes('day off')) ||
+                (shift.shift_name && shift.shift_name.toLowerCase().includes('duty off'))
+            ) : (hasRosterToday && !shift);
             const isOnDutyRoster = !!shift && !isOff;
 
             // Get shift timings
@@ -2797,7 +2959,14 @@ document.addEventListener('DOMContentLoaded', () => {
             
             dates.forEach(d => {
                 // Find shift code for this operator on this date
-                const shift = allRoster.find(r => r.owner.toLowerCase() === op.toLowerCase() && r.date === d);
+                const shift = allRoster.find(r => {
+                    if (!r || !r.owner || !r.date) return false;
+                    const rOwner = r.owner.toLowerCase();
+                    const rOwnerNorm = rOwner.replace(/sh/g, 's');
+                    const normOp = op.toLowerCase().replace(/sh/g, 's');
+                    const matchName = (rOwner === op.toLowerCase() || rOwnerNorm === normOp || normOp.includes(rOwnerNorm) || rOwnerNorm.includes(normOp));
+                    return matchName && r.date === d;
+                });
                 
                 // Helper function to resolve shift badges and select style classes dynamically
                 function getRosterClass(c) {
@@ -3332,6 +3501,35 @@ document.addEventListener('DOMContentLoaded', () => {
     if (filterScopeSelect) {
         filterScopeSelect.addEventListener('change', (e) => {
             selectedScopeFilter = e.target.value;
+            updateDashboard();
+        });
+    }
+
+    if (filterUserSelect) {
+        filterUserSelect.addEventListener('change', (e) => {
+            selectedUserFilter = e.target.value;
+            updateDashboard();
+        });
+    }
+
+    if (sortTasksSelect) {
+        sortTasksSelect.addEventListener('change', (e) => {
+            selectedSort = e.target.value;
+            updateDashboard();
+        });
+    }
+
+    if (thOwner) {
+        thOwner.addEventListener('click', () => {
+            if (!currentUser || currentUser.role !== 'admin') return;
+            if (selectedSort === 'USER_ASC') {
+                selectedSort = 'USER_DESC';
+            } else {
+                selectedSort = 'USER_ASC';
+            }
+            if (sortTasksSelect) {
+                sortTasksSelect.value = selectedSort;
+            }
             updateDashboard();
         });
     }

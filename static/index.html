@@ -76,6 +76,12 @@
                         Impl Tracker
                     </button>
 
+                    <!-- Customer Issue Tracker Link -->
+                    <button id="btnOpenCustomerTracker" class="btn-admin-console" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.2)); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981;" title="Customer Issue & Activity Tracker">
+                        <i data-lucide="user-check"></i>
+                        Customer Tracker
+                    </button>
+
                     <!-- Duty Roster Link (visible to all) -->
                     <button id="btnViewRoster" class="btn-admin-console" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.2)); border: 1px solid rgba(59, 130, 246, 0.2); color: #60a5fa;">
                         <i data-lucide="calendar"></i>
@@ -209,6 +215,20 @@
                                 <option value="OWN">Own Tasks</option>
                             </select>
                             
+                            <!-- Admin Only: User Filter & Sorting -->
+                            <select id="filterUser" class="hidden" title="Filter by Engineer">
+                                <option value="ALL">All Engineers</option>
+                            </select>
+                            
+                            <select id="sortTasks" class="hidden" title="Sort Tasks">
+                                <option value="DEFAULT">Sort: Default</option>
+                                <option value="USER_ASC">Sort: User (A → Z)</option>
+                                <option value="USER_DESC">Sort: User (Z → A)</option>
+                                <option value="TIME_DESC">Sort: Time (Newest First)</option>
+                                <option value="TIME_ASC">Sort: Time (Oldest First)</option>
+                                <option value="STATUS">Sort: Status</option>
+                            </select>
+                            
                             <div class="layout-toggle-widget">
                                 <button id="viewGrid" class="toggle-widget-btn" title="Grid Layout">
                                     <i data-lucide="grid"></i>
@@ -291,7 +311,7 @@
                                 <th style="width: 120px;">Reference</th>
                                 <th style="width: 130px;">Category</th>
                                 <th style="width: 130px;">Forwarded by</th>
-                                <th style="width: 140px;">Owner</th>
+                                <th id="thOwner" style="width: 140px;" title="Sort by Owner">Owner <span id="ownerSortIndicator" style="font-size: 0.75rem; opacity: 0.6; margin-left: 0.25rem;">↕</span></th>
                                 <th style="width: 140px;">Start Time</th>
                                 <th style="width: 140px;">End Time</th>
                                 <th style="width: 90px;">Duration</th>
