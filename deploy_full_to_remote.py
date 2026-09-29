@@ -40,15 +40,15 @@ try:
             sftp_mkdir_p(target_remote_dir)
 
             for file in files:
-                if file.endswith('.pyc') or file == '.gitignore' or 'extracted' in file:
+                if file.endswith(('.pyc', '.exe', '.zip', '.tar', '.gz')) or file == '.gitignore' or 'extracted' in file:
                     continue
                 local_file_path = os.path.join(root, file)
                 remote_file_path = os.path.join(target_remote_dir, file).replace('\\', '/')
                 try:
                     sftp.put(local_file_path, remote_file_path)
-                    print(f"  Uploaded: {rel_path}/{file}")
+                    print(f"  Uploaded: {rel_path}/{file}", flush=True)
                 except Exception as e:
-                    print(f"  [ERROR] Failed to upload {file}: {e}")
+                    print(f"  [ERROR] Failed to upload {file}: {e}", flush=True)
 
     # 1. Backup remote tasks.xlsx before deployment
     try:
@@ -90,17 +90,17 @@ try:
 
     # 4. Restart services on remote server
     print("\nRestarting services via start.sh...")
-    stdin, stdout, stderr = ssh.exec_command(f"{REMOTE_DIR}/start.sh")
-    out = stdout.read().decode()
-    err = stderr.read().decode()
-    print(out)
-    if err:
-        print("[STDERR]:", err)
+    ssh.exec_command(f"nohup bash {REMOTE_DIR}/start.sh > {REMOTE_DIR}/deploy_start.log 2>&1 &")
+    time.sleep(4)
 
     # 5. Check remote status
-    time.sleep(2)
     stdin, stdout, stderr = ssh.exec_command("ps aux | grep -E 'gunicorn|python3' | grep -v grep")
     print("\n--- Remote Process Status ---")
+    print(stdout.read().decode())
+
+    # 6. Verify HTTP 200
+    stdin, stdout, stderr = ssh.exec_command("curl -s -I http://127.0.0.1:9000/")
+    print("\n--- HTTP Health Check ---")
     print(stdout.read().decode())
 
     ssh.close()

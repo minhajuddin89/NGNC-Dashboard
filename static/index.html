@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Stylesheet -->
-    <link rel="stylesheet" href="style.css?v=1.3.5">
+    <link rel="stylesheet" href="style.css?v=1.3.9">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Chart.js -->
@@ -109,6 +109,9 @@
                             <span id="headerUserName" class="user-name">Guest</span>
                             <span id="headerUserRole" class="user-role">User</span>
                         </div>
+                        <button id="btnChangePassword" class="btn-change-password" title="Change Password">
+                            <i data-lucide="key-round"></i>
+                        </button>
                         <button id="btnLogout" class="btn-logout" title="Log Out">
                             <i data-lucide="log-out"></i>
                         </button>
@@ -1186,9 +1189,108 @@
         </div>
     </div>
 
+    <!-- Security & Password Change Console Modal (Dedicated Pop-up Window) -->
+    <div id="changePasswordModal" class="modal-overlay-deck hidden">
+        <div class="modal-content-deck security-console-window" style="max-width: 480px; width: 92%; padding: 0; overflow: hidden; border: 1px solid rgba(168, 85, 247, 0.35); box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 40px rgba(168, 85, 247, 0.18);">
+            <!-- Top Cyber Glow Line -->
+            <div style="height: 3px; background: linear-gradient(90deg, #38bdf8, #a855f7, #ec4899);"></div>
+            
+            <!-- Window Title Bar -->
+            <div class="security-console-header" style="padding: 1.25rem 1.5rem 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); background: rgba(15, 23, 42, 0.8);">
+                <div style="display: flex; align-items: center; gap: 0.85rem;">
+                    <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.35); display: flex; align-items: center; justify-content: center; color: #c084fc;">
+                        <i data-lucide="shield-check" style="width: 22px; height: 22px;"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: #c084fc; font-weight: 700; display: flex; align-items: center; gap: 0.4rem;">
+                            <span class="status-indicator-dot pulse" style="color: #10b981; width: 6px; height: 6px;"></span>
+                            SECURITY_CONSOLE:~ credential_manager
+                        </div>
+                        <h3 style="margin: 0.1rem 0 0 0; font-size: 1.15rem; font-weight: 700; color: var(--text-main);">Update Account Password</h3>
+                    </div>
+                </div>
+                <button type="button" id="btnCloseChangePasswordModal" class="modal-close-btn-deck" title="Close Window (Esc)" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid transparent; background: transparent; cursor: pointer; color: var(--text-muted); transition: all 0.2s;">
+                    <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+                </button>
+            </div>
+
+            <!-- Active User Session Banner -->
+            <div class="security-console-banner" style="padding: 0.75rem 1.5rem; background: rgba(30, 41, 59, 0.45); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted);">
+                    <i data-lucide="user-check" style="width: 15px; height: 15px; color: #10b981;"></i>
+                    <span>Authenticated User:</span>
+                </div>
+                <span id="changePasswordUserLabel" style="font-weight: 600; color: #38bdf8; background: rgba(56, 189, 248, 0.1); padding: 2px 10px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.25);">Operator</span>
+            </div>
+
+            <!-- Form Body -->
+            <form id="changePasswordForm" style="padding: 1.5rem;">
+                <!-- Current Password -->
+                <div class="form-group-deck" style="margin-bottom: 1.25rem;">
+                    <label for="currentPasswordInput" class="panel-label" style="display: flex; justify-content: space-between; margin-bottom: 0.4rem; font-size: 0.85rem; font-weight: 600;">
+                        <span>Current Password</span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">Required for verification</span>
+                    </label>
+                    <div style="position: relative; display: flex; align-items: center;">
+                        <input type="password" id="currentPasswordInput" placeholder="Enter current password" required autocomplete="current-password" style="width: 100%; padding-right: 42px;">
+                        <button type="button" class="btn-toggle-pass-visibility" data-target="currentPasswordInput" title="Show/Hide Password" style="position: absolute; right: 8px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center;">
+                            <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- New Password -->
+                <div class="form-group-deck" style="margin-bottom: 0.85rem;">
+                    <label for="newPasswordInput" class="panel-label" style="display: flex; justify-content: space-between; margin-bottom: 0.4rem; font-size: 0.85rem; font-weight: 600;">
+                        <span>New Password</span>
+                        <span id="passStrengthLabel" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);"></span>
+                    </label>
+                    <div style="position: relative; display: flex; align-items: center;">
+                        <input type="password" id="newPasswordInput" placeholder="Minimum 3-4 characters" minlength="3" required autocomplete="new-password" style="width: 100%; padding-right: 42px;">
+                        <button type="button" class="btn-toggle-pass-visibility" data-target="newPasswordInput" title="Show/Hide Password" style="position: absolute; right: 8px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center;">
+                            <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </div>
+                    <!-- Strength meter bar -->
+                    <div style="height: 4px; width: 100%; background: rgba(255, 255, 255, 0.08); border-radius: 2px; margin-top: 6px; overflow: hidden;">
+                        <div id="passStrengthBar" style="height: 100%; width: 0%; transition: width 0.3s, background-color 0.3s; background-color: #ef4444;"></div>
+                    </div>
+                </div>
+
+                <!-- Confirm Password -->
+                <div class="form-group-deck" style="margin-bottom: 1.25rem;">
+                    <label for="confirmNewPasswordInput" class="panel-label" style="display: flex; justify-content: space-between; margin-bottom: 0.4rem; font-size: 0.85rem; font-weight: 600;">
+                        <span>Confirm New Password</span>
+                        <span id="passMatchIndicator" style="font-size: 0.75rem; font-weight: 600;"></span>
+                    </label>
+                    <div style="position: relative; display: flex; align-items: center;">
+                        <input type="password" id="confirmNewPasswordInput" placeholder="Re-enter new password to confirm" minlength="3" required autocomplete="new-password" style="width: 100%; padding-right: 42px;">
+                        <button type="button" class="btn-toggle-pass-visibility" data-target="confirmNewPasswordInput" title="Show/Hide Password" style="position: absolute; right: 8px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center;">
+                            <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Security Guarantee Notice -->
+                <div style="display: flex; align-items: flex-start; gap: 0.6rem; background: rgba(16, 185, 129, 0.07); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 6px; padding: 0.7rem 0.85rem; margin-bottom: 1.25rem; font-size: 0.8rem; color: #10b981; line-height: 1.45;">
+                    <i data-lucide="shield" style="width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px;"></i>
+                    <span>This customized password is saved permanently to the database and will <strong>never be overwritten</strong> by future monthly roster imports.</span>
+                </div>
+
+                <!-- Modal Footer Actions -->
+                <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
+                    <button type="button" id="btnCancelChangePassword" class="btn-modal-cancel" style="padding: 0.6rem 1.25rem; font-size: 0.88rem; cursor: pointer;">Cancel</button>
+                    <button type="submit" id="btnSubmitChangePassword" class="btn-primary-action" style="padding: 0.6rem 1.5rem; font-size: 0.88rem; display: flex; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #8b5cf6, #6366f1); color: #ffffff; border: none; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35); transition: all 0.2s;">
+                        <i data-lucide="lock" style="width: 16px; height: 16px;"></i> Update Password
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Toast Notifications Container -->
     <div id="toastContainer" class="toast-container-deck"></div>
 
-    <script src="script.js?v=1.3.5"></script>
+    <script src="script.js?v=1.3.9"></script>
 </body>
 </html>

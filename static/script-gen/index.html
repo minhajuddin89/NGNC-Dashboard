@@ -266,6 +266,12 @@
             color: #10b981;
         }
 
+        .tool-icon-wrapper.amber {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: rgba(245, 158, 11, 0.35);
+            color: #f59e0b;
+        }
+
         .status-tag {
             font-size: 0.72rem;
             font-weight: 700;
@@ -470,6 +476,31 @@
 
                 <a href="/eoip-generator/index.html" target="_blank" class="btn-launch" style="background: linear-gradient(135deg, #059669, #047857); box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);">
                     <span>Launch EoIP Tool</span>
+                    <i data-lucide="external-link" style="width: 16px; height: 16px;"></i>
+                </a>
+            </div>
+
+            <!-- Card 4: Huawei Bandwidth Rate-Limit & QoS Policy Generator (Active) -->
+            <div class="tool-card featured">
+                <div class="tool-card-header">
+                    <div class="tool-icon-wrapper amber">
+                        <i data-lucide="gauge" style="width: 24px; height: 24px;"></i>
+                    </div>
+                    <span class="status-tag active">Live & Active</span>
+                </div>
+                <h3>Huawei Rate-Limit &amp; QoS Generator</h3>
+                <p>Generate precision QoS CAR &amp; MQC bandwidth rate-limiting policies for Huawei NetEngine 8000 routers and S6730 switches with dynamic CIR/CBS burst buffer calculations.</p>
+                
+                <div class="vendor-badges">
+                    <span class="vendor-badge">Huawei NE8000</span>
+                    <span class="vendor-badge">Huawei S6730</span>
+                    <span class="vendor-badge">Interface CAR</span>
+                    <span class="vendor-badge">MQC Traffic-Policy</span>
+                    <span class="vendor-badge">Clean CLI Copy</span>
+                </div>
+
+                <a href="/rate-limit-gen/index.html" target="_blank" class="btn-launch" style="background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);">
+                    <span>Launch Rate-Limit Generator</span>
                     <i data-lucide="external-link" style="width: 16px; height: 16px;"></i>
                 </a>
             </div>

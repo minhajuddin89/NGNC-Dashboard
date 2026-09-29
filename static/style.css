@@ -215,6 +215,27 @@ body {
     box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
 }
 
+.btn-change-password {
+    background-color: rgba(168, 85, 247, 0.1);
+    color: #c084fc;
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.btn-change-password:hover {
+    background-color: #a855f7;
+    color: white;
+    border-color: #a855f7;
+    box-shadow: 0 0 8px rgba(168, 85, 247, 0.4);
+}
+
 /* Admin Console Button */
 .btn-admin-console {
     background: rgba(168, 85, 247, 0.1);
@@ -3055,3 +3076,167 @@ body.light-theme th.sortable-header:hover {
     display: inline-block;
     transition: transform var(--transition-fast), color var(--transition-fast);
 }
+
+/* ==========================================================================
+   Red Flag Indicators for Tasks Exceeding 1 Hour
+   ========================================================================== */
+.duration-red-flag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 700 !important;
+    color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.82rem;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.2);
+    white-space: nowrap;
+}
+
+.duration-red-flag i,
+.duration-red-flag svg {
+    color: #ef4444 !important;
+    fill: #ef4444 !important;
+    width: 12px;
+    height: 12px;
+    animation: flagPulse 2s infinite ease-in-out;
+}
+
+@keyframes flagPulse {
+    0%, 100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.6));
+    }
+    50% {
+        transform: scale(1.2);
+        filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.9));
+    }
+}
+
+.card-red-flag-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    padding: 0.2rem 0.5rem;
+    border-radius: 50px;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.25);
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.card-red-flag-badge i,
+.card-red-flag-badge svg {
+    color: #ef4444 !important;
+    fill: #ef4444 !important;
+    width: 11px;
+    height: 11px;
+    animation: flagPulse 2s infinite ease-in-out;
+}
+
+/* Card left border indicator when duration > 1 hour */
+.task-card.task-red-flag-card {
+    border-left: 3px solid #ef4444 !important;
+}
+
+/* Table row highlight when duration > 1 hour */
+tr.task-red-flag-row td:first-child {
+    border-left: 3px solid #ef4444 !important;
+}
+
+/* Light Theme Red Flag Overrides */
+body.light-theme .duration-red-flag {
+    color: #dc2626 !important;
+    background: #fef2f2 !important;
+    border-color: #fca5a5 !important;
+}
+body.light-theme .duration-red-flag i,
+body.light-theme .duration-red-flag svg {
+    color: #dc2626 !important;
+    fill: #dc2626 !important;
+}
+body.light-theme .card-red-flag-badge {
+    color: #dc2626 !important;
+    background: #fef2f2 !important;
+    border-color: #fca5a5 !important;
+}
+body.light-theme .card-red-flag-badge i,
+body.light-theme .card-red-flag-badge svg {
+    color: #dc2626 !important;
+    fill: #dc2626 !important;
+}
+
+/* ==========================================================================
+   Security Console Window (Password Change Pop-up Modal)
+   ========================================================================== */
+.security-console-window {
+    background: #0f172a !important;
+    border: 1px solid rgba(168, 85, 247, 0.35) !important;
+    border-radius: var(--radius-lg) !important;
+    animation: securityModalPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes securityModalPopIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.96) translateY(-12px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.btn-toggle-pass-visibility {
+    transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.btn-toggle-pass-visibility:hover {
+    color: var(--primary) !important;
+    transform: scale(1.1);
+}
+
+.btn-primary-action:hover {
+    opacity: 0.95;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.45) !important;
+}
+
+.btn-primary-action:active {
+    transform: translateY(0);
+}
+
+/* Light Theme Overrides for Security Console */
+body.light-theme .security-console-window {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25) !important;
+}
+
+body.light-theme .security-console-header {
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+body.light-theme .security-console-banner {
+    background: #f1f5f9 !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+body.light-theme .security-console-window input {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+body.light-theme .security-console-window input:focus {
+    border-color: #8b5cf6 !important;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15) !important;
+}
+

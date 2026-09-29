@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import datetime
 
 def get_local_now():
@@ -7,7 +8,7 @@ def get_local_now():
     tz_bd = datetime.timezone(datetime.timedelta(hours=6))
     return datetime.datetime.now(tz_bd)
 import io
-from flask import Flask, request, jsonify, send_from_directory, send_file
+from flask import Flask, request, jsonify, send_from_directory, send_file, redirect
 
 # Try importing CORS defensively
 try:
@@ -78,6 +79,7 @@ EXCEL_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tasks.xls
 MASTER_ADMIN_USER = "admin"
 MASTER_ADMIN_PASS = "admin123"
 ONLINE_USERS = {} # username (lower) -> last active datetime
+ONLINE_TIMEOUT_SECONDS = 120 # User remains online as long as heartbeat received within 2 minutes
 
 SHIFT_HOURS = {
     "M": {"start": "09:30", "end": "18:30", "name": "Morning Shift"},
@@ -1115,6 +1117,50 @@ def delete_user_from_excel(username):
         print(f"Error deleting user: {e}")
         raise e
 
+def update_user_password_in_excel(username, current_password, new_password, is_admin_override=False):
+    init_excel()
+    username_clean = username.strip().lower()
+    if not username_clean:
+        return False, "Username cannot be empty."
+    if not new_password or len(str(new_password).strip()) < 3:
+        return False, "New password must be at least 3 characters."
+        
+    try:
+        wb = openpyxl.load_workbook(EXCEL_FILE)
+        if "Users" in wb.sheetnames:
+            ws = wb["Users"]
+            user_found = False
+            for row_idx, row in enumerate(ws.iter_rows(values_only=False), start=1):
+                if row_idx == 1:
+                    continue
+                cell_username = ws.cell(row=row_idx, column=1).value
+                cell_password = ws.cell(row=row_idx, column=3).value
+                if cell_username and str(cell_username).strip().lower() == username_clean:
+                    user_found = True
+                    # Check current password unless admin is overriding
+                    if not is_admin_override:
+                        if str(cell_password or '') != str(current_password or ''):
+                            wb.close()
+                            return False, "Current password does not match."
+                    # Update password
+                    ws.cell(row=row_idx, column=3).value = str(new_password).strip()
+                    wb.save(EXCEL_FILE)
+                    wb.close()
+                    # Invalidate in-memory data cache
+                    DB_CACHE["mtime"] = 0
+                    DB_CACHE["users"] = []
+                    return True, "Password updated successfully."
+            wb.close()
+            if not user_found:
+                if username_clean == MASTER_ADMIN_USER:
+                    return False, "System Administrator password is fixed."
+                return False, "User not found."
+        wb.close()
+        return False, "Users sheet not found."
+    except Exception as e:
+        print(f"Error updating user password: {e}")
+        raise e
+
 # --- Flask Routes ---
 
 @app.route("/")
@@ -1147,6 +1193,127 @@ def serve_cisco_vpn():
 def serve_eoip():
     return send_from_directory("static/eoip-generator", "index.html")
 
+
+@app.route("/customer-tracker")
+@app.route("/customer-issue-tracker")
+@app.route("/customer-timeline")
+def redirect_customer_tracker():
+    return redirect("/customer-tracker/")
+
+@app.route("/customer-tracker/")
+def serve_customer_tracker_index():
+    return send_from_directory("static/customer-tracker", "index.html")
+
+@app.route("/customer-tracker/<path:path>")
+def serve_customer_tracker_assets(path):
+    return send_from_directory("static/customer-tracker", path)
+
+# --- Centralized Customer Tracker Shared Database ---
+CUSTOMER_TRACKER_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "customer_tracker_data.json")
+customer_tracker_lock = threading.Lock()
+
+def read_customer_tracker_data():
+    """Thread-safe read of shared customer tracker profiles and timelines"""
+    if not os.path.exists(CUSTOMER_TRACKER_FILE):
+        return []
+    try:
+        with customer_tracker_lock:
+            with open(CUSTOMER_TRACKER_FILE, "r", encoding="utf-8") as f:
+                content = f.read().strip()
+                if not content:
+                    return []
+                return json.loads(content)
+    except Exception as e:
+        print(f"Error reading customer tracker data: {e}")
+        return []
+
+def write_customer_tracker_data(customers):
+    """Thread-safe atomic write to avoid data corruption"""
+    try:
+        with customer_tracker_lock:
+            tmp_file = CUSTOMER_TRACKER_FILE + ".tmp"
+            with open(tmp_file, "w", encoding="utf-8") as f:
+                json.dump(customers, f, ensure_ascii=False, indent=2)
+            os.replace(tmp_file, CUSTOMER_TRACKER_FILE)
+        return True
+    except Exception as e:
+        print(f"Error writing customer tracker data: {e}")
+        return False
+
+@app.route("/api/customer-tracker/data", methods=["GET"])
+def get_customer_tracker_data():
+    """Returns all shared customer profiles and timelines for any logged-in user"""
+    customers = read_customer_tracker_data()
+    return jsonify({
+        "success": True,
+        "customers": customers,
+        "count": len(customers)
+    })
+
+@app.route("/api/customer-tracker/save", methods=["POST"])
+def save_customer_tracker_data():
+    """Persists updated customer profiles and timelines to central server storage"""
+    try:
+        payload = request.get_json(force=True, silent=True) or {}
+        customers = payload.get("customers", [])
+        if not isinstance(customers, list):
+            return jsonify({"success": False, "error": "customers must be an array"}), 400
+        
+        success = write_customer_tracker_data(customers)
+        if success:
+            return jsonify({"success": True, "count": len(customers)})
+        else:
+            return jsonify({"success": False, "error": "Failed to write data"}), 500
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/customer-tracker/sync", methods=["POST"])
+def sync_customer_tracker_data():
+    """
+    Intelligently merges client's localStorage customers/updates with the central server database.
+    Guarantees no user data is overwritten or lost when multiple users work concurrently.
+    """
+    try:
+        payload = request.get_json(force=True, silent=True) or {}
+        client_customers = payload.get("customers", [])
+        if not isinstance(client_customers, list):
+            return jsonify({"success": False, "error": "customers must be an array"}), 400
+
+        server_customers = read_customer_tracker_data()
+        server_map = {c.get("id"): c for c in server_customers if isinstance(c, dict) and c.get("id")}
+        
+        modified = False
+        for cc in client_customers:
+            if not isinstance(cc, dict) or not cc.get("id"):
+                continue
+            cid = cc["id"]
+            if cid not in server_map:
+                server_customers.append(cc)
+                server_map[cid] = cc
+                modified = True
+            else:
+                existing = server_map[cid]
+                # Merge updates if client has updates not present in server
+                existing_updates = existing.get("updates", [])
+                existing_update_ids = {u.get("id") for u in existing_updates if isinstance(u, dict) and u.get("id")}
+                for cu in cc.get("updates", []):
+                    if isinstance(cu, dict) and cu.get("id") and cu["id"] not in existing_update_ids:
+                        existing_updates.append(cu)
+                        existing_update_ids.add(cu["id"])
+                        modified = True
+
+        if modified or not os.path.exists(CUSTOMER_TRACKER_FILE):
+            write_customer_tracker_data(server_customers)
+
+        return jsonify({
+            "success": True,
+            "customers": server_customers,
+            "count": len(server_customers)
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @app.route("/<path:path>")
 def serve_static(path):
     return send_from_directory("static", path)
@@ -1164,6 +1331,7 @@ def login():
             
         # Hardcoded master check OR sheet lookup
         if username.lower() == MASTER_ADMIN_USER and password == MASTER_ADMIN_PASS:
+            ONLINE_USERS[MASTER_ADMIN_USER] = get_local_now()
             return jsonify({
                 "success": True,
                 "user": {
@@ -1178,8 +1346,10 @@ def login():
         users = load_users_from_excel()
         for u in users:
             if u["username"].lower() == username.lower() and u["password"] == password:
+                u_lower = u["username"].lower()
+                ONLINE_USERS[u_lower] = get_local_now()
                 # Determine role: username "admin" is always admin, others are user
-                role = "admin" if u["username"].lower() == MASTER_ADMIN_USER else "user"
+                role = "admin" if u_lower == MASTER_ADMIN_USER else "user"
                 return jsonify({
                     "success": True,
                     "user": {
@@ -1192,6 +1362,76 @@ def login():
                 
         return jsonify({"error": "unauthorized", "message": "Invalid username or password."}), 401
         
+    except Exception as e:
+        return jsonify({"error": "error", "message": str(e)}), 500
+
+@app.route("/api/auth/logout", methods=["POST"])
+def logout():
+    try:
+        data = request.get_json(silent=True) or {}
+        username = data.get("username", "") or request.args.get("username", "")
+        username = username.strip().lower()
+        if username and username in ONLINE_USERS:
+            ONLINE_USERS.pop(username, None)
+        return jsonify({"success": True, "status": "logged_out"})
+    except Exception as e:
+        return jsonify({"error": "error", "message": str(e)}), 500
+
+@app.route("/api/heartbeat", methods=["GET", "POST"])
+def user_heartbeat():
+    try:
+        data = request.get_json(silent=True) or {}
+        username = data.get("username", "") or request.args.get("username", "")
+        username = username.strip().lower()
+        if username:
+            ONLINE_USERS[username] = get_local_now()
+            return jsonify({"success": True, "username": username, "status": "online"})
+        return jsonify({"error": "invalid_input", "message": "Username is required."}), 400
+    except Exception as e:
+        return jsonify({"error": "error", "message": str(e)}), 500
+
+@app.route("/api/auth/change-password", methods=["POST"])
+def change_password():
+    try:
+        data = request.get_json(silent=True) or {}
+        username = data.get("username", "").strip()
+        current_password = data.get("current_password", "").strip()
+        new_password = data.get("new_password", "").strip()
+        
+        if not username or not current_password or not new_password:
+            return jsonify({"error": "invalid_input", "message": "All password fields are required."}), 400
+            
+        success, msg = update_user_password_in_excel(username, current_password, new_password, is_admin_override=False)
+        if success:
+            return jsonify({"success": True, "message": msg}), 200
+        else:
+            return jsonify({"error": "failed", "message": msg}), 400
+    except PermissionError:
+        return jsonify({"error": "excel_locked", "message": "Excel file is currently locked. Please try again."}), 423
+    except Exception as e:
+        return jsonify({"error": "error", "message": str(e)}), 500
+
+@app.route("/api/admin/reset-password", methods=["POST"])
+def admin_reset_password():
+    try:
+        data = request.get_json(silent=True) or {}
+        admin_user = data.get("admin_username", "").strip().lower()
+        target_username = data.get("username", "").strip()
+        new_password = data.get("new_password", "").strip()
+        
+        if admin_user != MASTER_ADMIN_USER:
+            return jsonify({"error": "forbidden", "message": "Admin privileges required."}), 403
+            
+        if not target_username or not new_password:
+            return jsonify({"error": "invalid_input", "message": "Target username and new password are required."}), 400
+            
+        success, msg = update_user_password_in_excel(target_username, None, new_password, is_admin_override=True)
+        if success:
+            return jsonify({"success": True, "message": msg}), 200
+        else:
+            return jsonify({"error": "failed", "message": msg}), 400
+    except PermissionError:
+        return jsonify({"error": "excel_locked", "message": "Excel file is currently locked. Please try again."}), 423
     except Exception as e:
         return jsonify({"error": "error", "message": str(e)}), 500
 
@@ -1209,7 +1449,7 @@ def get_users():
         now = get_local_now()
         for u in users:
             u_name = u["username"].lower()
-            is_online = u_name in ONLINE_USERS and (now - ONLINE_USERS[u_name]).total_seconds() < 25
+            is_online = u_name in ONLINE_USERS and (now - ONLINE_USERS[u_name]).total_seconds() < ONLINE_TIMEOUT_SECONDS
             
             safe_users.append({
                 "username": u["username"],
@@ -1471,25 +1711,146 @@ def import_roster():
         wb = openpyxl.load_workbook(file, data_only=True)
         ws = wb.active  # Use the active sheet
         
-        # Read headers from row 1
-        headers = [str(cell.value or '').strip() for cell in ws[1]]
+        # --- 1. Smart Target Month & Year Detection ---
+        MONTH_MAP = {
+            "january": 1, "jan": 1,
+            "february": 2, "feb": 2,
+            "march": 3, "mar": 3,
+            "april": 4, "apr": 4,
+            "may": 5,
+            "june": 6, "jun": 6,
+            "july": 7, "jul": 7,
+            "august": 8, "aug": 8,
+            "september": 9, "sep": 9, "sept": 9,
+            "october": 10, "oct": 10,
+            "november": 11, "nov": 11,
+            "december": 12, "dec": 12
+        }
         
-        # Find column index for name/operator/employee
-        name_col_idx = -1
-        priority_keywords = ["full name", "operator name", "employee name", "staff name", "name", "operator", "owner", "staff", "user"]
+        detected_month = None
+        detected_year = None
         
-        for kw in priority_keywords:
-            for idx, h in enumerate(headers):
-                if kw in h.lower():
-                    name_col_idx = idx + 1
+        # Scan filename, sheet title, and top 5 rows for month & year keywords
+        search_texts = [str(file.filename or ''), str(ws.title or '')]
+        for r in range(1, min(6, ws.max_row + 1)):
+            for c in range(1, min(20, ws.max_column + 1)):
+                v = ws.cell(row=r, column=c).value
+                if v is not None:
+                    if isinstance(v, (datetime.datetime, datetime.date)):
+                        detected_year = v.year
+                        detected_month = v.month
+                    elif isinstance(v, str):
+                        search_texts.append(v)
+                        
+        combined_text = " ".join(search_texts).lower()
+        
+        if not detected_month:
+            for m_name in sorted(MONTH_MAP.keys(), key=len, reverse=True):
+                pattern = r'\b' + re.escape(m_name) + r'\b'
+                if re.search(pattern, combined_text):
+                    detected_month = MONTH_MAP[m_name]
                     break
-            if name_col_idx != -1:
+                    
+        if not detected_year:
+            m_year = re.search(r'\b(202[4-9]|203[0-9])\b', combined_text)
+            if m_year:
+                detected_year = int(m_year.group(1))
+            else:
+                m_short = re.search(r"['\-_/](2[4-9])\b", combined_text)
+                if m_short:
+                    detected_year = 2000 + int(m_short.group(1))
+                    
+        # If month or year still not found, apply month-end upload heuristic
+        now = get_local_now()
+        if not detected_month or not detected_year:
+            if now.day >= 20:
+                # Month-end upload: targeting upcoming month
+                if now.month == 12:
+                    fb_month = 1
+                    fb_year = now.year + 1
+                else:
+                    fb_month = now.month + 1
+                    fb_year = now.year
+            else:
+                fb_month = now.month
+                fb_year = now.year
+                
+            if not detected_month:
+                detected_month = fb_month
+            if not detected_year:
+                detected_year = fb_year
+                
+        # --- 2. Dynamic Header Row & Date Columns Scanning ---
+        priority_keywords = ["full name", "operator name", "employee name", "staff name", "name", "operator", "owner", "staff", "user", "engineer"]
+        header_row_idx = 1
+        name_col_idx = 1
+        date_columns = []
+        
+        for r_idx in range(1, min(6, ws.max_row + 1)):
+            temp_dates = []
+            temp_name_col = -1
+            
+            for c_idx in range(1, ws.max_column + 1):
+                val = ws.cell(row=r_idx, column=c_idx).value
+                if val is None:
+                    continue
+                v_str = str(val).strip()
+                
+                # Check for employee name column header
+                for kw in priority_keywords:
+                    if kw in v_str.lower():
+                        temp_name_col = c_idx
+                        break
+                        
+                # Check for date or day number
+                parsed_d = None
+                if isinstance(val, (datetime.datetime, datetime.date)):
+                    parsed_d = val.date()
+                elif v_str.isdigit() and 1 <= int(v_str) <= 31:
+                    try:
+                        parsed_d = datetime.date(detected_year, detected_month, int(v_str))
+                    except ValueError:
+                        pass
+                else:
+                    for fmt in ["%Y-%m-%d", "%d-%b-%Y", "%d-%b", "%m/%d/%Y", "%d/%m/%Y", "%b-%d", "%d/%m", "%d-%m-%Y"]:
+                        try:
+                            p_dt = datetime.datetime.strptime(v_str, fmt)
+                            y = detected_year if "%Y" not in fmt and "%y" not in fmt else p_dt.year
+                            m = detected_month if "%m" not in fmt and "%b" not in fmt and "%B" not in fmt else p_dt.month
+                            parsed_d = datetime.date(y, m, p_dt.day)
+                            break
+                        except ValueError:
+                            pass
+                            
+                if parsed_d:
+                    temp_dates.append((c_idx, parsed_d.strftime("%Y-%m-%d")))
+                    
+            # If row has 5 or more date columns, it is our header row
+            if len(temp_dates) >= 5:
+                header_row_idx = r_idx
+                date_columns = temp_dates
+                if temp_name_col != -1:
+                    name_col_idx = temp_name_col
                 break
                 
-        # Fallback to column 1 if no headers match
-        if name_col_idx == -1:
-            name_col_idx = 1
-            
+        # Fallback if less than 5 date columns found
+        if not date_columns:
+            for c_idx in range(1, ws.max_column + 1):
+                val = ws.cell(row=1, column=c_idx).value
+                if val is None or c_idx == name_col_idx:
+                    continue
+                v_str = str(val).strip()
+                parsed_d = None
+                if isinstance(val, (datetime.datetime, datetime.date)):
+                    parsed_d = val.date()
+                elif v_str.isdigit() and 1 <= int(v_str) <= 31:
+                    try:
+                        parsed_d = datetime.date(detected_year, detected_month, int(v_str))
+                    except ValueError:
+                        pass
+                if parsed_d:
+                    date_columns.append((c_idx, parsed_d.strftime("%Y-%m-%d")))
+                    
         # Load existing users to check for duplicates
         existing_users = load_users_from_excel()
         existing_usernames = {u["username"].lower() for u in existing_users}
@@ -1497,57 +1858,10 @@ def import_roster():
         
         imported_users = []
         skipped_count = 0
+        roster_entries_to_save = []
         
-
-        
-        # Load existing tasks to check for duplicates
-        existing_tasks = load_tasks_from_excel()
-        
-        def task_exists(owner_name, desc, start_t):
-            for t in existing_tasks:
-                if t["owner"] == owner_name and t["description"] == desc and t["start_time"] == start_t:
-                    return True
-            return False
-            
-        # Parse Dates from Column Headers (excluding the name column)
-        date_columns = []
-        for col_idx in range(1, len(headers) + 1):
-            if col_idx == name_col_idx:
-                continue
-            h_val = headers[col_idx - 1]
-            if not h_val:
-                continue
-                
-            cell_obj = ws.cell(row=1, column=col_idx).value
-            parsed_date = None
-            
-            if isinstance(cell_obj, (datetime.datetime, datetime.date)):
-                parsed_date = cell_obj.date()
-            else:
-                h_str = str(cell_obj).strip()
-                if h_str.isdigit() and 1 <= int(h_str) <= 31:
-                    now = get_local_now()
-                    try:
-                        parsed_date = datetime.date(now.year, now.month, int(h_str))
-                    except ValueError:
-                        pass
-                else:
-                    for fmt in ["%Y-%m-%d", "%d-%b-%Y", "%d-%b", "%m/%d/%Y", "%d/%m/%Y"]:
-                        try:
-                            parsed_dt = datetime.datetime.strptime(h_str, fmt)
-                            year = get_local_now().year if "%Y" not in fmt and "%y" not in fmt else parsed_dt.year
-                            parsed_date = datetime.date(year, parsed_dt.month, parsed_dt.day)
-                            break
-                        except ValueError:
-                            pass
-            
-            if parsed_date:
-                date_columns.append((col_idx, parsed_date.strftime("%Y-%m-%d")))
-                
-        # Now, process employee rows and sync both users and shifts
-        new_tasks_to_add = []
-        
-        for row in range(2, ws.max_row + 1):
+        # --- 3. Process Employee Rows & All Shift Codes (Including D/O & LEAVE) ---
+        for row in range(header_row_idx + 1, ws.max_row + 1):
             cell_val = ws.cell(row=row, column=name_col_idx).value
             if cell_val is None:
                 continue
@@ -1556,7 +1870,11 @@ def import_roster():
             if not full_name:
                 continue
                 
-            # --- 1. User registration ---
+            # Skip summary / total / legend rows
+            if full_name.lower() in ["total", "count", "shift summary", "morning", "evening", "off", "remarks", "note", "legend", "summary"]:
+                continue
+                
+            # User registration
             clean_name = full_name.lower()
             clean_name = re.sub(r'[^a-z0-9\s.-]', '', clean_name)
             username = clean_name.replace(" ", ".")
@@ -1577,32 +1895,64 @@ def import_roster():
                         imported_users.append({"username": username, "name": full_name})
                         existing_usernames.add(username)
                         existing_names.add(full_name.lower())
-            
-            # --- 2. Shifts / Roster tasks generation ---
+                        
+            # Shifts parsing: capture EVERY day for EVERY engineer
             for col_idx, date_str in date_columns:
                 shift_val = ws.cell(row=row, column=col_idx).value
-                if not shift_val:
-                    continue
-                    
-                code = str(shift_val).strip().upper()
-                if code in SHIFT_HOURS:
-                    shift = SHIFT_HOURS[code]
-                    shift_name = shift["name"]
-                    start_time_str = f"{date_str} {shift['start']}"
-                    end_time_str = f"{date_str} {shift['end']}"
-                    description = f"Duty Shift: {shift_name} ({code})"
-                    
-                    # Avoid duplicate columns inside the same upload sheet row
-                    if not any(x["owner"] == full_name and x["start_time"] == start_time_str for x in new_tasks_to_add):
-                        new_tasks_to_add.append({
-                            "description": description,
-                            "owner": full_name,
-                            "start_time": start_time_str,
-                            "end_time": end_time_str
-                        })
+                val_str = str(shift_val).strip() if shift_val is not None else ""
+                val_upper = val_str.upper()
+                
+                code = "D/O"
+                start_time = ""
+                end_time = ""
+                shift_name = "Day off"
+                
+                if not val_str or val_upper in ["D/O", "DO", "D / O", "OFF", "DUTY OFF", "DAY OFF", "WEEKEND", "W/O", "OFFDAY", "OFF DAY"]:
+                    code = "D/O"
+                    shift_name = "Day off"
+                elif val_upper in ["LEAVE", "L", "CASUAL LEAVE", "SICK LEAVE", "CL", "SL", "PL", "AL", "ANNUAL LEAVE", "EL"]:
+                    code = "LEAVE"
+                    shift_name = "Leave"
+                elif val_upper in SHIFT_HOURS:
+                    code = val_upper
+                    s_info = SHIFT_HOURS[val_upper]
+                    shift_name = s_info.get("name", "Duty Shift")
+                    start_time = s_info.get("start", "")
+                    end_time = s_info.get("end", "")
+                else:
+                    # Case-insensitive check in SHIFT_HOURS
+                    matched_sc = None
+                    for sc in SHIFT_HOURS:
+                        if sc.upper() == val_upper:
+                            matched_sc = sc
+                            break
+                    if matched_sc:
+                        code = matched_sc
+                        s_info = SHIFT_HOURS[matched_sc]
+                        shift_name = s_info.get("name", "Duty Shift")
+                        start_time = s_info.get("start", "")
+                        end_time = s_info.get("end", "")
+                    elif "LEAVE" in val_upper:
+                        code = "LEAVE"
+                        shift_name = "Leave"
+                    elif "OFF" in val_upper or "DO" in val_upper:
+                        code = "D/O"
+                        shift_name = "Day off"
+                    else:
+                        code = val_upper
+                        shift_name = f"Shift ({val_upper})"
                         
-        # Save parsed shift tasks to the Roster sheet
-        if new_tasks_to_add:
+                roster_entries_to_save.append([
+                    full_name,
+                    date_str,
+                    code,
+                    start_time,
+                    end_time,
+                    shift_name
+                ])
+                
+        # --- 4. Write Complete Roster (Including D/O & LEAVE) to Database ---
+        if roster_entries_to_save:
             wb_roster = openpyxl.load_workbook(EXCEL_FILE)
             if "Roster" in wb_roster.sheetnames:
                 ws_ros = wb_roster["Roster"]
@@ -1610,21 +1960,17 @@ def import_roster():
                 if ws_ros.max_row > 1:
                     ws_ros.delete_rows(2, ws_ros.max_row - 1)
                 
-                # Write new shifts
-                for t_item in new_tasks_to_add:
-                    parts_start = t_item["start_time"].split(' ')
-                    date_str = parts_start[0]
-                    start_time = parts_start[1]
-                    end_time = t_item["end_time"].split(' ')[1]
-                    
-                    match = re.match(r"Duty Shift:\s*(.*?)\s*\((.*?)\)", t_item["description"])
-                    shift_name = match.group(1) if match else "Duty Shift"
-                    code = match.group(2) if match else "M"
-                    
-                    ws_ros.append([t_item["owner"], date_str, code, start_time, end_time, shift_name])
+                # Write all daily assignments
+                for entry in roster_entries_to_save:
+                    ws_ros.append(entry)
                 
                 wb_roster.save(EXCEL_FILE)
             wb_roster.close()
+            
+            # Invalidate in-memory cache to force immediate reload across all clients
+            DB_CACHE["mtime"] = 0
+            DB_CACHE["roster"] = []
+            DB_CACHE["tasks"] = []
             
         wb.close()
         return jsonify({
@@ -1632,7 +1978,8 @@ def import_roster():
             "imported_count": len(imported_users),
             "skipped_count": skipped_count,
             "imported_users": imported_users,
-            "imported_shifts_count": len(new_tasks_to_add)
+            "imported_shifts_count": len(roster_entries_to_save),
+            "month_detected": f"{detected_year}-{str(detected_month).zfill(2)}"
         }), 200
         
     except PermissionError:
@@ -2377,7 +2724,7 @@ def get_dashboard_state():
         now = get_local_now()
         for u in users:
             u_name = u["username"].lower()
-            is_online = u_name in ONLINE_USERS and (now - ONLINE_USERS[u_name]).total_seconds() < 25
+            is_online = u_name in ONLINE_USERS and (now - ONLINE_USERS[u_name]).total_seconds() < ONLINE_TIMEOUT_SECONDS
             safe_users.append({
                 "username": u["username"],
                 "name": u["name"],

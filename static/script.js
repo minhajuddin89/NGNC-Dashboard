@@ -72,6 +72,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const headerUserName = document.getElementById('headerUserName');
     const headerUserRole = document.getElementById('headerUserRole');
     const btnLogout = document.getElementById('btnLogout');
+    const btnChangePassword = document.getElementById('btnChangePassword');
+    const changePasswordModal = document.getElementById('changePasswordModal');
+    const btnCloseChangePasswordModal = document.getElementById('btnCloseChangePasswordModal');
+    const btnCancelChangePassword = document.getElementById('btnCancelChangePassword');
+    const changePasswordForm = document.getElementById('changePasswordForm');
+    const changeCurrentPassInput = document.getElementById('currentPasswordInput');
+    const changeNewPassInput = document.getElementById('newPasswordInput');
+    const changeConfirmPassInput = document.getElementById('confirmNewPasswordInput');
+    const changePasswordUserLabel = document.getElementById('changePasswordUserLabel');
     const btnAdminConsole = document.getElementById('btnAdminConsole');
     const activeOwnerNameLabel = document.getElementById('activeOwnerName');
 
@@ -245,11 +254,119 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(updateClock, 1000);
     updateClock(); // Initial run
 
+    // --- Resilient Heartbeat System (Background & Multi-Tab Friendly) ---
+    let heartbeatWorker = null;
+    let heartbeatFallbackInterval = null;
+    let lastBeatTimestamp = 0;
+
+    function initHeartbeatWorker() {
+        if (heartbeatWorker) return;
+        try {
+            const workerCode = `
+                let timer = null;
+                self.onmessage = function(e) {
+                    if (e.data === 'start') {
+                        if (timer) clearInterval(timer);
+                        timer = setInterval(function() {
+                            self.postMessage('beat');
+                        }, 15000);
+                    } else if (e.data === 'stop') {
+                        if (timer) clearInterval(timer);
+                        timer = null;
+                    }
+                };
+            `;
+            const blob = new Blob([workerCode], { type: 'application/javascript' });
+            heartbeatWorker = new Worker(URL.createObjectURL(blob));
+            heartbeatWorker.onmessage = function(e) {
+                if (e.data === 'beat' && currentUser) {
+                    sendHeartbeat();
+                }
+            };
+        } catch (err) {
+            console.warn('Inline Web Worker not available, falling back to interval:', err);
+            heartbeatWorker = null;
+        }
+    }
+
+    async function sendHeartbeat() {
+        if (!currentUser || !currentUser.username) return;
+        const now = Date.now();
+        if (now - lastBeatTimestamp < 4000) return; // Prevent double-fire within 4s
+        lastBeatTimestamp = now;
+
+        try {
+            const u = encodeURIComponent(currentUser.username);
+            fetch(`${API_BASE}/heartbeat?username=${u}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: currentUser.username }),
+                keepalive: true
+            }).catch(() => {});
+        } catch (e) {
+            // Ignore background network transient errors
+        }
+    }
+
+    function startHeartbeat() {
+        if (!heartbeatWorker) {
+            initHeartbeatWorker();
+        }
+        if (heartbeatWorker) {
+            try {
+                heartbeatWorker.postMessage('start');
+            } catch (e) {}
+        }
+        if (!heartbeatFallbackInterval) {
+            heartbeatFallbackInterval = setInterval(() => {
+                if (currentUser) sendHeartbeat();
+            }, 15000);
+        }
+        sendHeartbeat();
+    }
+
+    function stopHeartbeat() {
+        if (heartbeatWorker) {
+            try {
+                heartbeatWorker.postMessage('stop');
+            } catch (e) {}
+        }
+        if (heartbeatFallbackInterval) {
+            clearInterval(heartbeatFallbackInterval);
+            heartbeatFallbackInterval = null;
+        }
+    }
+
+    // Immediately refresh & heartbeat when switching back to tab
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && currentUser) {
+            lastActivityTime = Date.now();
+            sendHeartbeat();
+            fetchTasks();
+        }
+    });
+
+    window.addEventListener('focus', () => {
+        if (currentUser) {
+            lastActivityTime = Date.now();
+            sendHeartbeat();
+            fetchTasks();
+        }
+    });
+
+    // Cross-tab authentication synchronization
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'currentUser') {
+            checkAuth();
+        }
+    });
+
     // --- Session / Authentication State Check ---
     function checkAuth() {
         const storedUser = localStorage.getItem('currentUser');
         if (storedUser) {
             currentUser = JSON.parse(storedUser);
+            startHeartbeat();
             
             // Set UI details
             headerUserName.textContent = currentUser.name;
@@ -313,6 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fetchQuickLinks();
         } else {
             currentUser = null;
+            stopHeartbeat();
             document.body.classList.remove('operator-theme');
             if (taskControlCenter) taskControlCenter.classList.remove('hidden');
             if (adminDashboardSection) adminDashboardSection.classList.add('hidden');
@@ -360,6 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('currentUser', JSON.stringify(data.user));
                 loginForm.reset();
                 checkAuth();
+                sendHeartbeat();
             } else {
                 showToast(data.message || 'Login failed. Please check credentials.', 'error');
             }
@@ -371,10 +490,212 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Handle Logout
     btnLogout.addEventListener('click', () => {
+        const userLoggingOut = currentUser ? currentUser.username : null;
         localStorage.removeItem('currentUser');
+        stopHeartbeat();
+        if (userLoggingOut) {
+            try {
+                fetch(`${API_BASE}/auth/logout`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: userLoggingOut }),
+                    keepalive: true
+                }).catch(() => {});
+            } catch (e) {}
+        }
         showToast('Successfully logged out.', 'info');
         checkAuth();
     });
+
+    // --- Change Password Operations (Dedicated Security Console Window) ---
+    const passStrengthLabel = document.getElementById('passStrengthLabel');
+    const passStrengthBar = document.getElementById('passStrengthBar');
+    const passMatchIndicator = document.getElementById('passMatchIndicator');
+
+    function evaluatePasswordStrength(val) {
+        if (!val) {
+            if (passStrengthLabel) passStrengthLabel.textContent = '';
+            if (passStrengthBar) {
+                passStrengthBar.style.width = '0%';
+                passStrengthBar.style.backgroundColor = '#ef4444';
+            }
+            return;
+        }
+        let score = 0;
+        if (val.length >= 4) score += 25;
+        if (val.length >= 8) score += 25;
+        if (/[0-9]/.test(val)) score += 25;
+        if (/[^A-Za-z0-9]/.test(val)) score += 25;
+
+        if (score <= 25) {
+            if (passStrengthLabel) {
+                passStrengthLabel.textContent = 'Weak';
+                passStrengthLabel.style.color = '#ef4444';
+            }
+            if (passStrengthBar) {
+                passStrengthBar.style.width = '30%';
+                passStrengthBar.style.backgroundColor = '#ef4444';
+            }
+        } else if (score <= 75) {
+            if (passStrengthLabel) {
+                passStrengthLabel.textContent = 'Good';
+                passStrengthLabel.style.color = '#f59e0b';
+            }
+            if (passStrengthBar) {
+                passStrengthBar.style.width = '65%';
+                passStrengthBar.style.backgroundColor = '#f59e0b';
+            }
+        } else {
+            if (passStrengthLabel) {
+                passStrengthLabel.textContent = 'Strong';
+                passStrengthLabel.style.color = '#10b981';
+            }
+            if (passStrengthBar) {
+                passStrengthBar.style.width = '100%';
+                passStrengthBar.style.backgroundColor = '#10b981';
+            }
+        }
+    }
+
+    function checkPasswordMatch() {
+        if (!passMatchIndicator) return;
+        const newPass = changeNewPassInput ? changeNewPassInput.value : '';
+        const confirmPass = changeConfirmPassInput ? changeConfirmPassInput.value : '';
+        if (!confirmPass) {
+            passMatchIndicator.textContent = '';
+            return;
+        }
+        if (newPass === confirmPass) {
+            passMatchIndicator.textContent = '✓ Passwords match';
+            passMatchIndicator.style.color = '#10b981';
+        } else {
+            passMatchIndicator.textContent = '✗ Do not match';
+            passMatchIndicator.style.color = '#ef4444';
+        }
+    }
+
+    if (changeNewPassInput) {
+        changeNewPassInput.addEventListener('input', () => {
+            evaluatePasswordStrength(changeNewPassInput.value);
+            checkPasswordMatch();
+        });
+    }
+
+    if (changeConfirmPassInput) {
+        changeConfirmPassInput.addEventListener('input', checkPasswordMatch);
+    }
+
+    // Password visibility eye toggles
+    document.querySelectorAll('.btn-toggle-pass-visibility').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetId = btn.getAttribute('data-target');
+            const targetInput = document.getElementById(targetId);
+            if (!targetInput) return;
+            const isPassword = targetInput.type === 'password';
+            targetInput.type = isPassword ? 'text' : 'password';
+            btn.innerHTML = `<i data-lucide="${isPassword ? 'eye-off' : 'eye'}" style="width: 16px; height: 16px;"></i>`;
+            if (window.lucide) window.lucide.createIcons();
+        });
+    });
+
+    if (btnChangePassword) {
+        btnChangePassword.addEventListener('click', () => {
+            if (!currentUser) return;
+            if (changePasswordUserLabel) {
+                changePasswordUserLabel.textContent = `${currentUser.name} (${currentUser.username})`;
+            }
+            if (changePasswordForm) changePasswordForm.reset();
+            evaluatePasswordStrength('');
+            if (passMatchIndicator) passMatchIndicator.textContent = '';
+            if (changePasswordModal) {
+                changePasswordModal.classList.remove('hidden');
+                if (window.lucide) window.lucide.createIcons();
+                setTimeout(() => changeCurrentPassInput?.focus(), 100);
+            }
+        });
+    }
+
+    function closeChangePasswordModal() {
+        if (changePasswordModal) changePasswordModal.classList.add('hidden');
+        if (changePasswordForm) changePasswordForm.reset();
+        evaluatePasswordStrength('');
+        if (passMatchIndicator) passMatchIndicator.textContent = '';
+        // Reset inputs to password type
+        [changeCurrentPassInput, changeNewPassInput, changeConfirmPassInput].forEach(inp => {
+            if (inp) inp.type = 'password';
+        });
+        document.querySelectorAll('.btn-toggle-pass-visibility').forEach(btn => {
+            btn.innerHTML = `<i data-lucide="eye" style="width: 16px; height: 16px;"></i>`;
+        });
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    if (btnCloseChangePasswordModal) {
+        btnCloseChangePasswordModal.addEventListener('click', closeChangePasswordModal);
+    }
+    if (btnCancelChangePassword) {
+        btnCancelChangePassword.addEventListener('click', closeChangePasswordModal);
+    }
+
+    if (changePasswordModal) {
+        changePasswordModal.addEventListener('click', (e) => {
+            if (e.target === changePasswordModal) {
+                closeChangePasswordModal();
+            }
+        });
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && changePasswordModal && !changePasswordModal.classList.contains('hidden')) {
+            closeChangePasswordModal();
+        }
+    });
+
+    if (changePasswordForm) {
+        changePasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            const current_password = changeCurrentPassInput.value;
+            const new_password = changeNewPassInput.value;
+            const confirm_password = changeConfirmPassInput.value;
+
+            if (new_password !== confirm_password) {
+                showToast('New passwords do not match. Please re-enter.', 'error');
+                changeConfirmPassInput.focus();
+                return;
+            }
+
+            if (new_password.length < 3) {
+                showToast('New password must be at least 3 characters.', 'error');
+                changeNewPassInput.focus();
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/change-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: currentUser.username,
+                        current_password: current_password,
+                        new_password: new_password
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    showToast('Password updated successfully! It will remain intact even after roster updates.', 'success');
+                    closeChangePasswordModal();
+                } else {
+                    showToast(data.message || 'Failed to update password.', 'error');
+                }
+            } catch (err) {
+                console.error('Error updating password:', err);
+                showToast('Failed to connect to server to update password.', 'error');
+            }
+        });
+    }
 
     // --- Admin Console Operations ---
     
@@ -1260,9 +1581,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isMasterAdmin = user.username.toLowerCase() === 'admin';
                 const actionBtn = isMasterAdmin ? 
                     `<span style="color: var(--text-muted); font-size: 0.8rem; font-style: italic;">Protected</span>` :
-                    `<button class="btn-user-delete" title="Delete User" data-username="${user.username}">
-                        <i data-lucide="trash-2" style="width: 15px; height: 15px;"></i>
-                     </button>`;
+                    `<div style="display: flex; gap: 0.4rem; align-items: center;">
+                        <button class="btn-user-reset-pass" title="Reset User Password" data-username="${user.username}" data-name="${user.name}" style="background: rgba(168, 85, 247, 0.1); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 4px; padding: 4px 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+                            <i data-lucide="key" style="width: 14px; height: 14px;"></i>
+                        </button>
+                        <button class="btn-user-delete" title="Delete User" data-username="${user.username}">
+                            <i data-lucide="trash-2" style="width: 15px; height: 15px;"></i>
+                        </button>
+                     </div>`;
 
                 // Check reports console access status
                 const isReportsAccess = user.reports_access === 'true';
@@ -1291,6 +1617,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.addEventListener('click', (e) => {
                     const username = e.currentTarget.getAttribute('data-username');
                     deleteUser(username);
+                });
+            });
+
+            // Bind admin reset password events
+            document.querySelectorAll('.btn-user-reset-pass').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const username = e.currentTarget.getAttribute('data-username');
+                    const name = e.currentTarget.getAttribute('data-name');
+                    const newPass = prompt(`Enter new password for ${name} (${username}):`);
+                    if (!newPass || !newPass.trim()) return;
+                    if (newPass.trim().length < 3) {
+                        showToast('Password must be at least 3 characters.', 'error');
+                        return;
+                    }
+                    try {
+                        const response = await fetch(`${API_BASE}/admin/reset-password`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                admin_username: currentUser.username,
+                                username: username,
+                                new_password: newPass.trim()
+                            })
+                        });
+                        const data = await response.json();
+                        if (response.ok && data.success) {
+                            showToast(`Password for ${name} has been reset successfully!`, 'success');
+                        } else {
+                            showToast(data.message || 'Failed to reset password.', 'error');
+                        }
+                    } catch (err) {
+                        console.error('Error resetting password:', err);
+                        showToast('Connection error resetting user password.', 'error');
+                    }
                 });
             });
 
@@ -3101,6 +3461,68 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Calculate Duration in Minutes and Detect > 1 Hour Threshold
+    function getTaskDurationInfo(task) {
+        let minutes = 0;
+        let text = task.duration || '';
+
+        // 1. Calculate from start_time and end_time (or now if actively running)
+        if (task.start_time) {
+            try {
+                const startClean = task.start_time.trim().replace(' ', 'T');
+                const startDate = new Date(startClean);
+                if (!isNaN(startDate.getTime())) {
+                    let endDate = null;
+                    if (task.end_time && task.end_time.trim() !== '') {
+                        const endClean = task.end_time.trim().replace(' ', 'T');
+                        endDate = new Date(endClean);
+                    } else if (task.status !== 'Completed') {
+                        endDate = new Date(); // Currently in progress
+                    }
+
+                    if (endDate && !isNaN(endDate.getTime())) {
+                        const diffMs = endDate.getTime() - startDate.getTime();
+                        if (diffMs > 0) {
+                            minutes = Math.floor(diffMs / (1000 * 60));
+                        }
+                    }
+                }
+            } catch (e) {}
+        }
+
+        // 2. Fallback: parse string if minutes still 0 and task.duration exists
+        if (minutes === 0 && task.duration) {
+            const durStr = String(task.duration).trim().toLowerCase();
+            if (durStr !== 'invalid range' && durStr !== '—') {
+                const dayMatch = durStr.match(/(\d+)\s*d/);
+                const hourMatch = durStr.match(/(\d+)\s*h/);
+                const minMatch = durStr.match(/(\d+)\s*m/);
+                if (dayMatch) minutes += parseInt(dayMatch[1], 10) * 1440;
+                if (hourMatch) minutes += parseInt(hourMatch[1], 10) * 60;
+                if (minMatch) minutes += parseInt(minMatch[1], 10);
+            }
+        }
+
+        // If text is empty or dash (e.g. running task), generate human-readable elapsed text
+        if (!text || text === '—') {
+            if (minutes > 0) {
+                const days = Math.floor(minutes / 1440);
+                const hours = Math.floor((minutes % 1440) / 60);
+                const mins = minutes % 60;
+                const parts = [];
+                if (days > 0) parts.push(`${days}d`);
+                if (hours > 0) parts.push(`${hours}h`);
+                parts.push(`${mins}m`);
+                text = parts.join(' ');
+            } else {
+                text = '—';
+            }
+        }
+
+        const isOverOneHour = minutes >= 60;
+        return { minutes, text, isOverOneHour };
+    }
+
     // Render Grid View Cards
     function renderGridView(tasks) {
         tasksGrid.innerHTML = '';
@@ -3108,12 +3530,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const card = document.createElement('div');
             card.className = `task-card ${task.status.toLowerCase().replace(' ', '-')}`;
             
-            const startDisplay = task.start_time || '—';
-            const endDisplay = task.end_time || '—';
-            const durationHtml = task.duration ? `
+            const durInfo = getTaskDurationInfo(task);
+            if (durInfo.isOverOneHour) {
+                card.classList.add('task-red-flag-card');
+            }
+
+            const redFlagHeaderBadge = durInfo.isOverOneHour ? `
+                <span class="card-red-flag-badge" title="Task duration exceeded 1 hour (${durInfo.text})">
+                    <i data-lucide="flag"></i> >1h
+                </span>
+            ` : '<span></span>';
+
+            const durationHtml = durInfo.text !== '—' ? `
                 <div class="meta-item">
                     <span class="meta-label">Duration</span>
-                    <span class="meta-value" style="color: #38bdf8; font-weight: 600;"><i data-lucide="hourglass"></i>${task.duration}</span>
+                    <span class="meta-value" style="font-weight: 600;">
+                        ${durInfo.isOverOneHour ? `
+                            <span class="duration-red-flag" title="Task duration exceeded 1 hour!"><i data-lucide="flag"></i>${durInfo.text}</span>
+                        ` : `
+                            <span style="color: #38bdf8;"><i data-lucide="hourglass"></i>${durInfo.text}</span>
+                        `}
+                    </span>
                 </div>
             ` : '';
             const refCode = extractReference(task.description);
@@ -3209,7 +3646,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             card.innerHTML = `
                 <div class="task-card-header">
-                    <span></span>
+                    ${redFlagHeaderBadge}
                     <span class="status-badge ${task.status.toLowerCase().replace(' ', '-')}">
                         <span class="badge-dot"></span>
                         ${task.status}
@@ -3258,10 +3695,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Append existing tasks
         tasks.forEach(task => {
             const tr = document.createElement('tr');
+            const durInfo = getTaskDurationInfo(task);
+            if (durInfo.isOverOneHour) {
+                tr.classList.add('task-red-flag-row');
+            }
             
             const startDisplay = formatDateTimeMultiLine(task.start_time);
             const endDisplay = formatDateTimeMultiLine(task.end_time);
-            const durationDisplay = task.duration || '—';
+            const durationDisplay = durInfo.text;
             
             let statusClass = task.status.toLowerCase().replace(' ', '-');
 
@@ -3426,7 +3867,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td><span style="font-weight: 500;">${task.owner}</span></td>
                 <td>${startDisplay}</td>
                 <td>${endDisplay}</td>
-                <td><span style="font-weight: 600; color: #38bdf8; font-size: 0.85rem;">${durationDisplay}</span></td>
+                <td>
+                    ${durInfo.isOverOneHour ? `
+                        <span class="duration-red-flag" title="Task duration has exceeded 1 hour!">
+                            <i data-lucide="flag"></i>${durationDisplay}
+                        </span>
+                    ` : (durationDisplay !== '—' ? `<span style="font-weight: 600; color: #38bdf8; font-size: 0.85rem;">${durationDisplay}</span>` : '<span style="color: var(--text-muted); font-style: italic;">—</span>')}
+                </td>
                 <td>
                     <span class="status-badge ${statusClass}">
                         <span class="badge-dot"></span>
@@ -3586,7 +4033,12 @@ document.addEventListener('DOMContentLoaded', () => {
         detailAssignedTime.textContent = task.assigned_time || 'N/A';
         detailStartTime.textContent = task.start_time || 'N/A';
         detailEndTime.textContent = task.end_time || 'N/A';
-        detailDuration.textContent = task.duration || 'N/A';
+        const detailDurInfo = getTaskDurationInfo(task);
+        if (detailDurInfo.isOverOneHour) {
+            detailDuration.innerHTML = `<span class="duration-red-flag" style="font-size: 0.82rem;" title="Task duration exceeded 1 hour!"><i data-lucide="flag"></i>${detailDurInfo.text} (Exceeded 1 Hour)</span>`;
+        } else {
+            detailDuration.textContent = detailDurInfo.text !== '—' ? detailDurInfo.text : (task.duration || 'N/A');
+        }
         detailPendingReason.value = task.pending_reason || 'N/A';
         if (detailEscalationHistory) {
             detailEscalationHistory.value = task.escalation_history || 'N/A';
@@ -3610,6 +4062,7 @@ document.addEventListener('DOMContentLoaded', () => {
         content.style.transform = 'translateY(20px)';
         setTimeout(() => {
             content.style.transform = 'translateY(0)';
+            if (window.lucide) window.lucide.createIcons();
         }, 10);
     }
 
@@ -3733,6 +4186,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Instantly resume fetching if we were idle
                 fetchTasks();
                 fetchQuickLinks();
+                sendHeartbeat();
             }
         }, { passive: true });
     });
@@ -3845,7 +4299,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const startDisplay = formatTrackerDateTime(task.start_time);
             const endDisplay = formatTrackerDateTime(task.end_time);
-            const durationDisplay = task.duration || '—';
+            const trackerDurInfo = getTaskDurationInfo(task);
+            const durationDisplay = trackerDurInfo.text;
 
             const refDisplay = task.reference ? `<span style="font-weight: 600; color: #0284c7; background: rgba(14, 165, 233, 0.12); padding: 0.2rem 0.4rem; border-radius: var(--radius-sm); font-size: 0.72rem; word-break: break-all;"><i data-lucide="tag" style="width: 10px; height: 10px; display: inline-block; margin-right: 0.15rem; vertical-align: middle;"></i>${task.reference}</span>` : '—';
 
@@ -3914,7 +4369,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td style="text-align: center; vertical-align: top;"><span style="font-weight: 500; font-size: 0.78rem;">${task.owner}</span></td>
                 <td style="text-align: center; vertical-align: top;">${startDisplay}</td>
                 <td style="text-align: center; vertical-align: top;">${endDisplay}</td>
-                <td style="text-align: center; vertical-align: top;"><span style="font-weight: 600; color: #38bdf8; font-size: 0.8rem;">${durationDisplay}</span></td>
+                <td style="text-align: center; vertical-align: top;">
+                    ${trackerDurInfo.isOverOneHour ? `
+                        <span class="duration-red-flag" style="font-size: 0.75rem;" title="Task duration exceeded 1 hour!">
+                            <i data-lucide="flag"></i>${durationDisplay}
+                        </span>
+                    ` : (durationDisplay !== '—' ? `<span style="font-weight: 600; color: #38bdf8; font-size: 0.8rem;">${durationDisplay}</span>` : '<span style="color: var(--text-muted); font-style: italic;">—</span>')}
+                </td>
                 <td style="text-align: center; vertical-align: top;">${statusBadge}</td>
                 <td style="text-align: center; vertical-align: top;">${misStatusHtml}</td>
                 <td style="text-align: center; vertical-align: top;">${configDisplay}</td>
