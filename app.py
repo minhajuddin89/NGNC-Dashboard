@@ -75,6 +75,10 @@ try:
 except Exception as e:
     print(f"Error registering OLT blueprint: {e}")
 
+import database
+database.init_db()
+database.migrate_excel_to_sqlite()
+
 EXCEL_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tasks.xlsx")
 MASTER_ADMIN_USER = "admin"
 MASTER_ADMIN_PASS = "admin123"
@@ -669,7 +673,7 @@ try:
 except Exception as e:
     print("Error starting backup scheduler thread:", e)
 
-# In-memory database cache to prevent Excel disk bottlenecks under high concurrency
+# In-memory database cache delegate to high-speed SQLite database
 DB_CACHE = {
     "mtime": 0,
     "tasks": [],
@@ -679,487 +683,46 @@ DB_CACHE = {
 }
 
 def load_all_data_cached():
-    current_mtime = 0
-    try:
-        if os.path.exists(EXCEL_FILE):
-            current_mtime = os.path.getmtime(EXCEL_FILE)
-    except Exception:
-        pass
-        
-    # If the file hasn't changed and cache is populated, return cache
-    if DB_CACHE["mtime"] == current_mtime and DB_CACHE["tasks"]:
-        return DB_CACHE["tasks"], DB_CACHE["users"], DB_CACHE["roster"], DB_CACHE["shifts"]
-        
-    try:
-        init_excel()
-        wb = openpyxl.load_workbook(EXCEL_FILE, data_only=True)
-        
-        # 1. Parse Tasks
-        tasks = []
-        if "Tasks" in wb.sheetnames:
-            ws = wb["Tasks"]
-            for row in ws.iter_rows(min_row=2, values_only=True):
-                if not row[0]:
-                    continue
-                start_val = row[3]
-                if isinstance(start_val, (datetime.datetime, datetime.date)):
-                    start_val = start_val.strftime("%Y-%m-%d %H:%M")
-                end_val = row[4]
-                if isinstance(end_val, (datetime.datetime, datetime.date)):
-                    end_val = end_val.strftime("%Y-%m-%d %H:%M")
-                updated_val = row[7]
-                if isinstance(updated_val, (datetime.datetime, datetime.date)):
-                    updated_val = updated_val.strftime("%Y-%m-%d %H:%M")
-                pending_reason = str(row[8]) if len(row) > 8 and row[8] is not None else ""
-                escalation_history = str(row[9]) if len(row) > 9 and row[9] is not None else ""
-                config_status = str(row[10]) if len(row) > 10 and row[10] is not None else ""
-                mis_status = str(row[11]) if len(row) > 11 and row[11] is not None else "Not Closed"
-                assigned_time = str(row[12]) if len(row) > 12 and row[12] is not None else ""
-                assignment_history = str(row[13]) if len(row) > 13 and row[13] is not None else ""
-                
-                import re
-                desc = str(row[1]) if row[1] is not None else ""
-                desc_lower = desc.lower()
-                forwarded_list = []
-                if re.search(r'\bncss\b', desc_lower):
-                    forwarded_list.append("NCSS")
-                if re.search(r'\bbnoc\b', desc_lower):
-                    forwarded_list.append("BNOC")
-                if re.search(r'\bsat\b', desc_lower):
-                    forwarded_list.append("SAT")
-                if re.search(r'\bsales\b', desc_lower):
-                    forwarded_list.append("Sales")
-                if re.search(r'\bnmc\b', desc_lower):
-                    forwarded_list.append("NMC")
-                if re.search(r'\bbackbone\b', desc_lower):
-                    forwarded_list.append("Backbone")
-                if re.search(r'\bini\b', desc_lower):
-                    forwarded_list.append("INI")
-                if re.search(r'\bngnc\b', desc_lower):
-                    forwarded_list.append("NGNC")
-                if re.search(r'\bsystem\s+team\b', desc_lower):
-                    forwarded_list.append("System Team")
-                if re.search(r'\bpower\s+team\b', desc_lower):
-                    forwarded_list.append("Power Team")
-                if re.search(r'\bproject\b', desc_lower):
-                    forwarded_list.append("PROJECT")
-                forwarded_by = ", ".join(forwarded_list) if forwarded_list else ""
-                
-                tasks.append({
-                    "id": str(row[0]),
-                    "description": desc,
-                    "owner": str(row[2]) if row[2] is not None else "",
-                    "start_time": str(start_val) if start_val is not None else "",
-                    "end_time": str(end_val) if end_val is not None else "",
-                    "duration": str(row[5]) if row[5] is not None else "",
-                    "status": str(row[6]) if row[6] is not None else "Pending",
-                    "last_updated": str(updated_val) if updated_val is not None else "",
-                    "pending_reason": pending_reason,
-                    "escalation_history": escalation_history,
-                    "config_status": config_status,
-                    "mis_status": mis_status,
-                    "assigned_time": assigned_time,
-                    "assignment_history": assignment_history,
-                    "forwarded_by": forwarded_by
-                })
-                
-        # 2. Parse Users
-        users = []
-        if "Users" in wb.sheetnames:
-            ws = wb["Users"]
-            for row in ws.iter_rows(min_row=2, values_only=True):
-                if not row[0]:
-                    continue
-                created_val = row[3]
-                if isinstance(created_val, (datetime.datetime, datetime.date)):
-                    created_val = created_val.strftime("%Y-%m-%d %H:%M")
-                
-                reports_access = "false"
-                if len(row) > 4 and row[4] is not None:
-                    reports_access = str(row[4]).strip().lower()
-                
-                # Master admin always has access
-                if str(row[0]).strip().lower() == MASTER_ADMIN_USER:
-                    reports_access = "true"
-
-                users.append({
-                    "username": str(row[0]).strip(),
-                    "name": str(row[1]).strip() if row[1] else "",
-                    "password": str(row[2]) if row[2] else "",
-                    "created_at": str(created_val) if created_val else "",
-                    "reports_access": reports_access
-                })
-        # Always guarantee master admin is returned
-        if not any(u["username"] == MASTER_ADMIN_USER for u in users):
-            users.append({
-                "username": MASTER_ADMIN_USER,
-                "name": "System Administrator",
-                "password": MASTER_ADMIN_PASS,
-                "created_at": "",
-                "reports_access": "true"
-            })
-            
-        # 3. Parse Roster
-        roster = []
-        if "Roster" in wb.sheetnames:
-            ws = wb["Roster"]
-            for row in ws.iter_rows(min_row=2, values_only=True):
-                if not row[0]:
-                    continue
-                date_val = row[1]
-                if isinstance(date_val, (datetime.datetime, datetime.date)):
-                    date_val = date_val.strftime("%Y-%m-%d")
-                start_val = row[3]
-                if isinstance(start_val, datetime.time):
-                    start_val = start_val.strftime("%H:%M")
-                end_val = row[4]
-                if isinstance(end_val, datetime.time):
-                    end_val = end_val.strftime("%H:%M")
-                roster.append({
-                    "owner": str(row[0]).strip(),
-                    "date": str(date_val).strip() if date_val is not None else "",
-                    "code": str(row[2]).strip(),
-                    "start_time": str(start_val).strip() if start_val is not None else "",
-                    "end_time": str(end_val).strip() if end_val is not None else "",
-                    "shift_name": str(row[5]).strip() if row[5] is not None else ""
-                })
-                
-        # 4. Parse Shifts
-        shifts = {}
-        if "Shifts" in wb.sheetnames:
-            ws = wb["Shifts"]
-            for row in ws.iter_rows(min_row=2, values_only=True):
-                if not row[0]:
-                    continue
-                code = str(row[0]).strip().upper()
-                name = str(row[1]).strip() if row[1] is not None else ""
-                start = str(row[2]).strip() if row[2] is not None else ""
-                end = str(row[3]).strip() if row[3] is not None else ""
-                shifts[code] = {"start": start, "end": end, "name": name}
-        if not shifts:
-            shifts = {
-                "M": {"start": "09:30", "end": "18:30", "name": "Morning Shift"},
-                "EE": {"start": "11:00", "end": "20:00", "name": "Early Evening Shift"},
-                "E": {"start": "14:00", "end": "22:00", "name": "Evening Shift"},
-                "LE": {"start": "16:00", "end": "00:00", "name": "Late Evening Shift"}
-            }
-            
-        wb.close()
-        
-        # Save to cache
-        DB_CACHE["mtime"] = current_mtime
-        DB_CACHE["tasks"] = tasks
-        DB_CACHE["users"] = users
-        DB_CACHE["roster"] = roster
-        DB_CACHE["shifts"] = shifts
-        
-        return tasks, users, roster, shifts
-    except PermissionError as pe:
-        raise pe
-    except Exception as e:
-        print(f"Error loading workbook for DB cache: {e}")
-        if DB_CACHE["tasks"]:
-            return DB_CACHE["tasks"], DB_CACHE["users"], DB_CACHE["roster"], DB_CACHE["shifts"]
-        raise
+    return (database.db_get_all_tasks(), database.db_get_users(),
+            database.db_get_roster(), database.db_get_shifts())
 
 def load_tasks_from_excel():
-    tasks, _, _, _ = load_all_data_cached()
-    
-    # Auto-migration of legacy descriptions containing escalation logs
-    import re
-    migrated = False
-    for t in tasks:
-        desc = t.get("description", "")
-        esc_history = t.get("escalation_history", "")
-        pattern = r'\s*\[Escalated by [^\]]+\]'
-        matches = re.findall(r'(\[Escalated by [^\]]+\])', desc)
-        if matches:
-            cleaned_desc = re.sub(pattern, '', desc).strip()
-            t["description"] = cleaned_desc
-            new_logs = []
-            if esc_history:
-                new_logs.extend([line.strip() for line in esc_history.split('\n') if line.strip()])
-            for m in matches:
-                if m not in new_logs:
-                    new_logs.append(m)
-            t["escalation_history"] = '\n'.join(new_logs)
-            migrated = True
-    
-    if migrated:
-        try:
-            save_tasks_to_excel(tasks)
-        except Exception as se:
-            print(f"Error auto-migrating tasks to Excel: {se}")
-            
-    return tasks
+    return database.db_get_all_tasks()
 
 def load_shifts_from_excel():
-    _, _, _, shifts = load_all_data_cached()
-    return shifts
+    return database.db_get_shifts()
 
 def load_quick_links_from_excel():
-    init_excel()
-    links = []
-    try:
-        wb = openpyxl.load_workbook(EXCEL_FILE, data_only=True)
-        if "QuickLinks" in wb.sheetnames:
-            ws = wb["QuickLinks"]
-            for row in ws.iter_rows(min_row=2, values_only=True):
-                if not row[0]:
-                    continue
-                name = str(row[0]).strip()
-                url = str(row[1]).strip() if row[1] is not None else ""
-                links.append({"name": name, "url": url})
-        wb.close()
-    except Exception as e:
-        print(f"Error loading quick links: {e}")
-    if not links:
-        links = [{"name": "IPAM", "url": "http://phpipam.link3.net/index.php?page=login"}]
-    return links
+    return database.db_get_quicklinks()
 
 def save_tasks_to_excel(tasks):
-    init_excel()
-    wb = openpyxl.load_workbook(EXCEL_FILE)
-    
-    if "Tasks" in wb.sheetnames:
-        del wb["Tasks"]
-        
-    ws = wb.create_sheet(title="Tasks", index=0)
-    headers = ["Task ID", "Description", "Owner", "Start Time", "End Time", "Duration", "Status", "Last Updated", "Pending Reason", "Escalation History", "Config Status", "MIS Status", "Assigned Time", "Assignment History"]
-    ws.append(headers)
-    
-    header_fill = PatternFill(start_color="107C41", end_color="107C41", fill_type="solid")
-    header_font = Font(name="Segoe UI", size=11, bold=True, color="FFFFFF")
-    center_align = Alignment(horizontal="center", vertical="center")
-    
-    for col_idx in range(1, len(headers) + 1):
-        cell = ws.cell(row=1, column=col_idx)
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = center_align
-    
-    thin_border = Border(
-        left=Side(style='thin', color='D9D9D9'),
-        right=Side(style='thin', color='D9D9D9'),
-        top=Side(style='thin', color='D9D9D9'),
-        bottom=Side(style='thin', color='D9D9D9')
-    )
-    
-    data_font = Font(name="Segoe UI", size=10)
-    
-    for idx, t in enumerate(tasks):
-        row_idx = idx + 2
-        row_data = [
-            t.get("id", ""),
-            t.get("description", ""),
-            t.get("owner", ""),
-            format_datetime(t.get("start_time", "")),
-            format_datetime(t.get("end_time", "")),
-            t.get("duration", ""),
-            t.get("status", "Pending"),
-            format_datetime(t.get("last_updated", "")),
-            t.get("pending_reason", ""),
-            t.get("escalation_history", ""),
-            t.get("config_status", ""),
-            t.get("mis_status", "Not Closed"),
-            t.get("assigned_time", ""),
-            t.get("assignment_history", "")
-        ]
-        ws.append(row_data)
-        
-        for col_idx in range(1, len(headers) + 1):
-            cell = ws.cell(row=row_idx, column=col_idx)
-            cell.font = data_font
-            cell.border = thin_border
-            
-            if col_idx in [1, 4, 5, 6, 7, 8, 12]:  # ID, Times, Duration, Status, Updated, MIS Status
-                cell.alignment = center_align
-            else:
-                cell.alignment = Alignment(horizontal="left", vertical="center")
-            
-            status = t.get("status", "Pending")
-            if col_idx == 7:  # Status
-                if status == "Completed":
-                    cell.fill = PatternFill(start_color="D9EAD3", end_color="D9EAD3", fill_type="solid")
-                    cell.font = Font(name="Segoe UI", size=10, color="274E13", bold=True)
-                elif status == "In Progress":
-                    cell.fill = PatternFill(start_color="FCE5CD", end_color="FCE5CD", fill_type="solid")
-                    cell.font = Font(name="Segoe UI", size=10, color="783F04", bold=True)
-                else:  # Pending
-                    cell.fill = PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid")
-                    cell.font = Font(name="Segoe UI", size=10, color="7F6000", bold=True)
-
-    for col in ws.columns:
-        max_len = 0
-        col_letter = get_column_letter(col[0].column)
-        for cell in col:
-            val = str(cell.value or '')
-            if len(val) > max_len:
-                max_len = len(val)
-        ws.column_dimensions[col_letter].width = max(max_len + 3, 12)
-        
-    wb.save(EXCEL_FILE)
-
-# --- Owners Sheet Functions ---
+    conn = database.get_db()
+    with conn:
+        for t in tasks:
+            database.db_update_task(t)
+    conn.close()
+    database.schedule_excel_sync()
 
 def load_owners_from_excel():
-    init_excel()
-    owners = []
-    try:
-        wb = openpyxl.load_workbook(EXCEL_FILE, data_only=True)
-        if "Owners" in wb.sheetnames:
-            ws = wb["Owners"]
-            for row in ws.iter_rows(min_row=2, max_col=1, values_only=True):
-                if row[0]:
-                    owners.append(str(row[0]).strip())
-        wb.close()
-    except PermissionError as pe:
-        raise pe
-    except Exception as e:
-        print(f"Error loading owners: {e}")
-    if not owners:
-        owners = ["Minhaj Uddin", "System Administrator"]
-    return owners
+    return database.db_get_owners()
 
 def add_owner_to_excel(name):
-    init_excel()
-    try:
-        wb = openpyxl.load_workbook(EXCEL_FILE)
-        if "Owners" in wb.sheetnames:
-            ws = wb["Owners"]
-            existing = [str(row[0]).strip().lower() for row in ws.iter_rows(min_row=2, max_col=1, values_only=True) if row[0]]
-            if name.strip().lower() not in existing:
-                ws.append([name.strip()])
-                wb.save(EXCEL_FILE)
-                wb.close()
-                return True
-        wb.close()
-        return False
-    except Exception as e:
-        print(f"Error adding owner: {e}")
-        raise e
-
-# --- Users Sheet Functions ---
+    return database.db_add_owner(name)
 
 def load_users_from_excel():
-    _, users, _, _ = load_all_data_cached()
-    return users
+    return database.db_get_users()
 
 def load_roster_from_excel():
-    _, _, roster, _ = load_all_data_cached()
-    return roster
+    return database.db_get_roster()
 
 def add_user_to_excel(username, name, password):
-    init_excel()
-    username_clean = username.strip().lower()
-    if not username_clean:
-        return False, "Username cannot be empty."
-        
-    try:
-        wb = openpyxl.load_workbook(EXCEL_FILE)
-        if "Users" in wb.sheetnames:
-            ws = wb["Users"]
-            
-            # Check for duplicate
-            for row in ws.iter_rows(min_row=2, max_col=1, values_only=True):
-                if row[0] and str(row[0]).strip().lower() == username_clean:
-                    wb.close()
-                    return False, "Username already exists."
-                    
-            now_str = get_local_now().strftime("%Y-%m-%d %H:%M")
-            ws.append([username.strip(), name.strip(), password, now_str])
-            
-            # Re-apply column widths
-            for col in ws.columns:
-                max_len = max(len(str(cell.value or '')) for cell in col)
-                col_letter = get_column_letter(col[0].column)
-                ws.column_dimensions[col_letter].width = max(max_len + 3, 15)
-                
-            wb.save(EXCEL_FILE)
-            wb.close()
-            
-            # Also add their name to the Owners list automatically!
-            add_owner_to_excel(name.strip())
-            return True, "User created successfully."
-        wb.close()
-        return False, "Users sheet not found."
-    except Exception as e:
-        print(f"Error adding user: {e}")
-        raise e
+    return database.db_add_user(username, name, password)
 
 def delete_user_from_excel(username):
-    init_excel()
-    username_clean = username.strip().lower()
-    if username_clean == MASTER_ADMIN_USER:
-        return False, "Cannot delete the master admin account."
-        
-    try:
-        wb = openpyxl.load_workbook(EXCEL_FILE)
-        if "Users" in wb.sheetnames:
-            ws = wb["Users"]
-            rows_to_delete = []
-            
-            # Find row index to delete (1-indexed, headers are row 1)
-            for row_idx, row in enumerate(ws.iter_rows(values_only=True), start=1):
-                if row[0] and str(row[0]).strip().lower() == username_clean:
-                    rows_to_delete.append(row_idx)
-            
-            if rows_to_delete:
-                # Delete rows in reverse order to keep indices correct
-                for r in sorted(rows_to_delete, reverse=True):
-                    ws.delete_rows(r)
-                wb.save(EXCEL_FILE)
-                wb.close()
-                return True, "User deleted successfully."
-        wb.close()
-        return False, "User not found."
-    except Exception as e:
-        print(f"Error deleting user: {e}")
-        raise e
+    return database.db_delete_user(username)
 
 def update_user_password_in_excel(username, current_password, new_password, is_admin_override=False):
-    init_excel()
-    username_clean = username.strip().lower()
-    if not username_clean:
-        return False, "Username cannot be empty."
-    if not new_password or len(str(new_password).strip()) < 3:
-        return False, "New password must be at least 3 characters."
-        
-    try:
-        wb = openpyxl.load_workbook(EXCEL_FILE)
-        if "Users" in wb.sheetnames:
-            ws = wb["Users"]
-            user_found = False
-            for row_idx, row in enumerate(ws.iter_rows(values_only=False), start=1):
-                if row_idx == 1:
-                    continue
-                cell_username = ws.cell(row=row_idx, column=1).value
-                cell_password = ws.cell(row=row_idx, column=3).value
-                if cell_username and str(cell_username).strip().lower() == username_clean:
-                    user_found = True
-                    # Check current password unless admin is overriding
-                    if not is_admin_override:
-                        if str(cell_password or '') != str(current_password or ''):
-                            wb.close()
-                            return False, "Current password does not match."
-                    # Update password
-                    ws.cell(row=row_idx, column=3).value = str(new_password).strip()
-                    wb.save(EXCEL_FILE)
-                    wb.close()
-                    # Invalidate in-memory data cache
-                    DB_CACHE["mtime"] = 0
-                    DB_CACHE["users"] = []
-                    return True, "Password updated successfully."
-            wb.close()
-            if not user_found:
-                if username_clean == MASTER_ADMIN_USER:
-                    return False, "System Administrator password is fixed."
-                return False, "User not found."
-        wb.close()
-        return False, "Users sheet not found."
-    except Exception as e:
-        print(f"Error updating user password: {e}")
-        raise e
+    return database.db_update_user_password(username, current_password, new_password, is_admin_override)
 
 # --- Flask Routes ---
 
@@ -1510,37 +1073,10 @@ def toggle_reports_access():
         if username_to_toggle == MASTER_ADMIN_USER:
             return jsonify({"error": "forbidden", "message": "Cannot toggle reports access for System Administrator."}), 403
             
-        wb = openpyxl.load_workbook(EXCEL_FILE)
-        if "Users" in wb.sheetnames:
-            ws = wb["Users"]
-            headers = [str(cell.value or '').strip() for cell in ws[1]]
-            
-            # Make sure Reports Access header is there
-            if "Reports Access" not in headers:
-                ws.cell(row=1, column=5).value = "Reports Access"
-                
-            row_updated = False
-            for r in range(2, ws.max_row + 1):
-                username_val = str(ws.cell(row=r, column=1).value or '').strip().lower()
-                if username_val == username_to_toggle:
-                    ws.cell(row=r, column=5).value = new_status
-                    row_updated = True
-                    break
-                    
-            if row_updated:
-                wb.save(EXCEL_FILE)
-                wb.close()
-                # Clear database cache to force reload
-                DB_CACHE["mtime"] = 0
-                DB_CACHE["tasks"] = []
-                return jsonify({"success": True, "message": f"Reports access updated to {new_status} for {username_to_toggle}."})
-            
-            wb.close()
-            return jsonify({"error": "not_found", "message": "User not found."}), 404
-            
-        wb.close()
-        return jsonify({"error": "not_found", "message": "Users sheet not found."}), 404
-        
+        success, msg = database.db_toggle_reports_access(username_to_toggle, new_status)
+        if success:
+            return jsonify({"success": True, "message": msg})
+        return jsonify({"error": "not_found", "message": msg}), 404
     except Exception as e:
         return jsonify({"error": "error", "message": str(e)}), 500
 
@@ -1687,6 +1223,7 @@ def import_tasks_db():
         # Clear database cache to force reload
         DB_CACHE["mtime"] = 0
         DB_CACHE["tasks"] = []
+        database.reload_tasks_from_excel_file(EXCEL_FILE)
         
         return jsonify({"success": True, "message": f"Successfully imported {row_count - 1} tasks into the database."})
         
@@ -1870,11 +1407,11 @@ def import_roster():
             if not full_name:
                 continue
                 
-            # Skip summary / total / legend rows
-            if full_name.lower() in ["total", "count", "shift summary", "morning", "evening", "off", "remarks", "note", "legend", "summary"]:
+            # Skip summary / total / legend / holiday notice rows
+            if full_name.lower() in ["total", "count", "shift summary", "morning", "evening", "off", "remarks", "note", "legend", "summary", "holiday", "govt holiday", "public holiday"]:
                 continue
                 
-            # User registration
+            # User registration (only for genuine engineer names not already in users)
             clean_name = full_name.lower()
             clean_name = re.sub(r'[^a-z0-9\s.-]', '', clean_name)
             username = clean_name.replace(" ", ".")
@@ -1882,19 +1419,20 @@ def import_roster():
             username = username.strip(".")
             
             if username:
-                orig_username = username
-                counter = 1
-                while username in existing_usernames and username not in [u["username"] for u in existing_users]:
-                    username = f"{orig_username}{counter}"
-                    counter += 1
-                
                 if full_name.lower() not in existing_names:
+                    orig_username = username
+                    counter = 1
+                    while username in existing_usernames:
+                        username = f"{orig_username}{counter}"
+                        counter += 1
                     default_pass = username
                     success, msg = add_user_to_excel(username, full_name, default_pass)
                     if success:
                         imported_users.append({"username": username, "name": full_name})
                         existing_usernames.add(username)
                         existing_names.add(full_name.lower())
+                else:
+                    skipped_count += 1
                         
             # Shifts parsing: capture EVERY day for EVERY engineer
             for col_idx, date_str in date_columns:
@@ -1913,6 +1451,11 @@ def import_roster():
                 elif val_upper in ["LEAVE", "L", "CASUAL LEAVE", "SICK LEAVE", "CL", "SL", "PL", "AL", "ANNUAL LEAVE", "EL"]:
                     code = "LEAVE"
                     shift_name = "Leave"
+                elif "HOLIDAY" in val_upper or val_upper in ["H", "GOVT HOLIDAY", "PUBLIC HOLIDAY", "OFFICIAL HOLIDAY"]:
+                    code = "HOLIDAY"
+                    shift_name = "Holiday"
+                    start_time = ""
+                    end_time = ""
                 elif val_upper in SHIFT_HOURS:
                     code = val_upper
                     s_info = SHIFT_HOURS[val_upper]
@@ -1935,6 +1478,11 @@ def import_roster():
                     elif "LEAVE" in val_upper:
                         code = "LEAVE"
                         shift_name = "Leave"
+                    elif "HOLIDAY" in val_upper or val_upper == "H":
+                        code = "HOLIDAY"
+                        shift_name = "Holiday"
+                        start_time = ""
+                        end_time = ""
                     elif "OFF" in val_upper or "DO" in val_upper:
                         code = "D/O"
                         shift_name = "Day off"
@@ -1951,26 +1499,12 @@ def import_roster():
                     shift_name
                 ])
                 
-        # --- 4. Write Complete Roster (Including D/O & LEAVE) to Database ---
+        # --- 4. Write Complete Roster (Including D/O, LEAVE & HOLIDAY) to Database ---
         if roster_entries_to_save:
-            wb_roster = openpyxl.load_workbook(EXCEL_FILE)
-            if "Roster" in wb_roster.sheetnames:
-                ws_ros = wb_roster["Roster"]
-                # Clear all previous roster entries (keep header row 1)
-                if ws_ros.max_row > 1:
-                    ws_ros.delete_rows(2, ws_ros.max_row - 1)
-                
-                # Write all daily assignments
-                for entry in roster_entries_to_save:
-                    ws_ros.append(entry)
-                
-                wb_roster.save(EXCEL_FILE)
-            wb_roster.close()
-            
+            database.db_replace_roster(roster_entries_to_save)
             # Invalidate in-memory cache to force immediate reload across all clients
             DB_CACHE["mtime"] = 0
             DB_CACHE["roster"] = []
-            DB_CACHE["tasks"] = []
             
         wb.close()
         return jsonify({
@@ -2051,65 +1585,12 @@ def get_roster():
 @app.route("/api/roster/batch-update", methods=["POST"])
 def batch_update_roster():
     try:
-        init_excel()
-        SHIFT_HOURS = load_shifts_from_excel()
         data = request.json or {}
         updates = data.get("updates", [])
-        
         if not isinstance(updates, list):
             return jsonify({"error": "invalid_input", "message": "Updates list is required."}), 400
-            
-        wb = openpyxl.load_workbook(EXCEL_FILE)
-        if "Roster" in wb.sheetnames:
-            ws = wb["Roster"]
-            
-            # Create a dictionary of existing rows for quick lookup
-            # key: (owner.lower(), date_str), value: row_number
-            existing_rows = {}
-            for idx in range(2, ws.max_row + 1):
-                row_owner = ws.cell(row=idx, column=1).value
-                row_date = ws.cell(row=idx, column=2).value
-                if row_owner and row_date:
-                    existing_rows[(str(row_owner).strip().lower(), str(row_date).strip())] = idx
-                    
-            for item in updates:
-                owner = item.get("owner", "").strip()
-                date_str = item.get("date", "").strip()
-                code = item.get("code", "").strip().upper()
-                
-                if not owner or not date_str or not code:
-                    continue
-                    
-                # Get shift details
-                shift_name = "Day off"
-                start_time = ""
-                end_time = ""
-                
-                if code in SHIFT_HOURS:
-                    shift = SHIFT_HOURS[code]
-                    shift_name = shift["name"]
-                    start_time = shift["start"]
-                    end_time = shift["end"]
-                elif code == "LEAVE":
-                    shift_name = "Casual/Sick Leave"
-                    
-                key = (owner.lower(), date_str)
-                if key in existing_rows:
-                    row_idx = existing_rows[key]
-                    ws.cell(row=row_idx, column=3).value = code
-                    ws.cell(row=row_idx, column=4).value = start_time
-                    ws.cell(row=row_idx, column=5).value = end_time
-                    ws.cell(row=row_idx, column=6).value = shift_name
-                else:
-                    ws.append([owner, date_str, code, start_time, end_time, shift_name])
-                    existing_rows[key] = ws.max_row
-                    
-            wb.save(EXCEL_FILE)
-        wb.close()
+        database.db_batch_update_roster(updates)
         return jsonify({"success": True, "message": "Roster shifts saved successfully."})
-        
-    except PermissionError:
-        return jsonify({"error": "excel_locked", "message": "Excel file is currently open. Please close 'tasks.xlsx' and try again."}), 423
     except Exception as e:
         print(f"Error saving roster updates: {e}")
         return jsonify({"error": "error", "message": str(e)}), 500
@@ -2138,19 +1619,17 @@ def create_owner():
 def add_task():
     try:
         data = request.json or {}
-        tasks = load_tasks_from_excel()
-        
-        next_id_num = 1001
-        if tasks:
-            ids = []
-            for t in tasks:
-                try:
-                    num = int(t["id"].split("-")[1])
-                    ids.append(num)
-                except (IndexError, ValueError):
-                    pass
-            if ids:
-                next_id_num = max(ids) + 1
+        conn = database.get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM tasks")
+        ids = []
+        for r in cur.fetchall():
+            try:
+                ids.append(int(r[0].split("-")[1]))
+            except (IndexError, ValueError):
+                pass
+        conn.close()
+        next_id_num = (max(ids) + 1) if ids else 1001
         
         task_id = f"TSK-{next_id_num}"
         now_str = get_local_now().strftime("%Y-%m-%d %H:%M")
@@ -2198,12 +1677,8 @@ def add_task():
             "assignment_history": assignment_history
         }
         
-        tasks.append(new_task)
-        save_tasks_to_excel(tasks)
+        database.db_insert_task(new_task)
         return jsonify(new_task), 201
-        
-    except PermissionError:
-        return jsonify({"error": "excel_locked", "message": "Excel file is currently open. Please close 'tasks.xlsx' and try again."}), 423
     except Exception as e:
         return jsonify({"error": "error", "message": str(e)}), 500
 
@@ -2444,18 +1919,10 @@ def export_tasks():
 def update_task(task_id):
     try:
         data = request.json or {}
-        tasks = load_tasks_from_excel()
-        
-        task_index = -1
-        for idx, t in enumerate(tasks):
-            if t["id"] == task_id:
-                task_index = idx
-                break
-                
-        if task_index == -1:
+        task = database.db_get_task_by_id(task_id)
+        if not task:
             return jsonify({"error": "not_found", "message": "Task not found"}), 404
             
-        task = tasks[task_index]
         now_str = get_local_now().strftime("%Y-%m-%d %H:%M")
         
         old_owner = task.get("owner", "Unassigned")
@@ -2481,8 +1948,8 @@ def update_task(task_id):
         if new_status != "Pending":
             task["pending_reason"] = ""
         
-        start_time = data.get("start_time", task["start_time"])
-        end_time = data.get("end_time", task["end_time"])
+        start_time = data.get("start_time", task.get("start_time", ""))
+        end_time = data.get("end_time", task.get("end_time", ""))
         
         if new_status != old_status:
             task["status"] = new_status
@@ -2541,47 +2008,28 @@ def update_task(task_id):
                 task["assignment_history"] = log_str
 
         task["last_updated"] = now_str
-        
-        tasks[task_index] = task
-        save_tasks_to_excel(tasks)
+        database.db_update_task(task)
         return jsonify(task)
         
-    except PermissionError:
-        return jsonify({"error": "excel_locked", "message": "Excel file is currently open. Please close 'tasks.xlsx' and try again."}), 423
     except Exception as e:
         return jsonify({"error": "error", "message": str(e)}), 500
 
 @app.route("/api/tasks/<task_id>", methods=["DELETE"])
 def delete_task(task_id):
     try:
-        tasks = load_tasks_from_excel()
-        filtered_tasks = [t for t in tasks if t["id"] != task_id]
-        
-        if len(filtered_tasks) == len(tasks):
+        task = database.db_get_task_by_id(task_id)
+        if not task:
             return jsonify({"error": "not_found", "message": "Task not found"}), 404
-            
-        save_tasks_to_excel(filtered_tasks)
+        database.db_delete_task(task_id)
         return jsonify({"success": True})
-        
-    except PermissionError:
-        return jsonify({"error": "excel_locked", "message": "Excel file is currently open. Please close 'tasks.xlsx' and try again."}), 423
     except Exception as e:
         return jsonify({"error": "error", "message": str(e)}), 500
 
 @app.route("/api/tasks", methods=["DELETE"])
 def clear_all_tasks():
     try:
-        init_excel()
-        wb = openpyxl.load_workbook(EXCEL_FILE)
-        if "Tasks" in wb.sheetnames:
-            ws = wb["Tasks"]
-            if ws.max_row > 1:
-                ws.delete_rows(2, ws.max_row - 1)
-                wb.save(EXCEL_FILE)
-        wb.close()
+        database.db_clear_all_tasks()
         return jsonify({"success": True, "message": "All tasks cleared successfully."})
-    except PermissionError:
-        return jsonify({"error": "excel_locked", "message": "Excel file is currently open. Please close 'tasks.xlsx' and try again."}), 423
     except Exception as e:
         print(f"Error clearing all tasks: {e}")
         return jsonify({"error": "error", "message": str(e)}), 500
@@ -2610,41 +2058,8 @@ def get_shifts():
 def save_shifts():
     try:
         data = request.json or {}
-        wb = openpyxl.load_workbook(EXCEL_FILE)
-        if "Shifts" in wb.sheetnames:
-            del wb["Shifts"]
-        
-        ws = wb.create_sheet(title="Shifts")
-        headers = ["Shift Code", "Shift Name", "Start Time", "End Time"]
-        ws.append(headers)
-        
-        header_fill = PatternFill(start_color="107C41", end_color="107C41", fill_type="solid")
-        header_font = Font(name="Segoe UI", size=11, bold=True, color="FFFFFF")
-        center_align = Alignment(horizontal="center", vertical="center")
-        for col_idx in range(1, len(headers) + 1):
-            cell = ws.cell(row=1, column=col_idx)
-            cell.fill = header_fill
-            cell.font = header_font
-            cell.alignment = center_align
-            
-        for code, details in data.items():
-            ws.append([
-                code.upper().strip(),
-                details.get("name", "").strip(),
-                details.get("start", "").strip(),
-                details.get("end", "").strip()
-            ])
-            
-        ws.column_dimensions['A'].width = 12
-        ws.column_dimensions['B'].width = 25
-        ws.column_dimensions['C'].width = 15
-        ws.column_dimensions['D'].width = 15
-        
-        wb.save(EXCEL_FILE)
-        wb.close()
-        return jsonify({"success": True, "message": "Shifts saved to Excel successfully."})
-    except PermissionError:
-        return jsonify({"error": "excel_locked", "message": "Excel file is currently open. Please close 'tasks.xlsx' and try again."}), 423
+        database.db_save_shifts(data)
+        return jsonify({"success": True, "message": "Shifts saved successfully."})
     except Exception as e:
         return jsonify({"error": "error", "message": str(e)}), 500
 
@@ -2661,38 +2076,8 @@ def save_quick_links():
     try:
         data = request.json or {}
         links_list = data.get("links", [])
-        
-        wb = openpyxl.load_workbook(EXCEL_FILE)
-        if "QuickLinks" in wb.sheetnames:
-            del wb["QuickLinks"]
-            
-        ws = wb.create_sheet(title="QuickLinks")
-        headers = ["Portal Name", "URL"]
-        ws.append(headers)
-        
-        header_fill = PatternFill(start_color="107C41", end_color="107C41", fill_type="solid")
-        header_font = Font(name="Segoe UI", size=11, bold=True, color="FFFFFF")
-        center_align = Alignment(horizontal="center", vertical="center")
-        for col_idx in range(1, len(headers) + 1):
-            cell = ws.cell(row=1, column=col_idx)
-            cell.fill = header_fill
-            cell.font = header_font
-            cell.alignment = center_align
-            
-        for item in links_list:
-            name = item.get("name", "").strip()
-            url = item.get("url", "").strip()
-            if name and url:
-                ws.append([name, url])
-                
-        ws.column_dimensions['A'].width = 25
-        ws.column_dimensions['B'].width = 50
-        
-        wb.save(EXCEL_FILE)
-        wb.close()
+        database.db_save_quicklinks(links_list)
         return jsonify({"success": True, "message": "Quick links saved to Excel successfully."})
-    except PermissionError:
-        return jsonify({"error": "excel_locked", "message": "Excel file is currently open. Please close 'tasks.xlsx' and try again."}), 423
     except Exception as e:
         return jsonify({"error": "error", "message": str(e)}), 500
 
@@ -2703,23 +2088,8 @@ def get_dashboard_state():
         if active_username:
             ONLINE_USERS[active_username] = get_local_now()
             
-        tasks = load_tasks_from_excel()
-        today_str = get_local_now().strftime("%Y-%m-%d")
-        filtered_tasks = []
-        for t in tasks:
-            status = t.get("status", "")
-            if status == "Completed":
-                end_time = t.get("end_time", "")
-                if end_time and end_time.startswith(today_str):
-                    filtered_tasks.append(t)
-                else:
-                    lu = t.get("last_updated", "")
-                    if not end_time and lu and lu.startswith(today_str):
-                        filtered_tasks.append(t)
-            else:
-                filtered_tasks.append(t)
-                
-        users = load_users_from_excel()
+        filtered_tasks = database.db_get_filtered_dashboard_tasks()
+        users = database.db_get_users()
         safe_users = []
         now = get_local_now()
         for u in users:
@@ -2728,14 +2098,14 @@ def get_dashboard_state():
             safe_users.append({
                 "username": u["username"],
                 "name": u["name"],
-                "created_at": u["created_at"],
+                "created_at": u.get("created_at", ""),
                 "role": "admin" if u_name == MASTER_ADMIN_USER else "user",
                 "reports_access": u.get("reports_access", "false"),
                 "is_online": is_online
             })
             
-        roster = load_roster_from_excel()
-        shifts = load_shifts_from_excel()
+        roster = database.db_get_roster()
+        shifts = database.db_get_shifts()
         
         return jsonify({
             "tasks": filtered_tasks,
@@ -2743,8 +2113,6 @@ def get_dashboard_state():
             "roster": roster,
             "shifts": shifts
         })
-    except PermissionError:
-        return jsonify({"error": "excel_locked", "message": "Excel file is currently open. Please close 'tasks.xlsx' and try again."}), 423
     except Exception as e:
         print(f"Error loading dashboard state: {e}")
         return jsonify({"error": "error", "message": str(e)}), 500
@@ -2912,6 +2280,128 @@ def api_vlan_search():
 
     except Exception as e:
         return jsonify({"success": False, "message": f"Server error processing VLAN search: {str(e)}"}), 500
+
+
+# --- Project Work & Progress Tracking Endpoints ---
+
+@app.route("/api/projects", methods=["GET"])
+def get_projects():
+    try:
+        projects = database.db_get_all_projects()
+        return jsonify(projects), 200
+    except Exception as e:
+        return jsonify({"error": "error", "message": str(e)}), 500
+
+@app.route("/api/projects", methods=["POST"])
+def create_project():
+    try:
+        data = request.json or {}
+        name = (data.get("name") or "").strip()
+        description = (data.get("description") or "").strip()
+        assigned_to = (data.get("assigned_to") or "Unassigned").strip()
+        created_by = (data.get("created_by") or "Admin").strip()
+        target_date = (data.get("target_date") or "").strip()
+
+        if not name:
+            return jsonify({"error": "invalid_input", "message": "Project name is required."}), 400
+
+        proj = database.db_create_project(name, description, assigned_to, created_by, target_date)
+        return jsonify({"success": True, "project": proj}), 201
+    except Exception as e:
+        return jsonify({"error": "error", "message": str(e)}), 500
+
+@app.route("/api/projects/<project_id>/update", methods=["POST"])
+def add_project_progress_update(project_id):
+    try:
+        data = request.json or {}
+        note = (data.get("note") or "").strip()
+        progress = data.get("progress")
+        status = data.get("status")
+        updated_by = (data.get("updated_by") or "").strip()
+        user_role = (data.get("role") or "").strip().lower()
+
+        if not note:
+            return jsonify({"error": "invalid_input", "message": "Progress update note cannot be empty."}), 400
+
+        all_projs = database.db_get_all_projects()
+        target_proj = next((p for p in all_projs if p.get("id") == project_id), None)
+        if not target_proj:
+            return jsonify({"error": "not_found", "message": "Project not found."}), 404
+
+        u_lower = updated_by.lower()
+        assigned_list = [x.strip().lower() for x in (target_proj.get("assigned_to") or "").split(",") if x.strip()]
+        creator_lower = (target_proj.get("created_by") or "").strip().lower()
+        is_admin = user_role == "admin" or u_lower in ["admin", "system administrator"]
+
+        if not (is_admin or (u_lower and (u_lower in assigned_list or u_lower == creator_lower))):
+            return jsonify({
+                "error": "forbidden",
+                "message": "Only the assigned user, the user who assigned this project, or Admin can update progress."
+            }), 403
+
+        proj = database.db_add_project_update(project_id, note, progress, status, updated_by)
+        return jsonify({"success": True, "project": proj}), 200
+    except Exception as e:
+        return jsonify({"error": "error", "message": str(e)}), 500
+
+@app.route("/api/projects/<project_id>/finish", methods=["POST"])
+def finish_project_route(project_id):
+    try:
+        data = request.json or {}
+        updated_by = (data.get("updated_by") or "").strip()
+        user_role = (data.get("role") or "").strip().lower()
+        note = (data.get("note") or "").strip()
+
+        all_projs = database.db_get_all_projects()
+        target_proj = next((p for p in all_projs if p.get("id") == project_id), None)
+        if not target_proj:
+            return jsonify({"error": "not_found", "message": "Project not found."}), 404
+
+        u_lower = updated_by.lower()
+        assigned_list = [x.strip().lower() for x in (target_proj.get("assigned_to") or "").split(",") if x.strip()]
+        creator_lower = (target_proj.get("created_by") or "").strip().lower()
+        is_admin = user_role == "admin" or u_lower in ["admin", "system administrator"]
+
+        if not (is_admin or (u_lower and (u_lower in assigned_list or u_lower == creator_lower))):
+            return jsonify({
+                "error": "forbidden",
+                "message": "Only the assigned user, the user who assigned this project, or Admin can finish this project."
+            }), 403
+
+        proj = database.db_finish_project(project_id, updated_by, note)
+        return jsonify({"success": True, "project": proj}), 200
+    except Exception as e:
+        return jsonify({"error": "error", "message": str(e)}), 500
+
+@app.route("/api/projects/<project_id>", methods=["PUT"])
+def update_project_details(project_id):
+    try:
+        data = request.json or {}
+        proj = database.db_update_project(
+            project_id,
+            name=data.get("name"),
+            description=data.get("description"),
+            assigned_to=data.get("assigned_to"),
+            target_date=data.get("target_date"),
+            status=data.get("status"),
+            progress=data.get("progress"),
+            updated_by=data.get("updated_by", "Admin")
+        )
+        if not proj:
+            return jsonify({"error": "not_found", "message": "Project not found."}), 404
+        return jsonify({"success": True, "project": proj}), 200
+    except Exception as e:
+        return jsonify({"error": "error", "message": str(e)}), 500
+
+@app.route("/api/projects/<project_id>", methods=["DELETE"])
+def delete_project_route(project_id):
+    try:
+        deleted = database.db_delete_project(project_id)
+        if not deleted:
+            return jsonify({"error": "not_found", "message": "Project not found."}), 404
+        return jsonify({"success": True, "message": "Project deleted."}), 200
+    except Exception as e:
+        return jsonify({"error": "error", "message": str(e)}), 500
 
 if __name__ == "__main__":
     try:

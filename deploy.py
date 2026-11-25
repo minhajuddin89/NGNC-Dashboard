@@ -51,7 +51,7 @@ def sftp_upload_dir(sftp, local_dir, remote_dir, uploaded_files=None):
         if os.path.isdir(local_path):
             sftp_upload_dir(sftp, local_path, remote_path, uploaded_files)
         else:
-            if entry == 'tasks.xlsx':
+            if entry in ['tasks.xlsx', 'tasks.db', 'customer_tracker_data.json']:
                 try:
                     sftp.stat(remote_path)
                     print(f"--> Skipping upload of {entry} (remote database already exists and will be preserved)")

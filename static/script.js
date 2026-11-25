@@ -2409,11 +2409,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            if (currentUser && currentUser.role === 'admin') {
-                populateUserFilter();
-            }
+            // Smart change detection to avoid costly DOM re-renders if state hasn't changed
+            const stateFingerprint = JSON.stringify({
+                t: (data.tasks || []).map(x => `${x.id}:${x.status}:${x.last_updated}:${x.owner}`),
+                u: (data.users || []).map(x => `${x.username}:${x.is_online}:${x.reports_access}`),
+                rLen: (data.roster || []).length
+            });
+            const hasChanged = (window.__lastStateFingerprint !== stateFingerprint);
+            window.__lastStateFingerprint = stateFingerprint;
 
-            updateDashboard();
+            if (hasChanged) {
+                updateDashboard();
+            }
         } catch (error) {
             console.error('Error fetching tasks:', error);
             showToast('Could not load tasks. Ensure local backend is running.', 'error');
@@ -3015,9 +3022,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             shift.code.toUpperCase() === 'D/O' || 
                             shift.code.toUpperCase() === 'DO' || 
                             shift.code.toUpperCase() === 'LEAVE' ||
+                            shift.code.toUpperCase() === 'HOLIDAY' ||
                             shift.code.toUpperCase() === 'OFF' ||
                             (shift.shift_name && shift.shift_name.toLowerCase().includes('day off')) ||
-                            (shift.shift_name && shift.shift_name.toLowerCase().includes('duty off'))
+                            (shift.shift_name && shift.shift_name.toLowerCase().includes('duty off')) ||
+                            (shift.shift_name && shift.shift_name.toLowerCase().includes('holiday'))
                         ) : (hasRosterToday && !shift);
                         if (isOff) {
                             let xPos = x.getPixelForTick ? x.getPixelForTick(idx) : x.getPixelForValue(idx);
@@ -3053,23 +3062,26 @@ document.addEventListener('DOMContentLoaded', () => {
                             shift.code.toUpperCase() === 'D/O' || 
                             shift.code.toUpperCase() === 'DO' || 
                             shift.code.toUpperCase() === 'LEAVE' ||
+                            shift.code.toUpperCase() === 'HOLIDAY' ||
                             shift.code.toUpperCase() === 'OFF' ||
                             (shift.shift_name && shift.shift_name.toLowerCase().includes('day off')) ||
-                            (shift.shift_name && shift.shift_name.toLowerCase().includes('duty off'))
+                            (shift.shift_name && shift.shift_name.toLowerCase().includes('duty off')) ||
+                            (shift.shift_name && shift.shift_name.toLowerCase().includes('holiday'))
                         ) : (hasRosterToday && !shift);
                         if (isOff) {
                             let xPos = x.getPixelForTick ? x.getPixelForTick(idx) : x.getPixelForValue(idx);
                             if (isNaN(xPos) || xPos === undefined) xPos = x.getPixelForValue(owner);
                             const rectHeight = bottom - top;
                             
-                            // Draw text "DAY OFF" or "LEAVE" with vertically stacked letters on top of bars
+                            // Draw text "DAY OFF", "LEAVE", or "HOLIDAY" with vertically stacked letters on top of bars
                             ctx.fillStyle = isLight ? '#0f172a' : '#38bdf8';
                             ctx.font = "bold 10px Outfit, sans-serif";
                             ctx.textAlign = "center";
                             ctx.textBaseline = "middle";
                             
                             const isLeave = shift && shift.code && shift.code.toUpperCase() === 'LEAVE';
-                            const label = isLeave ? 'LEAVE' : 'DAY OFF';
+                            const isHoliday = shift && shift.code && (shift.code.toUpperCase() === 'HOLIDAY' || (shift.shift_name && shift.shift_name.toLowerCase().includes('holiday')));
+                            const label = isHoliday ? 'HOLIDAY' : (isLeave ? 'LEAVE' : 'DAY OFF');
                             const chars = label.split('');
                             const charHeight = 12; // vertical gap
                             const totalHeight = chars.length * charHeight;
@@ -3181,9 +3193,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 shift.code.toUpperCase() === 'D/O' || 
                 shift.code.toUpperCase() === 'DO' || 
                 shift.code.toUpperCase() === 'LEAVE' || 
+                shift.code.toUpperCase() === 'HOLIDAY' || 
                 shift.code.toUpperCase() === 'OFF' ||
                 (shift.shift_name && shift.shift_name.toLowerCase().includes('day off')) ||
-                (shift.shift_name && shift.shift_name.toLowerCase().includes('duty off'))
+                (shift.shift_name && shift.shift_name.toLowerCase().includes('duty off')) ||
+                (shift.shift_name && shift.shift_name.toLowerCase().includes('holiday'))
             ) : (hasRosterToday && !shift);
             const isOnDutyRoster = !!shift && !isOff;
 
@@ -3333,6 +3347,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const codeUpper = c.toUpperCase();
                     if (codeUpper === 'D/O') return 'shift-do';
                     if (codeUpper === 'LEAVE') return 'shift-leave';
+                    if (codeUpper === 'HOLIDAY') return 'shift-holiday';
                     return 'shift-' + codeUpper.toLowerCase();
                 }
 
@@ -3354,6 +3369,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     optionsHtml += `<option value="D/O" ${code === 'D/O' ? 'selected' : ''}>D/O</option>`;
                     optionsHtml += `<option value="LEAVE" ${code === 'LEAVE' ? 'selected' : ''}>LEAVE</option>`;
+                    optionsHtml += `<option value="HOLIDAY" ${code === 'HOLIDAY' ? 'selected' : ''}>HOLIDAY</option>`;
                     
                     const selectHtml = `
                         <select class="roster-select ${selectClass}" data-owner="${op}" data-date="${d}">
@@ -3366,7 +3382,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (shift) {
                         const code = shift.code.toUpperCase();
                         const badgeClass = getRosterClass(code);
-                        const hoverText = `${shift.shift_name} (${shift.start_time} - ${shift.end_time})`;
+                        const hoverText = (shift.start_time && shift.end_time) ? `${shift.shift_name} (${shift.start_time} - ${shift.end_time})` : shift.shift_name;
                         badgeHtml = `<span class="roster-badge ${badgeClass}" title="${hoverText}">${code}</span>`;
                     } else {
                         badgeHtml = `<span class="roster-badge shift-do" title="Day Off">D/O</span>`;
@@ -3401,6 +3417,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const codeUpper = c.toUpperCase();
                         if (codeUpper === 'D/O') return 'shift-do';
                         if (codeUpper === 'LEAVE') return 'shift-leave';
+                        if (codeUpper === 'HOLIDAY') return 'shift-holiday';
                         return 'shift-' + codeUpper.toLowerCase();
                     }
                     selectEl.classList.add(getRosterClassLocal(code));
@@ -3456,6 +3473,28 @@ document.addEventListener('DOMContentLoaded', () => {
             const time12 = `${hourStr}:${minutes} ${ampm}`;
             
             return `<div style="font-weight: 500; white-space: nowrap;">${datePart}</div><div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem; font-weight: 400; white-space: nowrap;">${time12}</div>`;
+        } catch (e) {
+            return dtStr;
+        }
+    }
+
+    function formatDateTimeCompact(dtStr) {
+        if (!dtStr || dtStr === '—' || dtStr.trim() === '') {
+            return '<span style="color: var(--text-muted); font-style: italic;">—</span>';
+        }
+        try {
+            const parts = dtStr.trim().split(' ');
+            if (parts.length < 2) return dtStr;
+            const datePart = parts[0];
+            const timePart = parts[1];
+            const timeSubParts = timePart.split(':');
+            if (timeSubParts.length < 2) return dtStr;
+            let hours = parseInt(timeSubParts[0], 10);
+            const minutes = timeSubParts[1];
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12;
+            const hourStr = String(hours).padStart(2, '0');
+            return `<span style="font-weight: 500; white-space: nowrap;">${datePart}</span> <span style="font-size: 0.72rem; color: var(--text-muted); white-space: nowrap;">${hourStr}:${minutes} ${ampm}</span>`;
         } catch (e) {
             return dtStr;
         }
@@ -3844,46 +3883,87 @@ document.addEventListener('DOMContentLoaded', () => {
                 forwardedDisplay = `<span style="font-weight: 600; color: ${badgeColor}; background: ${bgOpacity}; border: 1px solid ${borderOpacity}; padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.25rem;"><i data-lucide="forward" style="width: 12px; height: 12px;"></i>${task.forwarded_by}</span>`;
             }
 
-            let pendingReasonDisplay = '<span style="color: var(--text-muted); font-style: italic;">—</span>';
+            const startDisplayCompact = formatDateTimeCompact(task.start_time);
+            const endDisplayCompact = formatDateTimeCompact(task.end_time);
+
+            // Construct compact badges for metadata in the main column
+            let badgesList = [];
+            if (refCode) {
+                badgesList.push(`<span class="task-meta-tag tag-ref" title="Reference Code: ${refCode}"><i data-lucide="tag" style="width: 10px; height: 10px;"></i>${refCode}</span>`);
+            }
+            if (category !== '—') {
+                badgesList.push(categoryDisplay);
+            }
+            if (task.forwarded_by) {
+                badgesList.push(forwardedDisplay);
+            }
             if (task.pending_reason) {
                 const fullReason = task.pending_reason;
-                const truncatedReason = fullReason.length > 20 ? fullReason.substring(0, 20) + '...' : fullReason;
-                pendingReasonDisplay = `<span title="${fullReason.replace(/"/g, '&quot;')}" style="font-size: 0.8rem; color: #f59e0b; font-weight: 500; display: inline-flex; align-items: center; gap: 0.2rem; cursor: help;"><i data-lucide="alert-circle" style="width: 13px; height: 13px;"></i>${truncatedReason}</span>`;
+                const truncatedReason = fullReason.length > 25 ? fullReason.substring(0, 25) + '...' : fullReason;
+                badgesList.push(`<span class="task-meta-tag tag-pending" title="Pending Reason: ${fullReason.replace(/"/g, '&quot;')}"><i data-lucide="alert-circle" style="width: 11px; height: 11px;"></i>${truncatedReason}</span>`);
             }
-
-            let escalationDisplay = '<span style="color: var(--text-muted); font-style: italic;">—</span>';
             if (task.escalation_history) {
                 const fullEsc = task.escalation_history;
                 const singleLineEsc = fullEsc.replace(/\n/g, ' ');
-                const truncatedEsc = singleLineEsc.length > 20 ? singleLineEsc.substring(0, 20) + '...' : singleLineEsc;
-                escalationDisplay = `<span title="${fullEsc.replace(/"/g, '&quot;')}" style="font-size: 0.8rem; color: #818cf8; font-weight: 500; display: inline-flex; align-items: center; gap: 0.2rem; cursor: help;"><i data-lucide="trending-up" style="width: 13px; height: 13px;"></i>${truncatedEsc}</span>`;
+                const truncatedEsc = singleLineEsc.length > 25 ? singleLineEsc.substring(0, 25) + '...' : singleLineEsc;
+                badgesList.push(`<span class="task-meta-tag tag-escalation" title="Escalation: ${fullEsc.replace(/"/g, '&quot;')}"><i data-lucide="trending-up" style="width: 11px; height: 11px;"></i>${truncatedEsc}</span>`);
             }
 
+            const badgesHtml = badgesList.length > 0 
+                ? `<div class="task-table-badges">${badgesList.join('')}</div>`
+                : '';
+
+            // Construct Timeline HTML
+            const timelineHtml = `
+                <div class="task-timeline-cell">
+                    <div class="timeline-row">
+                        <span class="timeline-label">Start:</span>
+                        <span class="timeline-val">${startDisplayCompact}</span>
+                    </div>
+                    ${task.end_time ? `
+                    <div class="timeline-row">
+                        <span class="timeline-label">End:</span>
+                        <span class="timeline-val">${endDisplayCompact}</span>
+                    </div>
+                    ` : ''}
+                    ${durInfo.text !== '—' ? `
+                    <div class="timeline-duration">
+                        ${durInfo.isOverOneHour ? `
+                            <span class="duration-red-flag" title="Task duration has exceeded 1 hour!">
+                                <i data-lucide="flag"></i>${durationDisplay}
+                            </span>
+                        ` : `
+                            <span class="duration-badge-compact" title="Task Duration">
+                                <i data-lucide="clock" style="width: 10px; height: 10px;"></i>${durationDisplay}
+                            </span>
+                        `}
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+
             tr.innerHTML = `
-                <td><span style="font-weight: 500; word-break: break-word;">${task.description}</span></td>
-                <td>${refDisplay}</td>
-                <td>${categoryDisplay}</td>
-                <td>${forwardedDisplay}</td>
-                <td><span style="font-weight: 500;">${task.owner}</span></td>
-                <td>${startDisplay}</td>
-                <td>${endDisplay}</td>
-                <td>
-                    ${durInfo.isOverOneHour ? `
-                        <span class="duration-red-flag" title="Task duration has exceeded 1 hour!">
-                            <i data-lucide="flag"></i>${durationDisplay}
-                        </span>
-                    ` : (durationDisplay !== '—' ? `<span style="font-weight: 600; color: #38bdf8; font-size: 0.85rem;">${durationDisplay}</span>` : '<span style="color: var(--text-muted); font-style: italic;">—</span>')}
+                <td class="col-task-desc">
+                    <div class="task-desc-text">${task.description}</div>
+                    ${badgesHtml}
                 </td>
-                <td>
+                <td class="col-task-owner">
+                    <div class="task-owner-pill">
+                        <i data-lucide="user" style="width: 12px; height: 12px; color: #38bdf8;"></i>
+                        <span>${task.owner}</span>
+                    </div>
+                </td>
+                <td class="col-task-timeline">
+                    ${timelineHtml}
+                </td>
+                <td class="col-task-status">
                     <span class="status-badge ${statusClass}">
                         <span class="badge-dot"></span>
                         ${task.status}
                     </span>
                 </td>
-                <td>${pendingReasonDisplay}</td>
-                <td>${escalationDisplay}</td>
-                <td>
-                    <div style="display: flex; gap: 0.25rem;">
+                <td class="col-task-actions">
+                    <div class="task-actions-row">
                         ${actionButtons}
                     </div>
                 </td>
@@ -4191,12 +4271,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { passive: true });
     });
 
-    // Periodically refresh data every 3.5 seconds (reduced rate to prevent congestion)
+    // Periodically refresh data every 4.5 seconds
     setInterval(() => {
         if (currentUser && (Date.now() - lastActivityTime) <= IDLE_THRESHOLD) {
             fetchTasks();
         }
-    }, 3500);
+    }, 4500);
 
     // Automatically reload the browser page every 5 minutes (increased from 2 minutes)
     setInterval(() => {
@@ -4502,6 +4582,736 @@ document.addEventListener('DOMContentLoaded', () => {
         implTrackerVerifyFilter.addEventListener('change', () => {
             renderImplTrackerTable(allImplementations);
         });
+    }
+
+
+    // =========================================================================
+    // --- PROJECT WORK & PROGRESS TRACKER ---
+    // =========================================================================
+    const btnOpenProjectWork = document.getElementById('btnOpenProjectWork');
+    const projectWorkModal = document.getElementById('projectWorkModal');
+    const btnCloseProjectWorkModal = document.getElementById('btnCloseProjectWorkModal');
+    const btnToggleAddProjectForm = document.getElementById('btnToggleAddProjectForm');
+    const addProjectFormContainer = document.getElementById('addProjectFormContainer');
+    const btnCancelAddProject = document.getElementById('btnCancelAddProject');
+    const createProjectForm = document.getElementById('createProjectForm');
+    const newProjectName = document.getElementById('newProjectName');
+    const newProjectTagSelect = document.getElementById('newProjectTagSelect');
+    const newProjTagsContainer = document.getElementById('newProjTagsContainer');
+    const newProjTaggedCount = document.getElementById('newProjTaggedCount');
+    const newProjectTargetDate = document.getElementById('newProjectTargetDate');
+    const newProjectDescription = document.getElementById('newProjectDescription');
+
+    const statProjTotal = document.getElementById('statProjTotal');
+    const statProjMine = document.getElementById('statProjMine');
+    const statProjProgress = document.getElementById('statProjProgress');
+    const statProjCompleted = document.getElementById('statProjCompleted');
+
+    const projectWorkSearch = document.getElementById('projectWorkSearch');
+    const projectWorkScopeFilter = document.getElementById('projectWorkScopeFilter');
+    const projectWorkStatusFilter = document.getElementById('projectWorkStatusFilter');
+    const projectWorkTableBody = document.getElementById('projectWorkTableBody');
+
+    const projectProgressModal = document.getElementById('projectProgressModal');
+    const btnCloseProjProgressModal = document.getElementById('btnCloseProjProgressModal');
+    const projProgressModalTitle = document.getElementById('projProgressModalTitle');
+    const projProgressBannerDesc = document.getElementById('projProgressBannerDesc');
+    const projProgressBannerAssignee = document.getElementById('projProgressBannerAssignee');
+    const projProgressBannerTargetDate = document.getElementById('projProgressBannerTargetDate');
+    const projProgressBannerFinishedWrap = document.getElementById('projProgressBannerFinishedWrap');
+    const projProgressBannerFinishedAt = document.getElementById('projProgressBannerFinishedAt');
+    const btnModalFinishProject = document.getElementById('btnModalFinishProject');
+    const projProgressBannerCreator = document.getElementById('projProgressBannerCreator');
+    const projProgressBannerBadge = document.getElementById('projProgressBannerBadge');
+    const btnToggleEditAssignees = document.getElementById('btnToggleEditAssignees');
+    const editProjectAssigneesBox = document.getElementById('editProjectAssigneesBox');
+    const editProjectTagSelect = document.getElementById('editProjectTagSelect');
+    const editProjTagsContainer = document.getElementById('editProjTagsContainer');
+    const editProjTaggedCount = document.getElementById('editProjTaggedCount');
+    const editProjTargetDate = document.getElementById('editProjTargetDate');
+    const btnSaveProjectAssignees = document.getElementById('btnSaveProjectAssignees');
+    const projectProgressUpdateForm = document.getElementById('projectProgressUpdateForm');
+    const projProgressProjectId = document.getElementById('projProgressProjectId');
+    const projProgressNote = document.getElementById('projProgressNote');
+    const projProgressPercent = document.getElementById('projProgressPercent');
+    const projProgressPercentLabel = document.getElementById('projProgressPercentLabel');
+    const projProgressStatus = document.getElementById('projProgressStatus');
+    const projProgressTimelineList = document.getElementById('projProgressTimelineList');
+
+    let allProjects = [];
+    let cachedAssigneeNames = [];
+    let newProjectTaggedUsers = [];
+    let editProjectTaggedUsers = [];
+
+    function parseAssigneesList(assignedStr) {
+        if (!assignedStr) return [];
+        return String(assignedStr).split(',').map(s => s.trim()).filter(Boolean);
+    }
+
+    function isAssignedToUser(assignedStr, userNameLower) {
+        if (!userNameLower) return false;
+        return parseAssigneesList(assignedStr).some(a => a.toLowerCase() === userNameLower);
+    }
+
+    function renderNewProjectTags() {
+        if (!newProjTagsContainer) return;
+        if (newProjectTaggedUsers.length === 0) {
+            newProjTagsContainer.innerHTML = `<span style="color: var(--text-muted); font-size: 0.76rem; font-style: italic;">No person tagged yet. Select from the dropdown to tag members.</span>`;
+            if (newProjTaggedCount) newProjTaggedCount.textContent = '(0 tagged)';
+            return;
+        }
+        if (newProjTaggedCount) newProjTaggedCount.textContent = `(${newProjectTaggedUsers.length} tagged)`;
+        newProjTagsContainer.innerHTML = newProjectTaggedUsers.map(name => `
+            <span style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.22rem 0.6rem; border-radius: 999px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-size: 0.76rem; font-weight: 600;">
+                <i data-lucide="user" style="width: 12px; height: 12px;"></i>
+                <span>${escapeHtml(name)}</span>
+                <button type="button" class="btn-remove-new-tag" data-name="${escapeHtml(name)}" title="Remove tag" style="background: none; border: none; color: #94a3b8; cursor: pointer; padding: 0 0 0 3px; font-size: 14px; line-height: 1; font-weight: bold; display: inline-flex; align-items: center;">&times;</button>
+            </span>
+        `).join('');
+        newProjTagsContainer.querySelectorAll('.btn-remove-new-tag').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const tag = btn.getAttribute('data-name');
+                newProjectTaggedUsers = newProjectTaggedUsers.filter(n => n.toLowerCase() !== tag.toLowerCase());
+                renderNewProjectTags();
+            });
+        });
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    function renderEditProjectTags() {
+        if (!editProjTagsContainer) return;
+        if (editProjectTaggedUsers.length === 0) {
+            editProjTagsContainer.innerHTML = `<span style="color: var(--text-muted); font-size: 0.76rem; font-style: italic;">No person tagged yet. Select from the dropdown to tag members.</span>`;
+            if (editProjTaggedCount) editProjTaggedCount.textContent = '(0 tagged)';
+            return;
+        }
+        if (editProjTaggedCount) editProjTaggedCount.textContent = `(${editProjectTaggedUsers.length} tagged)`;
+        editProjTagsContainer.innerHTML = editProjectTaggedUsers.map(name => `
+            <span style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.22rem 0.6rem; border-radius: 999px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-size: 0.76rem; font-weight: 600;">
+                <i data-lucide="user" style="width: 12px; height: 12px;"></i>
+                <span>${escapeHtml(name)}</span>
+                <button type="button" class="btn-remove-edit-tag" data-name="${escapeHtml(name)}" title="Remove tag" style="background: none; border: none; color: #94a3b8; cursor: pointer; padding: 0 0 0 3px; font-size: 14px; line-height: 1; font-weight: bold; display: inline-flex; align-items: center;">&times;</button>
+            </span>
+        `).join('');
+        editProjTagsContainer.querySelectorAll('.btn-remove-edit-tag').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const tag = btn.getAttribute('data-name');
+                editProjectTaggedUsers = editProjectTaggedUsers.filter(n => n.toLowerCase() !== tag.toLowerCase());
+                renderEditProjectTags();
+            });
+        });
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    if (newProjectTagSelect) {
+        newProjectTagSelect.addEventListener('change', () => {
+            const val = newProjectTagSelect.value.trim();
+            if (val) {
+                if (!newProjectTaggedUsers.some(u => u.toLowerCase() === val.toLowerCase())) {
+                    newProjectTaggedUsers.push(val);
+                    renderNewProjectTags();
+                } else {
+                    showToast(`${val} is already tagged.`, 'info');
+                }
+                newProjectTagSelect.value = '';
+            }
+        });
+    }
+
+    if (editProjectTagSelect) {
+        editProjectTagSelect.addEventListener('change', () => {
+            const val = editProjectTagSelect.value.trim();
+            if (val) {
+                if (!editProjectTaggedUsers.some(u => u.toLowerCase() === val.toLowerCase())) {
+                    editProjectTaggedUsers.push(val);
+                    renderEditProjectTags();
+                } else {
+                    showToast(`${val} is already tagged.`, 'info');
+                }
+                editProjectTagSelect.value = '';
+            }
+        });
+    }
+
+    async function populateProjectAssignees() {
+        let usersList = [];
+        try {
+            const res = await fetch(`${API_BASE}/users`);
+            if (res.ok) {
+                usersList = await res.json();
+            }
+        } catch (e) {}
+
+        const namesSet = new Set();
+        usersList.forEach(u => {
+            if (u.name && u.username !== 'admin') namesSet.add(u.name.trim());
+        });
+        if (Array.isArray(allUsers)) {
+            allUsers.forEach(u => {
+                if (u.name && u.username !== 'admin') namesSet.add(u.name.trim());
+            });
+        }
+        cachedAssigneeNames = Array.from(namesSet).sort((a, b) => a.localeCompare(b));
+
+        const fillTagDropdown = (sel, placeholder) => {
+            if (!sel) return;
+            sel.innerHTML = `<option value="">${placeholder}</option>`;
+            cachedAssigneeNames.forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                sel.appendChild(opt);
+            });
+        };
+
+        fillTagDropdown(newProjectTagSelect, '+ Tag a person...');
+        fillTagDropdown(editProjectTagSelect, '+ Tag another person...');
+    }
+
+    async function loadAndRenderProjects() {
+        if (!projectWorkTableBody) return;
+        try {
+            const res = await fetch(`${API_BASE}/projects`);
+            if (!res.ok) throw new Error('Failed to load projects');
+            allProjects = await res.json();
+            renderProjectWorkTable();
+        } catch (err) {
+            console.error('Error loading projects:', err);
+            projectWorkTableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; color: #ef4444; padding: 2rem;">
+                        Failed to load projects. Please try again.
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    function renderProjectWorkTable() {
+        if (!projectWorkTableBody) return;
+        const myName = (currentUser && currentUser.name ? currentUser.name.trim().toLowerCase() : '');
+        const isAdmin = currentUser && currentUser.role === 'admin';
+
+        // Update quick metrics
+        const totalCount = allProjects.length;
+        const mineCount = allProjects.filter(p => isAssignedToUser(p.assigned_to, myName)).length;
+        const inProgCount = allProjects.filter(p => p.status !== 'Completed').length;
+        const compCount = allProjects.filter(p => p.status === 'Completed').length;
+
+        if (statProjTotal) statProjTotal.textContent = totalCount;
+        if (statProjMine) statProjMine.textContent = mineCount;
+        if (statProjProgress) statProjProgress.textContent = inProgCount;
+        if (statProjCompleted) statProjCompleted.textContent = compCount;
+
+        const q = (projectWorkSearch ? projectWorkSearch.value.trim().toLowerCase() : '');
+        const scope = (projectWorkScopeFilter ? projectWorkScopeFilter.value : 'ALL');
+        const statusFilter = (projectWorkStatusFilter ? projectWorkStatusFilter.value : 'ALL');
+
+        const filtered = allProjects.filter(p => {
+            if (scope === 'MINE' && !isAssignedToUser(p.assigned_to, myName)) {
+                return false;
+            }
+            if (statusFilter !== 'ALL' && p.status !== statusFilter) {
+                return false;
+            }
+            if (q) {
+                const hay = `${p.id || ''} ${p.name || ''} ${p.description || ''} ${p.assigned_to || ''} ${p.created_by || ''}`.toLowerCase();
+                if (!hay.includes(q)) return false;
+            }
+            return true;
+        });
+
+        if (filtered.length === 0) {
+            projectWorkTableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+                        No projects found. Click <strong>"Add New Project"</strong> above to create and assign a project.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        projectWorkTableBody.innerHTML = '';
+        filtered.forEach(p => {
+            const tr = document.createElement('tr');
+            const assignees = parseAssigneesList(p.assigned_to);
+            const isAssignedToMe = isAssignedToUser(p.assigned_to, myName);
+            const isCreatedByMe = myName && (p.created_by || '').trim().toLowerCase() === myName;
+            const canUpdate = isAdmin || isAssignedToMe || isCreatedByMe;
+            const canDelete = isAdmin || isCreatedByMe;
+
+            const prog = Math.max(0, Math.min(100, parseInt(p.progress || 0, 10)));
+            const updates = Array.isArray(p.updates) ? p.updates : [];
+            const latest = updates.length > 0 ? updates[0] : null;
+
+            let statusColor = '#38bdf8';
+            let statusBg = 'rgba(56, 189, 248, 0.12)';
+            if (p.status === 'Completed') {
+                statusColor = '#10b981';
+                statusBg = 'rgba(16, 185, 129, 0.14)';
+            } else if (p.status === 'Pending') {
+                statusColor = '#eab308';
+                statusBg = 'rgba(234, 179, 8, 0.14)';
+            }
+
+            const barColor = p.status === 'Completed' ? '#10b981' : (prog >= 50 ? '#38bdf8' : '#f59e0b');
+
+            const assigneesBadgesHtml = (assignees.length ? assignees : ['Unassigned']).map(person => {
+                const isMe = myName && person.toLowerCase() === myName;
+                return `<div style="display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.25rem 0.6rem; border-radius: 999px; font-size: 0.76rem; font-weight: 600; margin: 2px; background: ${isMe ? 'rgba(245, 158, 11, 0.18)' : 'rgba(56, 189, 248, 0.1)'}; color: ${isMe ? '#fbbf24' : '#38bdf8'}; border: 1px solid ${isMe ? 'rgba(245, 158, 11, 0.4)' : 'rgba(56, 189, 248, 0.25)'};">
+                    <i data-lucide="user" style="width: 12px; height: 12px;"></i>
+                    <span>${escapeHtml(person)}</span>
+                </div>`;
+            }).join('');
+
+            const latestHtml = latest
+                ? `<div style="font-size: 0.83rem; color: var(--text-main); line-height: 1.4; margin-bottom: 0.25rem; word-break: break-word;">${escapeHtml(latest.note)}</div>
+                   <div style="font-size: 0.72rem; color: var(--text-muted);">
+                       <strong style="color: #38bdf8;">${escapeHtml(latest.user || '')}</strong> &bull; ${escapeHtml(latest.timestamp || '')}
+                       <span style="margin-left: 0.35rem; background: rgba(148, 163, 184, 0.15); padding: 1px 6px; border-radius: 999px; font-size: 0.68rem;">${updates.length} update${updates.length === 1 ? '' : 's'}</span>
+                   </div>`
+                : `<span style="color: var(--text-muted); font-size: 0.8rem;">No updates yet</span>`;
+
+            tr.innerHTML = `
+                <td style="vertical-align: middle;">
+                    <div style="display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.2rem;">
+                        <span style="font-size: 0.7rem; font-weight: 700; color: #fbbf24; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); padding: 1px 6px; border-radius: 4px;">${escapeHtml(p.id)}</span>
+                        <strong style="font-size: 0.92rem; color: var(--text-main);">${escapeHtml(p.name)}</strong>
+                    </div>
+                    ${p.description ? `<div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.35;">${escapeHtml(p.description)}</div>` : ''}
+                    <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 0.25rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                        <span>Assigned by <strong>${escapeHtml(p.created_by || 'Admin')}</strong> on ${escapeHtml(p.created_at || '')}</span>
+                        ${p.target_date ? `<span style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 1px 7px; border-radius: 999px; font-weight: 700; font-size: 0.68rem; background: rgba(245, 158, 11, 0.14); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35);"><i data-lucide="calendar-clock" style="width: 11px; height: 11px;"></i> Target: ${escapeHtml(p.target_date)}</span>` : ''}
+                        ${p.finished_at ? `<span style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 1px 7px; border-radius: 999px; font-weight: 700; font-size: 0.68rem; background: rgba(16, 185, 129, 0.16); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4);"><i data-lucide="check-circle-2" style="width: 11px; height: 11px;"></i> Finished: ${escapeHtml(p.finished_at)}</span>` : ''}
+                    </div>
+                </td>
+                <td style="vertical-align: middle;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 2px;">${assigneesBadgesHtml}</div>
+                </td>
+                <td style="vertical-align: middle;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                        <span style="font-size: 0.73rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; color: ${statusColor}; background: ${statusBg};">${escapeHtml(p.status || 'In Progress')}</span>
+                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">${prog}%</span>
+                    </div>
+                    <div style="width: 100%; height: 7px; background: rgba(148, 163, 184, 0.15); border-radius: 999px; overflow: hidden;">
+                        <div style="width: ${prog}%; height: 100%; background: ${barColor}; border-radius: 999px; transition: width 0.3s ease;"></div>
+                    </div>
+                    ${p.finished_at ? `<div style="font-size: 0.7rem; color: #10b981; font-weight: 600; margin-top: 0.3rem; display: flex; align-items: center; gap: 0.25rem;"><i data-lucide="check-check" style="width: 12px; height: 12px;"></i> Finish Date: ${escapeHtml(p.finished_at)}</div>` : ''}
+                </td>
+                <td style="vertical-align: middle;">
+                    ${latestHtml}
+                </td>
+                <td style="vertical-align: middle;">
+                    <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;">
+                        <button type="button" class="btn-proj-update" data-id="${escapeHtml(p.id)}" style="padding: 0.42rem 0.75rem; font-size: 0.76rem; font-weight: 600; border-radius: var(--radius-sm); border: 1px solid ${canUpdate ? 'rgba(56, 189, 248, 0.35)' : 'rgba(56, 189, 248, 0.35)'}; background: rgba(56, 189, 248, 0.12); color: #38bdf8; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem;">
+                            <i data-lucide="${canUpdate ? 'message-square-plus' : 'eye'}" style="width: 14px; height: 14px;"></i> ${canUpdate ? 'Update' : 'View'}
+                        </button>
+                        ${(canUpdate && p.status !== 'Completed') ? `
+                        <button type="button" class="btn-proj-finish" data-id="${escapeHtml(p.id)}" title="Mark Project as Finished" style="padding: 0.42rem 0.75rem; font-size: 0.76rem; font-weight: 700; border-radius: var(--radius-sm); border: 1px solid rgba(16, 185, 129, 0.45); background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);">
+                            <i data-lucide="check-circle-2" style="width: 14px; height: 14px;"></i> Finish
+                        </button>` : ''}
+                        ${canDelete ? `
+                        <button type="button" class="btn-proj-delete" data-id="${escapeHtml(p.id)}" title="Delete Project" style="padding: 0.4rem 0.55rem; font-size: 0.75rem; border-radius: var(--radius-sm); border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1); color: #ef4444; cursor: pointer; display: inline-flex; align-items: center;">
+                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                        </button>` : ''}
+                    </div>
+                </td>
+            `;
+            projectWorkTableBody.appendChild(tr);
+        });
+
+        // Attach event listeners
+        projectWorkTableBody.querySelectorAll('.btn-proj-update').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const pid = btn.getAttribute('data-id');
+                openProjectProgressModal(pid);
+            });
+        });
+
+        projectWorkTableBody.querySelectorAll('.btn-proj-finish').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const pid = btn.getAttribute('data-id');
+                await finishProjectById(pid);
+            });
+        });
+
+        projectWorkTableBody.querySelectorAll('.btn-proj-delete').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const pid = btn.getAttribute('data-id');
+                const proj = allProjects.find(x => x.id === pid);
+                if (!confirm(`Are you sure you want to delete project "${proj ? proj.name : pid}"?`)) return;
+                try {
+                    const res = await fetch(`${API_BASE}/projects/${encodeURIComponent(pid)}`, { method: 'DELETE' });
+                    if (res.ok) {
+                        showToast('Project deleted successfully.', 'success');
+                        loadAndRenderProjects();
+                    } else {
+                        showToast('Failed to delete project.', 'error');
+                    }
+                } catch (e) {
+                    showToast('Error deleting project.', 'error');
+                }
+            });
+        });
+
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    async function openProjectProgressModal(projectId) {
+        const proj = allProjects.find(p => p.id === projectId);
+        if (!proj || !projectProgressModal) return;
+
+        await populateProjectAssignees();
+
+        projProgressProjectId.value = proj.id;
+        projProgressModalTitle.textContent = `${proj.id}: ${proj.name}`;
+        projProgressBannerDesc.textContent = proj.description || 'No additional scope description provided.';
+        projProgressBannerAssignee.textContent = proj.assigned_to || 'Unassigned';
+        if (projProgressBannerTargetDate) {
+            projProgressBannerTargetDate.textContent = proj.target_date || 'Not Set';
+        }
+        if (projProgressBannerFinishedWrap && projProgressBannerFinishedAt) {
+            if (proj.finished_at) {
+                projProgressBannerFinishedAt.textContent = proj.finished_at;
+                projProgressBannerFinishedWrap.classList.remove('hidden');
+            } else {
+                projProgressBannerFinishedWrap.classList.add('hidden');
+            }
+        }
+        if (btnModalFinishProject) {
+            if (proj.status === 'Completed') {
+                btnModalFinishProject.classList.add('hidden');
+            } else {
+                btnModalFinishProject.classList.remove('hidden');
+            }
+        }
+        projProgressBannerCreator.textContent = `${proj.created_by || 'Admin'} (${proj.created_at || ''})`;
+
+        const prog = Math.max(0, Math.min(100, parseInt(proj.progress || 0, 10)));
+        projProgressBannerBadge.textContent = `${prog}% (${proj.status || 'In Progress'})`;
+        projProgressPercent.value = prog;
+        projProgressPercentLabel.textContent = `${prog}%`;
+        projProgressStatus.value = proj.status || 'In Progress';
+        projProgressNote.value = '';
+
+        const myName = (currentUser && currentUser.name ? currentUser.name.trim().toLowerCase() : '');
+        const isAdmin = currentUser && currentUser.role === 'admin';
+        const isCreatedByMe = myName && (proj.created_by || '').trim().toLowerCase() === myName;
+        const canUpdate = isAdmin || isCreatedByMe || isAssignedToUser(proj.assigned_to, myName);
+        const canEditAssignees = isAdmin || isCreatedByMe;
+        const readOnlyNotice = document.getElementById('projProgressReadOnlyNotice');
+
+        if (btnToggleEditAssignees) {
+            if (canEditAssignees) {
+                btnToggleEditAssignees.classList.remove('hidden');
+            } else {
+                btnToggleEditAssignees.classList.add('hidden');
+            }
+        }
+        if (editProjectAssigneesBox) {
+            editProjectAssigneesBox.classList.add('hidden');
+            editProjectTaggedUsers = parseAssigneesList(proj.assigned_to);
+            renderEditProjectTags();
+            if (editProjTargetDate) editProjTargetDate.value = proj.target_date || '';
+        }
+
+        if (canUpdate) {
+            if (projectProgressUpdateForm) projectProgressUpdateForm.classList.remove('hidden');
+            if (readOnlyNotice) readOnlyNotice.classList.add('hidden');
+        } else {
+            if (projectProgressUpdateForm) projectProgressUpdateForm.classList.add('hidden');
+            if (readOnlyNotice) readOnlyNotice.classList.remove('hidden');
+        }
+
+        renderProjectTimeline(proj);
+        projectProgressModal.classList.remove('hidden');
+        if (window.lucide) window.lucide.createIcons();
+        if (canUpdate && projProgressNote) {
+            setTimeout(() => projProgressNote.focus(), 50);
+        }
+    }
+
+    if (btnToggleEditAssignees) {
+        btnToggleEditAssignees.addEventListener('click', () => {
+            if (editProjectAssigneesBox) {
+                editProjectAssigneesBox.classList.toggle('hidden');
+            }
+        });
+    }
+
+    if (btnSaveProjectAssignees) {
+        btnSaveProjectAssignees.addEventListener('click', async () => {
+            const pid = projProgressProjectId.value;
+            if (editProjectTaggedUsers.length === 0) {
+                showToast('Please tag at least 1 person involved in this project.', 'error');
+                return;
+            }
+            const combined = editProjectTaggedUsers.join(', ');
+            const target_date = editProjTargetDate ? editProjTargetDate.value.trim() : '';
+            const updated_by = currentUser && currentUser.name ? currentUser.name : 'Admin';
+            try {
+                const res = await fetch(`${API_BASE}/projects/${encodeURIComponent(pid)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ assigned_to: combined, target_date, updated_by })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showToast(`Project tagged members updated!`, 'success');
+                    const updatedProj = data.project;
+                    const idx = allProjects.findIndex(p => p.id === pid);
+                    if (idx !== -1) allProjects[idx] = updatedProj;
+                    projProgressBannerAssignee.textContent = updatedProj.assigned_to;
+                    if (projProgressBannerTargetDate) projProgressBannerTargetDate.textContent = updatedProj.target_date || 'Not Set';
+                    if (editProjectAssigneesBox) editProjectAssigneesBox.classList.add('hidden');
+                    renderProjectTimeline(updatedProj);
+                    renderProjectWorkTable();
+                } else {
+                    showToast(data.message || 'Failed to update tagged members.', 'error');
+                }
+            } catch (e) {
+                showToast('Error updating tagged members.', 'error');
+            }
+        });
+    }
+
+    function renderProjectTimeline(proj) {
+        if (!projProgressTimelineList) return;
+        const updates = Array.isArray(proj.updates) ? proj.updates : [];
+        if (updates.length === 0) {
+            projProgressTimelineList.innerHTML = `<div style="color: var(--text-muted); font-size: 0.82rem; padding: 1rem; text-align: center;">No updates recorded yet.</div>`;
+            return;
+        }
+        projProgressTimelineList.innerHTML = updates.map(u => `
+            <div style="padding: 0.75rem 0.9rem; background: rgba(15, 23, 42, 0.55); border: 1px solid var(--border-color); border-left: 3px solid #38bdf8; border-radius: var(--radius-sm);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; font-size: 0.76rem;">
+                    <span style="font-weight: 700; color: #38bdf8;">${escapeHtml(u.user || 'User')}</span>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="padding: 1px 7px; border-radius: 999px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; font-weight: 700;">${u.progress ?? 0}% &bull; ${escapeHtml(u.status || 'In Progress')}</span>
+                        <span style="color: var(--text-muted);">${escapeHtml(u.timestamp || '')}</span>
+                    </div>
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-main); line-height: 1.45; white-space: pre-wrap; word-break: break-word;">${escapeHtml(u.note || '')}</div>
+            </div>
+        `).join('');
+    }
+
+    if (btnOpenProjectWork) {
+        btnOpenProjectWork.addEventListener('click', () => {
+            projectWorkModal.classList.remove('hidden');
+            populateProjectAssignees();
+            loadAndRenderProjects();
+            if (window.lucide) window.lucide.createIcons();
+        });
+    }
+
+    if (btnCloseProjectWorkModal) {
+        btnCloseProjectWorkModal.addEventListener('click', () => {
+            projectWorkModal.classList.add('hidden');
+        });
+    }
+
+    if (btnToggleAddProjectForm) {
+        btnToggleAddProjectForm.addEventListener('click', () => {
+            if (!addProjectFormContainer) return;
+            const isHidden = addProjectFormContainer.classList.toggle('hidden');
+            if (!isHidden) {
+                populateProjectAssignees();
+                if (newProjectName) newProjectName.focus();
+            }
+        });
+    }
+
+    if (btnCancelAddProject) {
+        btnCancelAddProject.addEventListener('click', () => {
+            if (addProjectFormContainer) {
+                addProjectFormContainer.classList.add('hidden');
+                newProjectTaggedUsers = [];
+                renderNewProjectTags();
+            }
+        });
+    }
+
+    if (createProjectForm) {
+        createProjectForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = newProjectName.value.trim();
+            const target_date = newProjectTargetDate ? newProjectTargetDate.value.trim() : '';
+            const description = newProjectDescription.value.trim();
+            const created_by = currentUser && currentUser.name ? currentUser.name : 'Admin';
+
+            if (!name) {
+                showToast('Please enter a project name.', 'error');
+                return;
+            }
+            if (newProjectTaggedUsers.length === 0) {
+                showToast('Please tag at least 1 person involved in this project.', 'error');
+                return;
+            }
+            const assigned_to = newProjectTaggedUsers.join(', ');
+
+            try {
+                const res = await fetch(`${API_BASE}/projects`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, description, assigned_to, target_date, created_by })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showToast(`Project "${name}" created and tagged to ${assigned_to}!`, 'success');
+                    createProjectForm.reset();
+                    newProjectTaggedUsers = [];
+                    renderNewProjectTags();
+                    if (addProjectFormContainer) addProjectFormContainer.classList.add('hidden');
+                    loadAndRenderProjects();
+                } else {
+                    showToast(data.message || 'Failed to create project.', 'error');
+                }
+            } catch (err) {
+                showToast('Server error creating project.', 'error');
+            }
+        });
+    }
+
+    if (projProgressPercent) {
+        projProgressPercent.addEventListener('input', () => {
+            const v = parseInt(projProgressPercent.value, 10);
+            if (projProgressPercentLabel) projProgressPercentLabel.textContent = `${v}%`;
+            if (v === 100 && projProgressStatus) {
+                projProgressStatus.value = 'Completed';
+            } else if (v < 100 && projProgressStatus && projProgressStatus.value === 'Completed') {
+                projProgressStatus.value = 'In Progress';
+            }
+        });
+    }
+
+    if (projProgressStatus) {
+        projProgressStatus.addEventListener('change', () => {
+            if (projProgressStatus.value === 'Completed' && projProgressPercent) {
+                projProgressPercent.value = 100;
+                if (projProgressPercentLabel) projProgressPercentLabel.textContent = '100%';
+            }
+        });
+    }
+
+    if (projectProgressUpdateForm) {
+        projectProgressUpdateForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const pid = projProgressProjectId.value;
+            const note = projProgressNote.value.trim();
+            const progress = parseInt(projProgressPercent.value, 10);
+            const status = projProgressStatus.value;
+            const updated_by = currentUser && currentUser.name ? currentUser.name : 'User';
+
+            if (!note) {
+                showToast('Please write a progress update note.', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/projects/${encodeURIComponent(pid)}/update`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ note, progress, status, updated_by, role: currentUser && currentUser.role ? currentUser.role : 'operator' })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showToast('Project progress updated!', 'success');
+                    projProgressNote.value = '';
+                    const updatedProj = data.project;
+                    const idx = allProjects.findIndex(p => p.id === pid);
+                    if (idx !== -1) allProjects[idx] = updatedProj;
+                    projProgressBannerBadge.textContent = `${updatedProj.progress}% (${updatedProj.status})`;
+                    if (projProgressBannerFinishedWrap && projProgressBannerFinishedAt) {
+                        if (updatedProj.finished_at) {
+                            projProgressBannerFinishedAt.textContent = updatedProj.finished_at;
+                            projProgressBannerFinishedWrap.classList.remove('hidden');
+                        } else {
+                            projProgressBannerFinishedWrap.classList.add('hidden');
+                        }
+                    }
+                    if (btnModalFinishProject) {
+                        if (updatedProj.status === 'Completed') {
+                            btnModalFinishProject.classList.add('hidden');
+                        } else {
+                            btnModalFinishProject.classList.remove('hidden');
+                        }
+                    }
+                    renderProjectTimeline(updatedProj);
+                    renderProjectWorkTable();
+                } else {
+                    showToast(data.message || 'Failed to save progress update.', 'error');
+                }
+            } catch (err) {
+                showToast('Error saving progress update.', 'error');
+            }
+        });
+    }
+
+    async function finishProjectById(pid, optionalNote = '') {
+        const proj = allProjects.find(x => x.id === pid);
+        const updated_by = currentUser && currentUser.name ? currentUser.name : 'User';
+        const role = currentUser && currentUser.role ? currentUser.role : 'operator';
+        try {
+            const res = await fetch(`${API_BASE}/projects/${encodeURIComponent(pid)}/finish`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ updated_by, role, note: optionalNote })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                const updatedProj = data.project;
+                const idx = allProjects.findIndex(p => p.id === pid);
+                if (idx !== -1) allProjects[idx] = updatedProj;
+                showToast(`Project "${updatedProj.name}" finished at ${updatedProj.finished_at}!`, 'success');
+                renderProjectWorkTable();
+                if (projectProgressModal && !projectProgressModal.classList.contains('hidden') && projProgressProjectId.value === pid) {
+                    projProgressBannerBadge.textContent = `${updatedProj.progress}% (${updatedProj.status})`;
+                    projProgressPercent.value = 100;
+                    if (projProgressPercentLabel) projProgressPercentLabel.textContent = '100%';
+                    if (projProgressStatus) projProgressStatus.value = 'Completed';
+                    if (projProgressNote) projProgressNote.value = '';
+                    if (projProgressBannerFinishedWrap && projProgressBannerFinishedAt) {
+                        projProgressBannerFinishedAt.textContent = updatedProj.finished_at || '-';
+                        projProgressBannerFinishedWrap.classList.remove('hidden');
+                    }
+                    if (btnModalFinishProject) btnModalFinishProject.classList.add('hidden');
+                    renderProjectTimeline(updatedProj);
+                }
+            } else {
+                showToast(data.message || 'Failed to finish project.', 'error');
+            }
+        } catch (err) {
+            showToast('Error finishing project.', 'error');
+        }
+    }
+
+    if (btnModalFinishProject) {
+        btnModalFinishProject.addEventListener('click', async () => {
+            const pid = projProgressProjectId ? projProgressProjectId.value : '';
+            if (!pid) return;
+            const note = projProgressNote ? projProgressNote.value.trim() : '';
+            await finishProjectById(pid, note);
+        });
+    }
+
+    if (btnCloseProjProgressModal) {
+        btnCloseProjProgressModal.addEventListener('click', () => {
+            projectProgressModal.classList.add('hidden');
+        });
+    }
+
+    if (projectWorkSearch) {
+        projectWorkSearch.addEventListener('input', renderProjectWorkTable);
+    }
+    if (projectWorkScopeFilter) {
+        projectWorkScopeFilter.addEventListener('change', renderProjectWorkTable);
+    }
+    if (projectWorkStatusFilter) {
+        projectWorkStatusFilter.addEventListener('change', renderProjectWorkTable);
     }
 
     // --- Run Auth Setup on Boot ---

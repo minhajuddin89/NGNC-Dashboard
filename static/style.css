@@ -915,36 +915,148 @@ body.light-theme .engineer-name-compact {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
-    overflow-x: auto;
+    overflow-x: hidden;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .spreadsheet-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     text-align: left;
+    table-layout: fixed;
 }
 
 .spreadsheet-table th {
-    background-color: rgba(15, 23, 42, 0.8);
+    background-color: rgba(15, 23, 42, 0.85);
     color: var(--text-muted);
     font-weight: 600;
-    padding: 1rem;
+    padding: 0.85rem 1rem;
     border-bottom: 2px solid var(--border-color);
     text-transform: uppercase;
-    font-size: 0.75rem;
+    font-size: 0.74rem;
     letter-spacing: 0.05em;
+    box-sizing: border-box;
 }
 
 .spreadsheet-table td {
-    padding: 1rem;
+    padding: 0.85rem 1rem;
     border-bottom: 1px solid var(--border-color);
     color: var(--text-main);
     vertical-align: middle;
+    box-sizing: border-box;
 }
 
 .spreadsheet-table tr:hover td {
     background-color: rgba(255, 255, 255, 0.02);
+}
+
+.task-desc-text {
+    font-weight: 500;
+    line-height: 1.45;
+    word-break: break-word;
+    color: var(--text-main);
+    font-size: 0.88rem;
+}
+
+.task-table-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.45rem;
+    align-items: center;
+}
+
+.task-meta-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.18rem 0.45rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.task-meta-tag.tag-ref {
+    color: #0284c7;
+    background: rgba(14, 165, 233, 0.12);
+    border: 1px solid rgba(14, 165, 233, 0.25);
+}
+
+.task-meta-tag.tag-pending {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    cursor: help;
+}
+
+.task-meta-tag.tag-escalation {
+    color: #818cf8;
+    background: rgba(129, 140, 248, 0.1);
+    border: 1px solid rgba(129, 140, 248, 0.25);
+    cursor: help;
+}
+
+.task-owner-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 500;
+    font-size: 0.82rem;
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.03);
+    padding: 0.25rem 0.55rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    white-space: nowrap;
+}
+
+.task-timeline-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.78rem;
+}
+
+.timeline-row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.timeline-label {
+    color: var(--text-muted);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    min-width: 32px;
+    font-weight: 600;
+}
+
+.timeline-val {
+    color: var(--text-main);
+}
+
+.duration-badge-compact {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: 600;
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.1);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    padding: 0.15rem 0.45rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.74rem;
+}
+
+.task-actions-row {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+    flex-wrap: nowrap;
 }
 
 /* Empty State Card */
@@ -1851,6 +1963,12 @@ body.light-theme .admin-users-table tr:hover td {
     border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
+.roster-badge.shift-holiday {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
 .roster-badge.shift-le {
     background: rgba(245, 158, 11, 0.15);
     color: #fbbf24;
@@ -1929,6 +2047,12 @@ body.light-theme .admin-users-table tr:hover td {
     background: rgba(239, 68, 68, 0.15);
     color: #f87171;
     border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.roster-select-badge.shift-holiday {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 .roster-select-badge.shift-le {
@@ -2247,6 +2371,22 @@ body.light-theme .spreadsheet-table tr:nth-child(even) td {
     background-color: #fafafa !important;
 }
 
+body.light-theme .task-desc-text {
+    color: #0f172a !important;
+}
+
+body.light-theme .task-owner-pill {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #1e293b !important;
+}
+
+body.light-theme .duration-badge-compact {
+    background: rgba(2, 132, 199, 0.08) !important;
+    color: #0284c7 !important;
+    border-color: rgba(2, 132, 199, 0.2) !important;
+}
+
 body.light-theme .task-card {
     background-color: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
@@ -2454,6 +2594,12 @@ body.light-theme .roster-select-badge.shift-leave {
     background-color: rgba(239, 68, 68, 0.1) !important;
     color: #b91c1c !important;
     border-color: rgba(239, 68, 68, 0.25) !important;
+}
+body.light-theme .roster-badge.shift-holiday,
+body.light-theme .roster-select-badge.shift-holiday {
+    background-color: rgba(16, 185, 129, 0.12) !important;
+    color: #047857 !important;
+    border-color: rgba(16, 185, 129, 0.3) !important;
 }
 body.light-theme .roster-badge.shift-le,
 body.light-theme .roster-select-badge.shift-le {

@@ -19,7 +19,10 @@ shift_times = {
     'LE': ('16:00', '00:00', 'Late Evening Shift'),
     'D/O': (None, None, 'Day off'),
     'LEAVE': (None, None, 'Leave'),
-    'Leave': (None, None, 'Leave')
+    'Leave': (None, None, 'Leave'),
+    'HOLIDAY': (None, None, 'Holiday'),
+    'Holiday': (None, None, 'Holiday'),
+    'H': (None, None, 'Holiday')
 }
 
 roster_entries = []
@@ -47,6 +50,8 @@ for row in range(3, 30):
             code_str = 'D/O'
         elif code_str.upper() == 'LEAVE':
             code_str = 'LEAVE'
+        elif 'HOLIDAY' in code_str.upper() or code_str.upper() in ['H', 'GOVT HOLIDAY', 'PUBLIC HOLIDAY', 'OFFICIAL HOLIDAY']:
+            code_str = 'HOLIDAY'
             
         date_str = f"2026-08-{str(day_num).padStart(2, '0') if hasattr(str(day_num), 'padStart') else str(day_num).zfill(2)}"
         
